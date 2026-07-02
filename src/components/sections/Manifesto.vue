@@ -1,6 +1,6 @@
 <template>
 
-<section id="manifesto" class="manifesto">
+<section id="about" class="manifesto">
 
     <div class="grid-bg"></div>
 
@@ -82,7 +82,7 @@ padding:180px 0;
 
 overflow:hidden;
 
-background:#0F172A;
+background:var(--voxa-blue);
 
 }
 
@@ -102,7 +102,7 @@ background-size:46px 46px;
 
 opacity:.55;
 
-animation:gridMove 24s linear infinite;
+animation:none;
 
 }
 
@@ -128,7 +128,7 @@ left:-260px;
 
 top:-240px;
 
-background:rgba(59,130,246,.14);
+background:rgba(var(--voxa-accent-rgb),.14);
 
 }
 
@@ -142,7 +142,7 @@ right:-260px;
 
 bottom:-260px;
 
-background:rgba(59,130,246,.08);
+background:rgba(var(--voxa-accent-rgb),.08);
 
 }
 
@@ -186,7 +186,7 @@ letter-spacing:.32em;
 
 text-transform:uppercase;
 
-color:#DBEAFE;
+color:var(--voxa-accent-soft);
 
 }
 
@@ -198,7 +198,7 @@ width:44px;
 
 height:2px;
 
-background:#3B82F6;
+background:var(--voxa-accent-2);
 
 }
 
@@ -219,8 +219,6 @@ border-radius:34px;
 background:rgba(255,255,255,.05);
 
 border:1px solid rgba(255,255,255,.08);
-
-backdrop-filter:blur(24px);
 
 box-shadow:
 
@@ -252,7 +250,7 @@ linear-gradient(
 
 transparent,
 
-rgba(91,140,255,.55),
+rgba(var(--voxa-accent-rgb),.55),
 
 transparent
 
@@ -268,9 +266,9 @@ padding:10px 18px;
 
 border-radius:999px;
 
-background:rgba(59,130,246,.12);
+background:rgba(var(--voxa-accent-rgb),.12);
 
-border:1px solid rgba(59,130,246,.22);
+border:1px solid rgba(var(--voxa-accent-rgb),.22);
 
 font-size:12px;
 
@@ -280,7 +278,7 @@ letter-spacing:.22em;
 
 text-transform:uppercase;
 
-color:#BFDBFE;
+color:var(--voxa-accent-soft);
 
 margin-bottom:28px;
 
@@ -337,11 +335,11 @@ background .35s;
 
 transform:translateY(-10px);
 
-border-color:rgba(91,140,255,.28);
+border-color:rgba(var(--voxa-accent-rgb),.28);
 
 box-shadow:
 
-0 45px 110px rgba(59,130,246,.14);
+0 45px 110px rgba(var(--voxa-accent-rgb),.14);
 
 }
 
@@ -375,7 +373,7 @@ transparent
 
 transform:rotate(18deg);
 
-animation:shine 8s linear infinite;
+animation:none;
 
 }
 
@@ -407,16 +405,15 @@ color:#E2E8F0;
 
 .left{
 
-animation:fadeLeft .8s ease;
+animation:none;
 
 }
 
 .right{
 
-animation:fadeUp .9s cubic-bezier(.22,1,.36,1);
+animation:none;
 
 }
-
 @keyframes fadeLeft{
 
 from{
@@ -436,7 +433,6 @@ transform:translateX(0);
 }
 
 }
-
 @keyframes fadeUp{
 
 from{
@@ -456,39 +452,6 @@ transform:translateY(0);
 }
 
 }
-
-@keyframes shine{
-
-0%{
-
-left:-70%;
-
-}
-
-100%{
-
-left:180%;
-
-}
-
-}
-
-@keyframes gridMove{
-
-from{
-
-background-position:0 0;
-
-}
-
-to{
-
-background-position:46px 46px;
-
-}
-
-}
-
 @media(max-width:1100px){
 
 .manifesto{

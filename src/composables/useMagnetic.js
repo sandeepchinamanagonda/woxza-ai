@@ -1,46 +1,45 @@
-import { onMounted,onUnmounted } from "vue"
+import { onMounted, onUnmounted } from "vue"
 
-export function useMagnetic(){
+export function useMagnetic(selector = ".hero .btn-primary") {
+  let target
 
-let buttons=[]
+  const move = (event) => {
+    if (!target) return
 
-const move=(e)=>{
+    const rect = target.getBoundingClientRect()
+    const x = event.clientX - (rect.left + rect.width / 2)
+    const y = event.clientY - (rect.top + rect.height / 2)
 
-buttons.forEach(btn=>{
+    target.style.transform = `translate3d(${x * 0.08}px, ${y * 0.08}px, 0)`
+  }
 
-const rect=btn.getBoundingClientRect()
+  const leave = () => {
+    if (!target) return
 
-const x=e.clientX-(rect.left+rect.width/2)
-const y=e.clientY-(rect.top+rect.height/2)
+    target.removeEventListener("mousemove", move)
+    target.removeEventListener("mouseleave", leave)
+    target.style.transform = "translate3d(0, 0, 0)"
+    target.style.willChange = ""
+    target = null
+  }
 
-const distance=Math.sqrt(x*x+y*y)
+  const enter = (event) => {
+    if (target) leave()
 
-if(distance<180){
+    target = event.currentTarget
+    target.style.willChange = "transform"
+    target.addEventListener("mousemove", move, { passive: true })
+    target.addEventListener("mouseleave", leave, { once: true })
+  }
 
-btn.style.transform=`translate(${x*0.18}px,${y*0.18}px)`
+  onMounted(() => {
+    const element = document.querySelector(selector)
+    element?.addEventListener("mouseenter", enter, { passive: true })
+  })
 
-}else{
-
-btn.style.transform="translate(0,0)"
-
-}
-
-})
-
-}
-
-onMounted(()=>{
-
-buttons=[...document.querySelectorAll(".btn-primary,.btn-secondary,.consult")]
-
-window.addEventListener("mousemove",move)
-
-})
-
-onUnmounted(()=>{
-
-window.removeEventListener("mousemove",move)
-
-})
-
+  onUnmounted(() => {
+    const element = document.querySelector(selector)
+    element?.removeEventListener("mouseenter", enter)
+    leave()
+  })
 }

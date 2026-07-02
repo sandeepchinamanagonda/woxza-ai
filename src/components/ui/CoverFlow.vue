@@ -66,7 +66,7 @@
 </template>
 <script setup>
 
-import { ref, onMounted, nextTick } from "vue"
+import { ref, onMounted, onUnmounted, nextTick } from "vue"
 import { gsap } from "gsap"
 
 const props = defineProps({
@@ -87,6 +87,7 @@ const radius = 650
 const angleStep = 28
 
 let isAnimating = false
+let releaseAnimation
 
 function updateCards(){
 
@@ -117,6 +118,8 @@ function updateCards(){
 
         const opacity = Math.max(.18,1-Math.abs(offset)*.18)
 
+        card.style.zIndex=String(100-Math.abs(offset))
+
         gsap.to(card,{
 
             duration:.9,
@@ -133,17 +136,24 @@ function updateCards(){
 
             opacity,
 
-            filter:`blur(${Math.abs(offset)*1.4}px)`,
+            onStart:()=>{
+                card.style.willChange="transform, opacity"
+            },
 
-            zIndex:100-Math.abs(offset)
+            onComplete:()=>{
+                card.style.willChange=""
+            }
 
         })
 
     })
 
-    gsap.delayedCall(.9,()=>{
+    releaseAnimation?.kill()
+
+    releaseAnimation = gsap.delayedCall(.9,()=>{
 
         isAnimating=false
+        releaseAnimation=null
 
     })
 
@@ -206,6 +216,18 @@ onMounted(async()=>{
     stage.value.addEventListener("pointerdown",pointerDown)
 
     stage.value.addEventListener("pointerup",pointerUp)
+
+})
+
+onUnmounted(()=>{
+
+    stage.value?.removeEventListener("pointerdown",pointerDown)
+
+    stage.value?.removeEventListener("pointerup",pointerUp)
+
+    releaseAnimation?.kill()
+
+    gsap.killTweensOf(cardRefs.filter(Boolean))
 
 })
 
@@ -390,7 +412,7 @@ transparent
 
 transform:rotate(18deg);
 
-animation:shine 8s linear infinite;
+animation:none;
 
 }
 
@@ -545,23 +567,6 @@ right:20px;
 }
 
 /* Shine Animation */
-
-@keyframes shine{
-
-0%{
-
-left:-70%;
-
-}
-
-100%{
-
-left:180%;
-
-}
-
-}
-
 /* Tablet */
 
 @media(max-width:992px){

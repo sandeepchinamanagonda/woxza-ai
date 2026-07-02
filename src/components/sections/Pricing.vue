@@ -19,7 +19,7 @@ that fits your business.
 
 <p>
 Whether you're exploring AI or deploying enterprise-wide
-automation, VOXA provides a structured path from strategy to scale.
+automation, Voxa provides a structured path from strategy to scale.
 </p>
 
 </div>
@@ -149,7 +149,7 @@ linear-gradient(rgba(15,23,42,.04) 1px,transparent 1px),
 linear-gradient(90deg,rgba(15,23,42,.04) 1px,transparent 1px);
 background-size:46px 46px;
 opacity:.55;
-animation:gridMove 22s linear infinite;
+animation:none;
 }
 
 .glow{
@@ -225,7 +225,6 @@ position:relative;
 padding:40px;
 border-radius:30px;
 background:rgba(255,255,255,.78);
-backdrop-filter:blur(24px);
 border:1px solid rgba(15,23,42,.08);
 box-shadow:0 25px 70px rgba(15,23,42,.08);
 overflow:hidden;
@@ -248,7 +247,7 @@ rgba(59,130,246,.12),
 transparent
 );
 transform:rotate(20deg);
-animation:shine 9s linear infinite;
+animation:none;
 }
 
 .program-card:hover{
@@ -337,24 +336,6 @@ transition:.3s;
 .program-card:hover a{
 gap:14px;
 }
-@keyframes shine{
-0%{
-left:-70%;
-}
-100%{
-left:180%;
-}
-}
-
-@keyframes gridMove{
-from{
-background-position:0 0;
-}
-to{
-background-position:46px 46px;
-}
-}
-
 @media(max-width:1100px){
 
 .program-grid{

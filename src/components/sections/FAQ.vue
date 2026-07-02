@@ -38,7 +38,7 @@
 
                     <h3>
 
-                        What services does VOXA provide?
+                        What services does Voxa provide?
 
                     </h3>
 
@@ -312,7 +312,7 @@ radial-gradient(circle,#000 60%,transparent 100%);
 
 opacity:.45;
 
-animation:gridMove 28s linear infinite;
+animation:none;
 
 }
 
@@ -416,26 +416,9 @@ transparent
 
 transform:rotate(18deg);
 
-animation:shine 8s linear infinite;
+animation:none;
 
 }
-
-@keyframes shine{
-
-0%{
-
-left:-70%;
-
-}
-
-100%{
-
-left:180%;
-
-}
-
-}
-
 .question h3{
 
 transition:.35s;
@@ -579,16 +562,15 @@ ANIMATIONS
 
 .heading{
 
-animation:fadeUp .9s cubic-bezier(.22,1,.36,1);
+animation:none;
 
 }
 
 .faq-item{
 
-animation:fadeUp .9s cubic-bezier(.22,1,.36,1);
+animation:none;
 
 }
-
 @keyframes fadeUp{
 
 from{
@@ -608,23 +590,6 @@ transform:translateY(0);
 }
 
 }
-
-@keyframes gridMove{
-
-from{
-
-background-position:0 0;
-
-}
-
-to{
-
-background-position:48px 48px;
-
-}
-
-}
-
 /* ==========================================================
 FINISH
 ========================================================== */

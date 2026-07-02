@@ -229,9 +229,7 @@ scale(${scale})
 
 opacity,
 
-zIndex:100-Math.abs(offset),
-
-filter:`blur(${Math.abs(offset)*1.4}px)`
+zIndex:100-Math.abs(offset)
 
 }
 
@@ -288,7 +286,7 @@ background-size:46px 46px;
 
 opacity:.45;
 
-animation:gridMove 24s linear infinite;
+animation:none;
 
 pointer-events:none;
 
@@ -693,23 +691,6 @@ transform:translateX(4px);
 /* ======================
 ANIMATIONS
 ====================== */
-
-@keyframes gridMove{
-
-from{
-
-background-position:0 0;
-
-}
-
-to{
-
-background-position:46px 46px;
-
-}
-
-}
-
 /* ======================
 RESPONSIVE
 ====================== */

@@ -1,4 +1,4 @@
-# VoiceIQ Professional Vue.js Project - Complete Overview
+# Voxa Professional Vue.js Project - Complete Overview
 
 ## 📦 What You're Getting
 

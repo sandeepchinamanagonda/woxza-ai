@@ -11,7 +11,7 @@ class="loader"
 
 <div class="logo">
 
-VOXA
+Voxa
 
 </div>
 

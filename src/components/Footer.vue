@@ -13,11 +13,11 @@
 
 <div class="brand">
 
-<h2>VOXA</h2>
+<h2>Voxa</h2>
 
 <p>
-Building intelligent AI employees that automate conversations,
-streamline operations and create exceptional customer experiences.
+Building voice AI that answers calls, books appointments,
+updates systems and keeps every customer conversation moving.
 </p>
 
 </div>
@@ -39,7 +39,7 @@ streamline operations and create exceptional customer experiences.
 <h4>Resources</h4>
 
 <a href="#faq">FAQ</a>
-<a href="#newsletter">Newsletter</a>
+<a href="#contact">Waitlist</a>
 <a href="#">Insights</a>
 
 </div>
@@ -72,9 +72,9 @@ streamline operations and create exceptional customer experiences.
 
 <div class="bottom">
 
-<p>© 2026 VOXA. All rights reserved.</p>
+<p>© 2026 Voxa. All rights reserved.</p>
 
-<p>AI Consultancy • Voice AI • Enterprise Automation</p>
+<p>Voice AI Platform • Waitlist Access • Customer Automation</p>
 
 </div>
 
@@ -93,7 +93,7 @@ streamline operations and create exceptional customer experiences.
 .footer{
 position:relative;
 padding:140px 0 50px;
-background:#0f172a;
+background:var(--voxa-blue);
 overflow:hidden;
 }
 
@@ -105,7 +105,7 @@ linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
 linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
 background-size:46px 46px;
 opacity:.45;
-animation:gridMove 22s linear infinite;
+animation:none;
 }
 
 .glow{
@@ -120,7 +120,7 @@ width:520px;
 height:520px;
 left:-180px;
 top:-180px;
-background:rgba(59,130,246,.16);
+background:rgba(var(--voxa-accent-rgb),.16);
 }
 
 .glow-right{
@@ -128,7 +128,7 @@ width:620px;
 height:620px;
 right:-260px;
 bottom:-220px;
-background:rgba(59,130,246,.08);
+background:rgba(var(--voxa-accent-rgb),.08);
 }
 
 .footer-card{
@@ -138,7 +138,6 @@ padding:70px;
 border-radius:34px;
 background:rgba(255,255,255,.05);
 border:1px solid rgba(255,255,255,.08);
-backdrop-filter:blur(24px);
 }
 
 .top{
@@ -150,7 +149,7 @@ gap:80px;
 .brand h2{
 font-size:56px;
 font-weight:800;
-letter-spacing:.2em;
+letter-spacing:.04em;
 color:white;
 margin-bottom:24px;
 }
@@ -202,12 +201,6 @@ align-items:center;
 font-size:14px;
 color:#64748b;
 }
-
-@keyframes gridMove{
-from{background-position:0 0;}
-to{background-position:46px 46px;}
-}
-
 @media(max-width:900px){
 
 .footer{

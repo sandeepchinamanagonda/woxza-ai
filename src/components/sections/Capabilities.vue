@@ -124,17 +124,17 @@ overflow:hidden;
 background:
 
 radial-gradient(circle at top left,
-rgba(59,130,246,.14),
+rgba(var(--voxa-accent-rgb),.10),
 transparent 35%),
 
 radial-gradient(circle at bottom right,
-rgba(59,130,246,.08),
+rgba(15,23,42,.05),
 transparent 45%),
 
 linear-gradient(
 180deg,
-#0F172A,
-#162238
+var(--voxa-white),
+var(--voxa-soft)
 );
 
 }
@@ -147,9 +147,9 @@ inset:0;
 
 background-image:
 
-linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+linear-gradient(rgba(15,23,42,.045) 1px,transparent 1px),
 
-linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+linear-gradient(90deg,rgba(15,23,42,.045) 1px,transparent 1px);
 
 background-size:46px 46px;
 
@@ -179,7 +179,7 @@ left:-250px;
 
 top:-200px;
 
-background:rgba(59,130,246,.15);
+background:rgba(var(--voxa-accent-rgb),.15);
 
 }
 
@@ -193,7 +193,7 @@ right:-260px;
 
 bottom:-250px;
 
-background:rgba(59,130,246,.08);
+background:rgba(var(--voxa-accent-rgb),.08);
 
 }
 
@@ -229,9 +229,9 @@ padding:10px 18px;
 
 border-radius:999px;
 
-background:rgba(59,130,246,.12);
+background:rgba(var(--voxa-accent-rgb),.12);
 
-border:1px solid rgba(59,130,246,.22);
+border:1px solid rgba(var(--voxa-accent-rgb),.22);
 
 font-size:12px;
 
@@ -239,7 +239,7 @@ letter-spacing:.25em;
 
 font-weight:700;
 
-color:#BFDBFE;
+color:var(--voxa-accent);
 
 margin-bottom:24px;
 
@@ -253,7 +253,7 @@ line-height:.95;
 
 letter-spacing:-.05em;
 
-color:white;
+color:var(--voxa-blue);
 
 margin-bottom:24px;
 
@@ -269,12 +269,12 @@ font-size:19px;
 
 line-height:1.9;
 
-color:#CBD5E1;
+color:#64748b;
 
 }
 .heading{
 
-animation:fadeUp .8s ease;
+animation:none;
 
 }
 

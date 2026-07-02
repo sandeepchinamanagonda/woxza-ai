@@ -113,7 +113,7 @@ linear-gradient(rgba(15,23,42,.04) 1px,transparent 1px),
 linear-gradient(90deg,rgba(15,23,42,.04) 1px,transparent 1px);
 background-size:46px 46px;
 opacity:.55;
-animation:gridMove 22s linear infinite;
+animation:none;
 }
 
 .glow{
@@ -251,16 +251,6 @@ font-size:17px;
 line-height:1.9;
 color:#64748b;
 }
-
-@keyframes gridMove{
-from{
-background-position:0 0;
-}
-to{
-background-position:46px 46px;
-}
-}
-
 @media(max-width:768px){
 
 .process{

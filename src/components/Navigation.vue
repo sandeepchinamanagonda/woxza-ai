@@ -10,24 +10,35 @@
         class="logo"
       >
         <span class="dot"></span>
-        <span>VOXA</span>
+        <span>Voxa</span>
       </RouterLink>
 
       <nav class="nav-links">
 
-        <a href="#solutions">Solutions</a>
-        <a href="#approach">Approach</a>
-        <a href="#about">About</a>
-        <a href="#faq">FAQ</a>
+        <a href="#solutions" @click.prevent="scrollToSection('solutions')">Solutions</a>
+        <a href="#approach" @click.prevent="scrollToSection('approach')">Approach</a>
+        <a href="#about" @click.prevent="scrollToSection('about')">About</a>
+        <a href="#faq" @click.prevent="scrollToSection('faq')">FAQ</a>
 
       </nav>
 
-      <button
-        class="cta"
-        @click="$emit('open-demo')"
-      >
-        Book Consultation
-      </button>
+      <div class="nav-actions">
+
+        <button
+          class="cta"
+          @click="openDemo('waitlist')"
+        >
+          Join the Waitlist
+        </button>
+
+        <button
+          class="sales-cta"
+          @click="openDemo('sales')"
+        >
+          Call Sales
+        </button>
+
+      </div>
 
       <button
         class="menu-btn"
@@ -45,17 +56,28 @@
         class="mobile-menu"
       >
 
-        <a href="#solutions">Solutions</a>
-        <a href="#approach">Approach</a>
-        <a href="#about">About</a>
-        <a href="#faq">FAQ</a>
+        <a href="#solutions" @click.prevent="scrollToSection('solutions')">Solutions</a>
+        <a href="#approach" @click.prevent="scrollToSection('approach')">Approach</a>
+        <a href="#about" @click.prevent="scrollToSection('about')">About</a>
+        <a href="#faq" @click.prevent="scrollToSection('faq')">FAQ</a>
 
-        <button
-          class="cta mobile-cta"
-          @click="$emit('open-demo')"
-        >
-          Book Consultation
-        </button>
+        <div class="mobile-actions">
+
+          <button
+            class="cta mobile-cta"
+            @click="openDemo('waitlist')"
+          >
+            Join the Waitlist
+          </button>
+
+          <button
+            class="sales-cta mobile-cta"
+            @click="openDemo('sales')"
+          >
+            Call Sales
+          </button>
+
+        </div>
 
       </div>
 
@@ -66,32 +88,63 @@
 
 <script setup>
 
-import { ref,onMounted,onUnmounted } from "vue"
+import { ref } from "vue"
 import { RouterLink } from "vue-router"
+import { useMotionFrame } from "@/composables/useMotion"
 
-defineEmits(["open-demo"])
+const emit=defineEmits(["open-demo"])
 
 const mobile=ref(false)
 
 const isScrolled=ref(false)
 
-const onScroll=()=>{
+useMotionFrame(({ scrollY }) => {
+  isScrolled.value = scrollY > 25
+})
 
-isScrolled.value=window.scrollY>25
+const openDemo=(intent="waitlist")=>{
+
+mobile.value=false
+
+emit("open-demo",intent)
+
+window.dispatchEvent(
+new CustomEvent("voxa:open-demo",{
+detail:{ intent }
+})
+)
 
 }
 
-onMounted(()=>{
+const scrollToSection=(id)=>{
 
-window.addEventListener("scroll",onScroll)
+const target=document.getElementById(id)
 
+if(!target) return
+
+mobile.value=false
+
+const scrollToTarget=()=>{
+
+const top=
+window.scrollY+
+target.getBoundingClientRect().top-
+110
+
+window.scrollTo({
+top:Math.max(0,top),
+behavior:"smooth"
 })
 
-onUnmounted(()=>{
+}
 
-window.removeEventListener("scroll",onScroll)
+scrollToTarget()
 
-})
+window.setTimeout(scrollToTarget,650)
+
+window.history.replaceState(null,"",`#${id}`)
+
+}
 
 </script>
 
@@ -109,15 +162,13 @@ width:min(1320px,calc(100% - 50px));
 
 z-index:9999;
 
-background:rgba(255,255,255,.72);
-
-backdrop-filter:blur(24px);
+background:rgba(255,255,255,.94);
 
 border:1px solid rgba(15,23,42,.08);
 
 border-radius:18px;
 
-box-shadow:0 12px 40px rgba(15,23,42,.08);
+box-shadow:0 10px 28px rgba(15,23,42,.07);
 
 transition:.35s;
 
@@ -127,9 +178,9 @@ transition:.35s;
 
 top:12px;
 
-background:rgba(255,255,255,.92);
+background:#fff;
 
-box-shadow:0 20px 50px rgba(15,23,42,.12);
+box-shadow:0 14px 34px rgba(15,23,42,.10);
 
 }
 
@@ -140,6 +191,7 @@ height:74px;
 display:grid;
 
 grid-template-columns:220px 1fr 220px;
+grid-template-columns:220px 1fr auto;
 
 align-items:center;
 
@@ -172,9 +224,9 @@ height:8px;
 
 border-radius:50%;
 
-background:#2563eb;
+background:var(--voxa-accent);
 
-box-shadow:0 0 18px rgba(37,99,235,.45);
+box-shadow:0 0 18px rgba(var(--voxa-accent-rgb),.45);
 
 }
 
@@ -217,7 +269,7 @@ width:0;
 
 height:2px;
 
-background:#2563eb;
+background:var(--voxa-accent);
 
 border-radius:20px;
 
@@ -237,17 +289,30 @@ width:100%;
 
 }
 
-.cta{
+.nav-actions{
+
+display:flex;
+
+justify-content:flex-end;
+
+align-items:center;
+
+gap:12px;
+
+}
+
+.cta,
+.sales-cta{
 
 justify-self:end;
 
-padding:14px 24px;
+padding:14px 22px;
 
 border:none;
 
 border-radius:999px;
 
-background:linear-gradient(135deg,#2563eb,#3b82f6);
+background:linear-gradient(135deg,var(--voxa-accent),var(--voxa-accent-2));
 
 color:white;
 
@@ -255,17 +320,30 @@ font-weight:700;
 
 cursor:pointer;
 
-box-shadow:0 12px 30px rgba(37,99,235,.25);
+box-shadow:0 12px 30px rgba(var(--voxa-accent-rgb),.25);
 
 transition:.35s;
 
 }
 
-.cta:hover{
+.sales-cta{
 
-transform:translateY(-3px);
+background:white;
 
-box-shadow:0 20px 45px rgba(37,99,235,.35);
+border:1px solid rgba(var(--voxa-accent-rgb),.18);
+
+color:var(--voxa-blue);
+
+box-shadow:none;
+
+}
+
+.cta:hover,
+.sales-cta:hover{
+
+transform:translateY(-2px);
+
+box-shadow:0 14px 30px rgba(var(--voxa-accent-rgb),.26);
 
 }
 
@@ -278,6 +356,8 @@ border:none;
 background:none;
 
 font-size:24px;
+
+color:var(--voxa-blue);
 
 cursor:pointer;
 
@@ -304,7 +384,7 @@ grid-template-columns:1fr auto;
 }
 
 .nav-links,
-.cta{
+.nav-actions{
 
 display:none;
 
@@ -342,13 +422,21 @@ color:#64748b;
 
 }
 
+.mobile-actions{
+
+display:grid;
+
+gap:12px;
+
+margin-top:10px;
+
+}
+
 .mobile-cta{
 
 display:block;
 
 width:100%;
-
-margin-top:10px;
 
 }
 

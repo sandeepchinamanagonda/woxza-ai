@@ -59,8 +59,6 @@ padding:42px;
 
 background:rgba(255,255,255,.7);
 
-backdrop-filter:blur(10px);
-
 border:1px solid #E7E2DA;
 
 border-radius:24px;

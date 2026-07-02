@@ -187,7 +187,7 @@ Creates optimized `dist/` folder for deployment.
 ## 🔧 Easy Customization
 
 ### Change Company Name
-Find & replace "VoiceIQ" in:
+Find & replace "Voxa" in:
 - `src/components/Navigation.vue`
 - `src/components/Footer.vue`
 - `index.html`

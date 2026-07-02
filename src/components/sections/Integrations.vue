@@ -18,7 +18,7 @@ your team already uses.
 </h2>
 
 <p>
-VOXA connects with your existing platforms to create one
+Voxa connects with your existing platforms to create one
 connected AI operating system.
 </p>
 
@@ -124,7 +124,7 @@ background-image:
 linear-gradient(rgba(15,23,42,.04) 1px,transparent 1px),
 linear-gradient(90deg,rgba(15,23,42,.04) 1px,transparent 1px);
 background-size:46px 46px;
-animation:gridMove 22s linear infinite;
+animation:none;
 opacity:.55;
 }
 
@@ -201,7 +201,6 @@ gap:28px;
 padding:34px;
 border-radius:28px;
 background:rgba(255,255,255,.75);
-backdrop-filter:blur(24px);
 border:1px solid rgba(15,23,42,.08);
 box-shadow:0 25px 70px rgba(15,23,42,.08);
 transition:.4s;
@@ -248,16 +247,6 @@ font-size:13px;
 font-weight:600;
 color:#2563eb;
 }
-
-@keyframes gridMove{
-from{
-background-position:0 0;
-}
-to{
-background-position:46px 46px;
-}
-}
-
 @media(max-width:1100px){
 
 .integration-grid{

@@ -1,6 +1,5 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import { gsap } from 'gsap'
 
 import App from './App.vue'
 import './style.css'
@@ -15,7 +14,7 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: {
-      title: 'VoiceIQ - Enterprise AI Voice Platform'
+      title: 'Voxa - Enterprise AI Voice Platform'
     }
   },
   {
@@ -44,20 +43,17 @@ const router = createRouter({
     }
 
     return {
-      top: 0,
-      behavior: 'smooth'
+      top: 0
     }
   }
 })
 
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title || 'VOXA'
+  document.title = to.meta.title || 'Voxa'
   next()
 })
 
 const app = createApp(App)
-
-app.config.globalProperties.$gsap = gsap
 
 app.use(router)
 

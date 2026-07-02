@@ -6,8 +6,6 @@
 
     <div class="hero-gradient"></div>
 
-    <div class="hero-noise"></div>
-
     <div class="hero-container">
 
         <!-- ================= LEFT ================= -->
@@ -16,7 +14,7 @@
 
             <span class="eyebrow">
 
-                AI INFRASTRUCTURE STUDIO
+                VOICE AI WAITLIST
 
             </span>
 
@@ -34,10 +32,9 @@
 
             <p>
 
-                VOXA builds enterprise AI infrastructure combining
-                Voice AI, intelligent agents, workflow automation,
-                CRM integrations and knowledge systems into one
-                connected ecosystem.
+                Voxa answers customer calls, qualifies enquiries,
+                books appointments and updates your systems without
+                adding another manual workflow.
 
             </p>
 
@@ -46,18 +43,20 @@
                 <a
                     href="#contact"
                     class="btn-primary"
+                    @click.prevent="$emit('open-demo','waitlist')"
                 >
 
-                    Book Consultation
+                    Join the Waitlist
 
                 </a>
 
                 <a
-                    href="#capabilities"
+                    href="#contact"
                     class="btn-secondary"
+                    @click.prevent="$emit('open-demo','sales')"
                 >
 
-                    Explore Platform
+                    Call Sales
 
                 </a>
 
@@ -141,8 +140,6 @@
 
             <ChatOverlay />
 
-            <FloatingCards />
-
         </div>
 
     </div>
@@ -157,7 +154,7 @@ import Scene from "@/components/three/Scene.vue"
 
 import ChatOverlay from "@/components/three/ChatOverlay.vue"
 
-import FloatingCards from "@/components/three/FloatingCards.vue"
+defineEmits(["open-demo"])
 
 </script>
 
@@ -174,7 +171,12 @@ align-items:center;
 
 overflow:hidden;
 
-background:#F8FBFF;
+background:
+linear-gradient(
+180deg,
+var(--voxa-white) 0%,
+var(--voxa-soft) 100%
+);
 
 padding:120px 0 80px;
 
@@ -194,9 +196,9 @@ inset:0;
 
 background-image:
 
-linear-gradient(rgba(59,130,246,.04) 1px,transparent 1px),
+linear-gradient(rgba(var(--voxa-accent-rgb),.04) 1px,transparent 1px),
 
-linear-gradient(90deg,rgba(59,130,246,.04) 1px,transparent 1px);
+linear-gradient(90deg,rgba(var(--voxa-accent-rgb),.04) 1px,transparent 1px);
 
 background-size:60px 60px;
 
@@ -206,7 +208,7 @@ radial-gradient(circle,#000 72%,transparent);
 
 opacity:.55;
 
-animation:gridMove 30s linear infinite;
+animation:none;
 
 }
 
@@ -222,7 +224,7 @@ radial-gradient(
 
 circle at 78% 22%,
 
-rgba(59,130,246,.18),
+rgba(var(--voxa-accent-rgb),.18),
 
 transparent 36%
 
@@ -232,27 +234,11 @@ radial-gradient(
 
 circle at 18% 82%,
 
-rgba(59,130,246,.10),
+rgba(var(--voxa-accent-rgb),.10),
 
 transparent 42%
 
 );
-
-pointer-events:none;
-
-}
-
-.hero-noise{
-
-position:absolute;
-
-inset:0;
-
-background:url("/textures/noise.png");
-
-opacity:.025;
-
-mix-blend-mode:soft-light;
 
 pointer-events:none;
 
@@ -320,7 +306,7 @@ letter-spacing:.35em;
 
 text-transform:uppercase;
 
-color:#3B82F6;
+color:var(--voxa-accent-2);
 
 }
 
@@ -332,7 +318,7 @@ width:44px;
 
 height:2px;
 
-background:#3B82F6;
+background:var(--voxa-accent-2);
 
 }
 
@@ -354,7 +340,7 @@ margin-bottom:28px;
 
 .hero-content h1 span{
 
-color:#2563EB;
+color:var(--voxa-accent);
 
 }
 
@@ -400,7 +386,7 @@ padding:0 36px;
 
 border-radius:999px;
 
-background:#2563EB;
+background:var(--voxa-accent);
 
 color:white;
 
@@ -410,7 +396,7 @@ font-weight:700;
 
 box-shadow:
 
-0 22px 60px rgba(37,99,235,.22);
+0 22px 60px rgba(var(--voxa-accent-rgb),.22);
 
 transition:.35s;
 
@@ -418,9 +404,9 @@ transition:.35s;
 
 .btn-primary:hover{
 
-transform:translateY(-5px);
+transform:translateY(-3px);
 
-background:#1D4ED8;
+background:var(--voxa-accent-2);
 
 }
 
@@ -440,7 +426,7 @@ border-radius:999px;
 
 background:white;
 
-border:1px solid #DCE7F8;
+border:1px solid rgba(var(--voxa-accent-rgb),.16);
 
 text-decoration:none;
 
@@ -454,11 +440,11 @@ transition:.35s;
 
 .btn-secondary:hover{
 
-background:#EEF5FF;
+background:var(--voxa-soft);
 
-border-color:#2563EB;
+border-color:var(--voxa-accent);
 
-transform:translateY(-5px);
+transform:translateY(-3px);
 
 }
 /* ==========================================
@@ -529,7 +515,7 @@ height:48px;
 
 border-radius:999px;
 
-border:2px solid #3B82F6;
+border:2px solid var(--voxa-accent-2);
 
 display:flex;
 
@@ -547,9 +533,9 @@ height:10px;
 
 border-radius:99px;
 
-background:#3B82F6;
+background:var(--voxa-accent-2);
 
-animation:scrollMove 2s infinite;
+animation:none;
 
 }
 
@@ -589,9 +575,9 @@ overflow:visible;
 
 isolation:isolate;
 
-filter:drop-shadow(0 70px 140px rgba(59,130,246,.12));
+filter:drop-shadow(0 70px 140px rgba(var(--voxa-accent-rgb),.12));
 
-animation:sceneFloat 8s ease-in-out infinite;
+animation:none;
 
 }
 
@@ -623,7 +609,7 @@ position:absolute;
 
 inset:0;
 
-z-index:20;
+z-index:60;
 
 pointer-events:none;
 
@@ -668,7 +654,7 @@ radial-gradient(
 
 circle,
 
-rgba(59,130,246,.12),
+rgba(var(--voxa-accent-rgb),.12),
 
 transparent 72%
 
@@ -703,7 +689,7 @@ height:620px;
 
 border-radius:50%;
 
-border:1px solid rgba(59,130,246,.08);
+border:1px solid rgba(var(--voxa-accent-rgb),.08);
 
 pointer-events:none;
 
@@ -771,7 +757,6 @@ animation-delay:1.15s;
 /* ==========================================
 KEYFRAMES
 ========================================== */
-
 @keyframes heroReveal{
 
 from{
@@ -795,7 +780,6 @@ translateY(0);
 }
 
 }
-
 @keyframes sceneFloat{
 
 0%,100%{
@@ -815,7 +799,6 @@ translateY(-12px);
 }
 
 }
-
 @keyframes scrollMove{
 
 0%{
@@ -839,23 +822,6 @@ opacity:0;
 }
 
 }
-
-@keyframes gridMove{
-
-from{
-
-background-position:0 0;
-
-}
-
-to{
-
-background-position:60px 60px;
-
-}
-
-}
-
 /* ==========================================
 RESPONSIVE
 ========================================== */
@@ -990,6 +956,30 @@ height:560px;
 
 }
 
+.hero-visual > :first-child{
+
+width:540px;
+
+height:540px;
+
+}
+
+.hero-visual::before{
+
+width:540px;
+
+height:540px;
+
+}
+
+.hero-visual::after{
+
+width:470px;
+
+height:470px;
+
+}
+
 }
 
 @media(max-width:480px){
@@ -1015,6 +1005,30 @@ font-size:15px;
 .hero-visual{
 
 height:420px;
+
+}
+
+.hero-visual > :first-child{
+
+width:420px;
+
+height:420px;
+
+}
+
+.hero-visual::before{
+
+width:420px;
+
+height:420px;
+
+}
+
+.hero-visual::after{
+
+width:360px;
+
+height:360px;
 
 }
 

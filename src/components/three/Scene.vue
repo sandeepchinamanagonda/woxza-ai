@@ -4,8 +4,26 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue"
-import * as THREE from "three"
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
+import {
+  AmbientLight,
+  BoxGeometry,
+  BufferGeometry,
+  Color,
+  DirectionalLight,
+  Group,
+  Line,
+  LineBasicMaterial,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  PerspectiveCamera,
+  Scene,
+  SphereGeometry,
+  SRGBColorSpace,
+  TorusGeometry,
+  Vector3,
+  WebGLRenderer
+} from "three"
 
 const container = ref(null)
 
@@ -14,16 +32,14 @@ let camera
 let renderer
 let head
 let frame
-
-const mouse = { x: 0, y: 0 }
-
-function onPointerMove(e) {
-  mouse.x = (e.clientX / window.innerWidth - 0.5) * 2
-  mouse.y = (e.clientY / window.innerHeight - 0.5) * 2
-}
+let disposed = false
+let observer
+let visible = true
+let lastFrameAt = 0
+const FRAME_INTERVAL = 1000 / 30
 
 function resize() {
-  if (!container.value) return
+  if (!container.value || !camera || !renderer) return
 
   camera.aspect =
     container.value.clientWidth /
@@ -37,11 +53,134 @@ function resize() {
   )
 }
 
+function disposeObject(object) {
+  object?.traverse?.((child) => {
+    if (child.geometry) {
+      child.geometry.dispose()
+    }
+
+    if (child.material) {
+      const materials = Array.isArray(child.material)
+        ? child.material
+        : [child.material]
+
+      materials.forEach((material) => material.dispose?.())
+    }
+  })
+}
+
+function applyHead(object, scale) {
+  if (disposed) {
+    disposeObject(object)
+    return
+  }
+
+  if (head) {
+    scene.remove(head)
+    disposeObject(head)
+  }
+
+  head = object
+  head.scale.setScalar(scale)
+  head.position.set(-0.2, -0.35, 0)
+  head.rotation.set(0, 0, 0)
+  scene.add(head)
+}
+
+function createProceduralHead() {
+  const group = new Group()
+
+  const glass = new MeshStandardMaterial({
+    color: 0xbfd8ff,
+    metalness: 0.2,
+    roughness: 0.16,
+    emissive: new Color(0x2563eb),
+    emissiveIntensity: 0.18,
+    transparent: true,
+    opacity: 0.92
+  })
+
+  const shell = new Mesh(
+    new SphereGeometry(0.92, 36, 28),
+    glass
+  )
+
+  shell.scale.set(0.9, 1.18, 0.72)
+  shell.position.y = 0.1
+  group.add(shell)
+
+  const jaw = new Mesh(
+    new SphereGeometry(0.72, 32, 20),
+    glass.clone()
+  )
+
+  jaw.scale.set(0.9, 0.56, 0.7)
+  jaw.position.y = -0.68
+  group.add(jaw)
+
+  const visor = new Mesh(
+    new BoxGeometry(1.24, 0.18, 0.06),
+    new MeshBasicMaterial({
+      color: 0x2563eb,
+      transparent: true,
+      opacity: 0.82
+    })
+  )
+
+  visor.position.set(0, 0.26, 0.66)
+  group.add(visor)
+
+  const lineMaterial = new LineBasicMaterial({
+    color: 0x3b82f6,
+    transparent: true,
+    opacity: 0.55
+  })
+
+  for (let i = -2; i <= 2; i++) {
+    const x = i * 0.22
+    const points = [
+      new Vector3(x, 0.82, 0.5),
+      new Vector3(x * 0.78, 0.42, 0.68),
+      new Vector3(x * 0.62, -0.2, 0.72),
+      new Vector3(x * 0.5, -0.72, 0.48)
+    ]
+
+    group.add(
+      new Line(
+        new BufferGeometry().setFromPoints(points),
+        lineMaterial.clone()
+      )
+    )
+  }
+
+  const orbitMaterial = new MeshBasicMaterial({
+    color: 0x2563eb,
+    transparent: true,
+    opacity: 0.22
+  })
+
+  const orbit = new Mesh(
+    new TorusGeometry(1.35, 0.008, 10, 96),
+    orbitMaterial
+  )
+
+  orbit.rotation.x = Math.PI / 2
+  group.add(orbit)
+
+  const orbit2 = orbit.clone()
+  orbit2.rotation.y = Math.PI / 2
+  group.add(orbit2)
+
+  return group
+}
+
 onMounted(() => {
 
-  scene = new THREE.Scene()
+  disposed = false
 
-  camera = new THREE.PerspectiveCamera(
+  scene = new Scene()
+
+  camera = new PerspectiveCamera(
     35,
     container.value.clientWidth /
       container.value.clientHeight,
@@ -51,13 +190,14 @@ onMounted(() => {
 
   camera.position.set(0, 0.15, 4.1)
 
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     alpha: true,
-    antialias: true
+    antialias: true,
+    powerPreference: "high-performance"
   })
 
   renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio, 2)
+    Math.min(window.devicePixelRatio, 1.2)
   )
 
   renderer.setSize(
@@ -66,102 +206,58 @@ onMounted(() => {
   )
 
   renderer.outputColorSpace =
-    THREE.SRGBColorSpace
+    SRGBColorSpace
 
   container.value.appendChild(
     renderer.domElement
   )
 
   scene.add(
-    new THREE.AmbientLight(
+    new AmbientLight(
       0xffffff,
       2
     )
   )
 
-  const light = new THREE.DirectionalLight(
-  0xffffff,
-  7
-)
+  const light = new DirectionalLight(0xffffff, 7)
+  const rim = new DirectionalLight(0x6ea8ff, 3)
 
-const rim = new THREE.DirectionalLight(
-  0x6EA8FF,
-  3
-)
-
-rim.position.set(-4,2,-3)
-
-scene.add(rim)
+  rim.position.set(-4, 2, -3)
+  scene.add(rim)
 
   light.position.set(3, 5, 5)
 
   scene.add(light)
 
-  const loader = new GLTFLoader()
+  applyHead(createProceduralHead(), 1.08)
 
-  loader.load(
+  const startedAt = performance.now()
 
-    "/models/ai-head.glb",
+  observer = new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting
+  }, {
+    threshold: 0.05
+  })
 
-    (gltf) => {
+  observer.observe(container.value)
 
-      head.scale.set(2.8, 2.8, 2.8)
-
-head.position.set(-0.2, -0.35, 0)
-
-head.rotation.set(0, 0, 0)
-
-scene.add(head)
-
-    },
-
-    undefined,
-
-    (err) => {
-
-      console.error(err)
-
-    }
-
-  )
-
-  const clock = new THREE.Clock()
-
-  function animate() {
+  function animate(now = performance.now()) {
 
     frame = requestAnimationFrame(animate)
 
-    const t = clock.getElapsedTime()
+    if (!visible) return
 
-   if (head) {
+    if (now - lastFrameAt < FRAME_INTERVAL) return
 
-  head.rotation.y =
+    lastFrameAt = now
 
-    t * 0.25 +
+    const t = (now - startedAt) / 1000
 
-    mouse.x * 0.18
-
-  head.rotation.x =
-
-    Math.sin(t * 0.8) * 0.06 +
-
-    (-mouse.y * 0.08)
-
-  head.position.y =
-
-    -0.35 +
-
-    Math.sin(t * 1.2) * 0.05
-
-}
-    camera.position.x +=
-      (mouse.x * 0.4 - camera.position.x) *
-      0.05
-
-    camera.position.y +=
-      (-mouse.y * 0.2 - camera.position.y) *
-      0.05
-
+    if (head) {
+      head.rotation.y = t * 0.12
+      head.rotation.x = Math.sin(t * 0.7) * 0.025
+      head.position.y = -0.35 + Math.sin(t * 0.9) * 0.024
+    }
     camera.lookAt(0, 0, 0)
 
     renderer.render(scene, camera)
@@ -175,14 +271,11 @@ scene.add(head)
     resize
   )
 
-  window.addEventListener(
-    "pointermove",
-    onPointerMove
-  )
-
 })
 
 onBeforeUnmount(() => {
+
+  disposed = true
 
   cancelAnimationFrame(frame)
 
@@ -191,12 +284,11 @@ onBeforeUnmount(() => {
     resize
   )
 
-  window.removeEventListener(
-    "pointermove",
-    onPointerMove
-  )
+  observer?.disconnect()
 
   renderer?.dispose()
+
+  disposeObject(head)
 
 })
 </script>

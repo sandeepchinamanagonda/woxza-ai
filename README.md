@@ -1,4 +1,4 @@
-# VoiceIQ - Professional Vue.js Website
+# Voxa - Professional Vue.js Website
 
 A production-grade, professional SaaS website built with Vue 3, Vite, and Tailwind CSS. Complete with proper component architecture, routing, and a professional development setup.
 
@@ -170,7 +170,7 @@ const showModal = ref(false)
 ## 🎯 Customization
 
 ### Change Company Name
-Find and replace "VoiceIQ" across files:
+Find and replace "Voxa" across files:
 - `src/components/Navigation.vue`
 - `src/components/Footer.vue`
 - `src/views/Home.vue`

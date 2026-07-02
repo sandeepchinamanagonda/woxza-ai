@@ -17,10 +17,6 @@ RESET
   box-sizing:border-box;
 }
 
-html{
-  scroll-behavior:smooth;
-}
-
 body{
   overflow-x:hidden;
 }
@@ -34,12 +30,21 @@ DESIGN SYSTEM
   --bg:#08090B;
   --surface:#111318;
   --surface-2:#171A21;
+  --voxa-blue:#0f172a;
+  --voxa-blue-2:#162238;
+  --voxa-blue-rgb:15,23,42;
+  --voxa-white:#ffffff;
+  --voxa-soft:#f8fbff;
+  --voxa-accent:#2563eb;
+  --voxa-accent-2:#3b82f6;
+  --voxa-accent-rgb:37,99,235;
+  --voxa-accent-soft:#dbeafe;
 
   --text:#F5F7FA;
   --muted:#A8B2C1;
 
-  --accent:#5B8CFF;
-  --accent-soft:#8FAEFF;
+  --accent:var(--voxa-accent);
+  --accent-soft:var(--voxa-accent-soft);
 
   --border:#242833;
 
@@ -88,11 +93,11 @@ pointer-events:none;
 background:
 
 radial-gradient(circle at top left,
-rgba(91,140,255,.08),
+rgba(var(--voxa-accent-rgb),.08),
 transparent 35%),
 
 radial-gradient(circle at bottom right,
-rgba(91,140,255,.05),
+rgba(var(--voxa-accent-rgb),.05),
 transparent 40%);
 
 z-index:-2;
@@ -252,7 +257,7 @@ padding:16px 34px;
 
 border-radius:999px;
 
-background:#5B8CFF;
+background:var(--voxa-accent);
 
 color:white;
 
@@ -272,7 +277,7 @@ transform:translateY(-3px);
 
 box-shadow:
 
-0 20px 40px rgba(91,140,255,.30);
+0 20px 40px rgba(var(--voxa-accent-rgb),.30);
 
 }
 
@@ -304,9 +309,9 @@ transition:.35s;
 
 .btn-secondary:hover{
 
-border-color:#5B8CFF;
+border-color:var(--voxa-accent);
 
-background:rgba(91,140,255,.08);
+background:rgba(var(--voxa-accent-rgb),.08);
 
 }
 
@@ -328,19 +333,17 @@ border:1px solid var(--border);
 
 border-radius:24px;
 
-backdrop-filter:blur(18px);
-
 box-shadow:var(--shadow);
 
-transition:.4s;
+transition:.18s;
 
 }
 
 .card:hover{
 
-transform:translateY(-8px);
+transform:translateY(-3px);
 
-border-color:#5B8CFF;
+border-color:var(--voxa-accent);
 
 }
 
@@ -381,11 +384,11 @@ textarea:focus{
 
 outline:none;
 
-border-color:#5B8CFF;
+border-color:var(--voxa-accent);
 
 box-shadow:
 
-0 0 0 4px rgba(91,140,255,.10);
+0 0 0 4px rgba(var(--voxa-accent-rgb),.10);
 
 }
 
@@ -427,7 +430,7 @@ border-radius:999px;
 
 ::-webkit-scrollbar-thumb:hover{
 
-background:#5B8CFF;
+background:var(--voxa-accent);
 
 }
 
@@ -437,7 +440,7 @@ SELECTION
 
 ::selection{
 
-background:rgba(91,140,255,.28);
+background:rgba(var(--voxa-accent-rgb),.28);
 
 color:white;
 
@@ -446,7 +449,6 @@ color:white;
 /* ==========================================================
 ANIMATIONS
 ========================================================== */
-
 @keyframes fadeUp{
 
 from{
@@ -466,27 +468,25 @@ transform:translateY(0);
 }
 
 }
-
-@keyframes gridMove{
-
-from{
-
-background-position:0 0;
-
-}
-
-to{
-
-background-position:42px 42px;
-
-}
-
-}
-
 .fade-up{
 
 animation:fadeUp .8s ease forwards;
 
+}
+
+.reveal-ready{
+opacity:0;
+transform:translate3d(0,24px,0);
+transition:
+opacity .7s cubic-bezier(.22,1,.36,1),
+transform .7s cubic-bezier(.22,1,.36,1);
+will-change:opacity,transform;
+}
+
+.reveal-ready.is-revealed{
+opacity:1;
+transform:translate3d(0,0,0);
+will-change:auto;
 }
 
 /* ==========================================================

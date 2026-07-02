@@ -29,7 +29,7 @@ focus on what truly matters.
 
 <div class="mark"></div>
 
-<span>VOXA</span>
+<span>Voxa</span>
 
 <div class="mark"></div>
 
@@ -62,7 +62,7 @@ linear-gradient(rgba(15,23,42,.04) 1px,transparent 1px),
 linear-gradient(90deg,rgba(15,23,42,.04) 1px,transparent 1px);
 background-size:46px 46px;
 opacity:.55;
-animation:gridMove 22s linear infinite;
+animation:none;
 }
 
 .glow{
@@ -97,7 +97,6 @@ padding:100px 80px;
 background:rgba(255,255,255,.75);
 border:1px solid rgba(15,23,42,.08);
 border-radius:36px;
-backdrop-filter:blur(24px);
 box-shadow:0 35px 90px rgba(15,23,42,.08);
 text-align:center;
 overflow:hidden;
@@ -117,7 +116,7 @@ rgba(59,130,246,.10),
 transparent
 );
 transform:rotate(20deg);
-animation:shine 10s linear infinite;
+animation:none;
 }
 
 .eyebrow{
@@ -169,17 +168,6 @@ font-weight:700;
 letter-spacing:.35em;
 color:#2563eb;
 }
-
-@keyframes shine{
-0%{left:-70%;}
-100%{left:180%;}
-}
-
-@keyframes gridMove{
-from{background-position:0 0;}
-to{background-position:46px 46px;}
-}
-
 @media(max-width:768px){
 
 .editorial{

@@ -127,7 +127,7 @@
 
       <div class="core-inner">
 
-        <small>VOXA</small>
+        <small>Voxa</small>
 
         <h2>
           AI
@@ -311,8 +311,6 @@ width:180px;
 padding:20px 22px;
 
 background:rgba(255,255,255,.75);
-
-backdrop-filter:blur(12px);
 
 border:1px solid rgba(255,255,255,.6);
 

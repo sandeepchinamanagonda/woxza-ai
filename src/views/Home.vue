@@ -2,11 +2,9 @@
 
 <main class="home">
 
-<PageLoader/>
-
 <Hero
 @start-free="scrollTo('#contact')"
-@open-demo="showDemoModal=true"
+@open-demo="openDemoModal"
 />
 
 <Manifesto/>
@@ -27,11 +25,12 @@
 
 <CTA
 @start-free="scrollTo('#contact')"
-@open-demo="showDemoModal=true"
+@open-demo="openDemoModal"
 />
 
 <DemoModal
 :is-open="showDemoModal"
+:mode="demoMode"
 @close="showDemoModal=false"
 />
 
@@ -41,13 +40,8 @@
 
 <script setup>
 
-import { ref } from "vue"
-
-import { useReveal } from "@/composables/useReveal"
-import { useMagnetic } from "@/composables/useMagnetic"
-import { useParallax } from "@/composables/useParallax"
-import { useCursorGlow } from "@/composables/useCursorGlow"
-import { useParticles } from "@/composables/useParticles"
+import { onMounted, onUnmounted, ref } from "vue"
+import { useMotion } from "@/composables/useMotion"
 
 import Hero from "@/components/sections/Hero.vue"
 import Manifesto from "@/components/sections/Manifesto.vue"
@@ -61,15 +55,25 @@ import FAQ from "@/components/sections/FAQ.vue"
 import CTA from "@/components/sections/CTA.vue"
 
 import DemoModal from "@/components/DemoModal.vue"
-import PageLoader from "@/components/PageLoader.vue"
 
 const showDemoModal=ref(false)
 
-useReveal()
-useMagnetic()
-useParallax()
-useCursorGlow()
-useParticles()
+const demoMode=ref("waitlist")
+
+useMotion()
+
+const openDemoModal=(eventOrIntent="waitlist")=>{
+
+const intent=
+typeof eventOrIntent==="string"
+?eventOrIntent
+:eventOrIntent?.detail?.intent||"waitlist"
+
+demoMode.value=intent
+
+showDemoModal.value=true
+
+}
 
 const scrollTo=(selector)=>{
 
@@ -86,6 +90,18 @@ behavior:"smooth"
 }
 
 }
+
+onMounted(()=>{
+
+window.addEventListener("voxa:open-demo",openDemoModal)
+
+})
+
+onUnmounted(()=>{
+
+window.removeEventListener("voxa:open-demo",openDemoModal)
+
+})
 
 </script>
 

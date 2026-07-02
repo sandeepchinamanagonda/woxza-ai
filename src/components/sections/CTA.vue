@@ -1,5 +1,5 @@
 <template>
-<section class="cta-section">
+<section id="contact" class="cta-section">
 
 <div class="grid-bg"></div>
 <div class="glow glow-left"></div>
@@ -10,35 +10,34 @@
 <div class="cta">
 
 <span class="eyebrow">
-LET'S BUILD TOGETHER
+EARLY ACCESS
 </span>
 
 <h2>
-Ready to transform
+Ready to put Voxa
 <br>
-your business with AI?
+on your phones?
 </h2>
 
 <p>
-Whether you're beginning your AI journey or scaling enterprise
-automation, our team is ready to help you build intelligent systems
-tailored to your organization.
+Join the waitlist for early access, or talk with sales if you
+already know which calls and workflows you want Voxa to handle.
 </p>
 
 <div class="actions">
 
 <button
 class="btn-primary"
-@click="$emit('open-demo')"
+@click="$emit('open-demo','waitlist')"
 >
-Book Consultation
+Join the Waitlist
 </button>
 
 <button
 class="btn-secondary"
-@click="$emit('start-free')"
+@click="$emit('open-demo','sales')"
 >
-Explore Programs
+Call Sales
 </button>
 
 </div>
@@ -64,7 +63,17 @@ defineEmits([
 .cta-section{
 position:relative;
 padding:180px 0;
-background:#0f172a;
+background:
+radial-gradient(
+circle at top left,
+rgba(var(--voxa-accent-rgb),.14),
+transparent 35%
+),
+linear-gradient(
+180deg,
+var(--voxa-blue),
+var(--voxa-blue-2)
+);
 overflow:hidden;
 }
 
@@ -76,7 +85,7 @@ linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
 linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
 background-size:46px 46px;
 opacity:.45;
-animation:gridMove 22s linear infinite;
+animation:none;
 }
 
 .glow{
@@ -91,7 +100,7 @@ width:560px;
 height:560px;
 left:-220px;
 top:-180px;
-background:rgba(59,130,246,.18);
+background:rgba(var(--voxa-accent-rgb),.18);
 }
 
 .glow-right{
@@ -99,7 +108,7 @@ width:620px;
 height:620px;
 right:-260px;
 bottom:-220px;
-background:rgba(59,130,246,.08);
+background:rgba(var(--voxa-accent-rgb),.08);
 }
 
 .cta{
@@ -109,7 +118,6 @@ padding:100px 70px;
 border-radius:36px;
 background:rgba(255,255,255,.05);
 border:1px solid rgba(255,255,255,.08);
-backdrop-filter:blur(28px);
 text-align:center;
 overflow:hidden;
 }
@@ -128,7 +136,7 @@ rgba(255,255,255,.08),
 transparent
 );
 transform:rotate(20deg);
-animation:shine 10s linear infinite;
+animation:none;
 }
 
 .eyebrow{
@@ -179,7 +187,7 @@ cursor:pointer;
 }
 
 .btn-primary{
-background:#2563eb;
+background:var(--voxa-accent);
 border:none;
 color:white;
 }
@@ -197,17 +205,6 @@ color:white;
 .btn-secondary:hover{
 background:rgba(255,255,255,.06);
 }
-
-@keyframes shine{
-0%{left:-70%;}
-100%{left:180%;}
-}
-
-@keyframes gridMove{
-from{background-position:0 0;}
-to{background-position:46px 46px;}
-}
-
 @media(max-width:768px){
 
 .cta-section{
