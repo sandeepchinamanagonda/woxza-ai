@@ -63,17 +63,7 @@ defineEmits([
 .cta-section{
 position:relative;
 padding:180px 0;
-background:
-radial-gradient(
-circle at top left,
-rgba(var(--voxa-accent-rgb),.14),
-transparent 35%
-),
-linear-gradient(
-180deg,
-var(--voxa-blue),
-var(--voxa-blue-2)
-);
+background:var(--voxa-blue);
 overflow:hidden;
 }
 
@@ -89,10 +79,7 @@ animation:none;
 }
 
 .glow{
-position:absolute;
-border-radius:50%;
-filter:blur(120px);
-pointer-events:none;
+display:none;
 }
 
 .glow-left{
@@ -116,10 +103,11 @@ position:relative;
 z-index:2;
 padding:100px 70px;
 border-radius:36px;
-background:rgba(255,255,255,.05);
+background:var(--voxa-blue-2);
 border:1px solid rgba(255,255,255,.08);
 text-align:center;
 overflow:hidden;
+box-shadow:0 36px 100px rgba(0,0,0,.16);
 }
 
 .cta::before{
@@ -204,6 +192,7 @@ color:white;
 
 .btn-secondary:hover{
 background:rgba(255,255,255,.06);
+border-color:rgba(255,255,255,.24);
 }
 @media(max-width:768px){
 

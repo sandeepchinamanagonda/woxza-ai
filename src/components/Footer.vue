@@ -104,15 +104,13 @@ background-image:
 linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
 linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
 background-size:46px 46px;
+background-position:0 23px,23px 0;
 opacity:.45;
 animation:none;
 }
 
 .glow{
-position:absolute;
-border-radius:50%;
-filter:blur(120px);
-pointer-events:none;
+display:none;
 }
 
 .glow-left{
@@ -136,7 +134,7 @@ position:relative;
 z-index:2;
 padding:70px;
 border-radius:34px;
-background:rgba(255,255,255,.05);
+background:var(--voxa-blue-2);
 border:1px solid rgba(255,255,255,.08);
 }
 

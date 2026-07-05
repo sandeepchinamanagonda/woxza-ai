@@ -22,7 +22,7 @@ const FEATURE_OPTIONS = [
   "custom-workflows"
 ];
 const ADOPTION_TIMELINES = ["immediately", "1-3-months", "3-6-months", "exploring"];
-const TEAM_SIZES = ["just-me", "2-10", "11-50", "51-200", "201-plus"];
+const TEAM_SIZES = ["just-me", "2-10", "11-50", "51-200", "200-plus"];
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const COUNTRY_CODE_PATTERN = /^\+[1-9]\d{0,3}$/;

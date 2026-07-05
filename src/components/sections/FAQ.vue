@@ -147,9 +147,19 @@ position:relative;
 
 padding:220px 0;
 
-background:#F8FAFD;
+background:
+radial-gradient(circle at 12% 18%, rgba(var(--voxa-accent-rgb), .08), transparent 32%),
+#fff;
 
 overflow:hidden;
+
+}
+
+.container-custom{
+
+position:relative;
+
+z-index:1;
 
 }
 

@@ -2,7 +2,10 @@ import { readFile } from "node:fs/promises";
 import pg from "pg";
 
 const { Pool } = pg;
-const schemaUrl = new URL("../migrations/001_initial.sql", import.meta.url);
+const schemaUrls = [
+  new URL("../migrations/001_initial.sql", import.meta.url),
+  new URL("../migrations/002_demo_calls.sql", import.meta.url)
+];
 
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -35,8 +38,10 @@ export async function createDatabase({
   for (let attempt = 1; attempt <= retries; attempt += 1) {
     try {
       await pool.query("SELECT 1");
-      const schema = await readFile(schemaUrl, "utf8");
-      await pool.query(schema);
+      for (const schemaUrl of schemaUrls) {
+        const schema = await readFile(schemaUrl, "utf8");
+        await pool.query(schema);
+      }
       return pool;
     } catch (error) {
       lastError = error;

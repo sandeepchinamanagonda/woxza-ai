@@ -35,13 +35,21 @@ function corsHeaders(req, allowedOrigins) {
   if (!origin || (!allowedOrigins.includes("*") && !allowedOrigins.includes(origin))) return {};
   return {
     "access-control-allow-origin": allowedOrigins.includes("*") ? "*" : origin,
-    "access-control-allow-methods": "POST, OPTIONS",
-    "access-control-allow-headers": "content-type",
+    "access-control-allow-methods": "GET, POST, OPTIONS",
+    "access-control-allow-headers": "content-type, authorization",
     vary: "Origin"
   };
 }
 
-export function createApp({ db, allowedOrigins = ["http://localhost:3000"] }) {
+async function readForm(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  return Object.fromEntries(new URLSearchParams(Buffer.concat(chunks).toString("utf8")));
+}
+
+const csvCell = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
+
+export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_TOKEN, allowedOrigins = ["http://localhost:3000"] }) {
   return async function app(req, res) {
     const cors = corsHeaders(req, allowedOrigins);
     if (req.method === "OPTIONS") {
@@ -55,6 +63,66 @@ export function createApp({ db, allowedOrigins = ["http://localhost:3000"] }) {
       if (req.method === "GET" && url.pathname === "/health") {
         await db.query("SELECT 1");
         return sendJson(res, 200, { status: "ok" }, cors);
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/demo-call") {
+        const input = await readJson(req);
+        if (input.website) return sendJson(res, 202, { status: "accepted" }, cors);
+        if (!demoService) return sendJson(res, 503, { error: "Live demo is not configured" }, cors);
+        const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "0.0.0.0").split(",")[0].trim();
+        const result = await demoService.create(input, ip);
+        if (result.silent) return sendJson(res, 202, { status: "accepted" }, cors);
+        if (result.error) return sendJson(res, result.status, { error: result.error, reason: result.reason }, cors);
+        return sendJson(res, result.httpStatus || 201, { status: result.status, callId: result.callId }, cors);
+      }
+
+      const demoStatus = url.pathname.match(/^\/api\/demo-call\/([0-9a-f-]+)\/status$/i);
+      if (req.method === "GET" && demoStatus) {
+        const result = demoService ? await demoService.status(demoStatus[1]) : null;
+        return result ? sendJson(res, 200, result, cors) : sendJson(res, 404, { error: "Demo call not found" }, cors);
+      }
+
+      const demoAnswer = url.pathname.match(/^\/api\/demo-call\/([0-9a-f-]+)\/answer$/i);
+      if ((req.method === "GET" || req.method === "POST") && demoAnswer) {
+        const xml = demoService ? await demoService.answer(demoAnswer[1]) : null;
+        if (!xml) return sendJson(res, 404, { error: "Demo call not found" }, cors);
+        res.writeHead(200, { "content-type": "application/xml; charset=utf-8" });
+        return res.end(xml);
+      }
+
+      const demoCallback = url.pathname.match(/^\/api\/demo-call\/([0-9a-f-]+)\/status-callback$/i);
+      if (req.method === "POST" && demoCallback) {
+        const fields = (req.headers["content-type"] || "").includes("application/json") ? await readJson(req) : await readForm(req);
+        if (demoService) await demoService.callback(demoCallback[1], fields);
+        return sendJson(res, 200, { status: "ok" }, cors);
+      }
+
+      if (req.method === "GET" && url.pathname === "/api/leads/unsubscribe") {
+        const leadId = url.searchParams.get("lead");
+        const token = url.searchParams.get("token");
+        if (!demoService?.verifyUnsubscribe(leadId, token)) return sendJson(res, 400, { error: "Invalid unsubscribe link" }, cors);
+        await db.query(`UPDATE leads SET consent_marketing=FALSE,contact_status='unsubscribed' WHERE id=$1`, [leadId]);
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+        return res.end("<!doctype html><title>Unsubscribed</title><main style='font:18px system-ui;max-width:620px;margin:15vh auto;padding:24px'><h1>You’re unsubscribed.</h1><p>Voxa will not send you further marketing follow-ups.</p></main>");
+      }
+
+      if (req.method === "GET" && url.pathname === "/api/leads") {
+        if (!adminToken || req.headers.authorization !== `Bearer ${adminToken}`) return sendJson(res, 401, { error: "Unauthorized" }, cors);
+        const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10));
+        const pageSize = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("pageSize") || "25", 10)));
+        const filters = [url.searchParams.get("use_case"), url.searchParams.get("contact_status"), url.searchParams.get("from"), url.searchParams.get("to")];
+        const result = await db.query(
+          `SELECT *,COUNT(*) OVER()::int AS total_count FROM leads
+           WHERE ($1::text IS NULL OR use_case=$1) AND ($2::text IS NULL OR contact_status=$2)
+             AND ($3::timestamptz IS NULL OR created_at >= $3) AND ($4::timestamptz IS NULL OR created_at < $4)
+           ORDER BY created_at DESC LIMIT $5 OFFSET $6`, [...filters,pageSize,(page-1)*pageSize]);
+        if (url.searchParams.get("format") === "csv") {
+          const columns = ["id","name","phone","email","use_case","call_outcome","call_duration_seconds","contact_status","created_at"];
+          const csv = [columns.join(","), ...result.rows.map(row => columns.map(column => csvCell(row[column])).join(","))].join("\n");
+          res.writeHead(200, { "content-type":"text/csv; charset=utf-8", "content-disposition":"attachment; filename=voxa-demo-leads.csv", ...cors });
+          return res.end(csv);
+        }
+        return sendJson(res, 200, { items:result.rows.map(({ total_count, ...row }) => row), page, pageSize, total:result.rows[0]?.total_count || 0 }, cors);
       }
 
       if (req.method === "POST" && url.pathname === "/api/waitlist/registrations") {

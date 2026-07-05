@@ -7,25 +7,42 @@
         @click.self="closeModal"
       >
         <div class="modal">
-          <div class="modal-header">
-            <div>
-              <span class="eyebrow">{{ modalCopy.eyebrow }}</span>
-              <h2>{{ modalCopy.title }}</h2>
+          <button
+            class="close"
+            type="button"
+            aria-label="Close modal"
+            @click="closeModal"
+          >
+            X
+          </button>
+
+          <aside class="modal-story">
+            <div class="modal-brand" aria-hidden="true">
+              <i class="modal-brand-dot"></i>
+              <span>Voxa</span>
             </div>
 
-            <button
-              class="close"
-              type="button"
-              aria-label="Close modal"
-              @click="closeModal"
-            >
-              X
-            </button>
-          </div>
+            <div class="modal-header">
+              <div>
+                <span class="eyebrow">{{ props.mode === 'waitlist' ? `Step ${stepIndex + 1} of ${waitlistSteps.length}` : modalCopy.eyebrow }}</span>
+                <h2>{{ modalCopy.title }}</h2>
+              </div>
+            </div>
 
-          <p class="intro">
-            {{ modalCopy.intro }}
-          </p>
+            <p class="intro">
+              {{ modalCopy.intro }}
+            </p>
+
+            <div v-if="props.mode === 'waitlist'" class="story-steps" :aria-label="`Step ${stepIndex + 1} of ${waitlistSteps.length}`">
+              <div v-for="(label, index) in waitlistSteps" :key="label" :class="{ active: index <= stepIndex }">
+                <span>{{ index + 1 }}</span>
+                <small>{{ label }}</small>
+              </div>
+            </div>
+
+          </aside>
+
+          <div class="modal-content">
 
           <div
             v-if="successMessage"
@@ -88,14 +105,19 @@
                 >
               </label>
 
-              <label class="wide">
+              <label class="wide phone-field">
                 <span>Phone number</span>
                 <div class="phone-row">
-                  <select v-model="form.countryCode" aria-label="Country calling code" required>
-                    <option v-for="country in countryCodeOptions" :key="`${country.flag}-${country.code}`" :value="country.code">
-                      {{ country.flag }} {{ country.code }}
-                    </option>
-                  </select>
+                  <div class="country-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (countryMenuOpen = false)">
+                    <button class="country-select-trigger" type="button" aria-label="Country calling code" :aria-expanded="countryMenuOpen" @click="countryMenuOpen = !countryMenuOpen" @keydown.esc.stop="countryMenuOpen = false">
+                      <span>{{ selectedCountry.flag }}</span><strong>{{ selectedCountry.code }}</strong><i></i>
+                    </button>
+                    <div v-if="countryMenuOpen" class="country-select-menu" role="listbox" aria-label="Country calling code">
+                      <button v-for="country in countryCodeOptions" :key="`${country.flag}-${country.code}`" type="button" role="option" :aria-selected="form.countryFlag === country.flag" @click="selectCountry(country)">
+                        <span>{{ country.flag }}</span><span class="country-select-name">{{ country.name }}</span><strong>{{ country.code }}</strong>
+                      </button>
+                    </div>
+                  </div>
                   <input v-model.trim="form.phoneNumber" autocomplete="tel-national" inputmode="tel" placeholder="312 555 0100" required>
                 </div>
               </label>
@@ -114,32 +136,45 @@
               v-show="stepIndex === 1"
               class="step-panel"
             >
-              <div class="field-block wide">
+              <div class="field-block wide dropdown-field" :class="{ 'is-open': industryMenuOpen }">
                 <span class="field-title">Industry</span>
-                <div class="choice-grid industry-grid">
-                  <label v-for="type in businessTypeOptions" :key="type.value" class="choice-pill" :class="{ active: form.industry === type.value }">
-                    <input v-model="form.industry" type="radio" name="industry" :value="type.value">
-                    <span>{{ type.label }}</span>
-                  </label>
+                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (industryMenuOpen = false)">
+                  <button class="option-select-trigger" type="button" aria-label="Industry" :aria-expanded="industryMenuOpen" @click="industryMenuOpen = !industryMenuOpen" @keydown.esc.stop="industryMenuOpen = false">
+                    <span :class="{ placeholder: !form.industry }">{{ selectedIndustryLabel }}</span><i></i>
+                  </button>
+                  <div v-if="industryMenuOpen" class="option-select-menu" role="listbox" aria-label="Industry">
+                    <button v-for="type in businessTypeOptions" :key="type.value" type="button" role="option" :aria-selected="form.industry === type.value" @click="selectIndustry(type.value)">
+                      <span>{{ type.label }}</span><b v-if="form.industry === type.value">✓</b>
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div class="field-block wide">
-                <span class="field-title">Company size</span>
-                <div class="choice-grid size-grid">
-                  <label v-for="size in teamSizeOptions" :key="size.value" class="choice-pill" :class="{ active: form.companySize === size.value }">
-                    <input v-model="form.companySize" type="radio" name="company-size" :value="size.value">
-                    <span>{{ size.label }}</span>
-                  </label>
+              <label v-if="form.industry === 'other'" class="wide">
+                <span>Enter your industry</span>
+                <input v-model.trim="form.otherIndustry" type="text" placeholder="For example, Manufacturing" maxlength="100" required>
+              </label>
+
+              <div class="field-block wide dropdown-field" :class="{ 'is-open': employeeMenuOpen }">
+                <span class="field-title">Employee count</span>
+                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (employeeMenuOpen = false)">
+                  <button class="option-select-trigger" type="button" aria-label="Employee count" :aria-expanded="employeeMenuOpen" @click="employeeMenuOpen = !employeeMenuOpen" @keydown.esc.stop="employeeMenuOpen = false">
+                    <span :class="{ placeholder: !form.companySize }">{{ selectedEmployeeLabel }}</span><i></i>
+                  </button>
+                  <div v-if="employeeMenuOpen" class="option-select-menu employee-select-menu" role="listbox" aria-label="Employee count">
+                    <button v-for="size in teamSizeOptions" :key="size.value" type="button" role="option" :aria-selected="form.companySize === size.value" @click="selectEmployeeCount(size.value)">
+                      <span>{{ size.label }}</span><b v-if="form.companySize === size.value">✓</b>
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <label class="wide">
-                <span>Main use case</span>
+                <span>What do you want Voxa to take off your plate?</span>
                 <textarea
                   v-model.trim="form.useCase"
                   rows="4"
-                  placeholder="Example: answer incoming calls, qualify customers, book appointments, update CRM"
+                  placeholder="Example: answer order calls, check stock, confirm delivery times, and update our team."
                   required
                 ></textarea>
               </label>
@@ -149,61 +184,45 @@
               v-show="stepIndex === 2"
               class="step-panel"
             >
-              <div class="field-block wide">
+              <div class="field-block wide dropdown-field" :class="{ 'is-open': pricingMenuOpen }">
                 <span class="field-title">Preferred pricing</span>
-
-                <div class="option-grid">
-                  <label
-                    v-for="price in pricingOptions"
-                    :key="price.value"
-                    class="option-card"
-                    :class="{ active: form.pricing === price.value }"
-                  >
-                    <input
-                      v-model="form.pricing"
-                      type="radio"
-                      name="pricing"
-                      :value="price.value"
-                      required
-                    >
-                    <strong>{{ price.label }}</strong>
-                    <span>{{ price.helper }}</span>
-                  </label>
+                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (pricingMenuOpen = false)">
+                  <button class="option-select-trigger" type="button" aria-label="Preferred pricing" :aria-expanded="pricingMenuOpen" @click="pricingMenuOpen = !pricingMenuOpen" @keydown.esc.stop="pricingMenuOpen = false">
+                    <span :class="{ placeholder: !form.pricing }">{{ selectedPricingLabel }}</span><i></i>
+                  </button>
+                  <div v-if="pricingMenuOpen" class="option-select-menu pricing-select-menu" role="listbox" aria-label="Preferred pricing">
+                    <button v-for="price in pricingOptions" :key="price.value" type="button" role="option" :aria-selected="form.pricing === price.value" @click="selectPricing(price.value)">
+                      <span class="pricing-option-copy"><strong>{{ price.label }}</strong><small>{{ price.helper }}</small></span><b v-if="form.pricing === price.value">✓</b>
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div class="field-block wide">
+              <div class="field-block wide dropdown-field" :class="{ 'is-open': timelineMenuOpen }">
                 <span class="field-title">Launch timeline</span>
-                <div class="choice-grid timeline-grid">
-                  <label v-for="timeline in timelineOptions" :key="timeline.value" class="choice-pill" :class="{ active: form.adoptionTimeline === timeline.value }">
-                    <input v-model="form.adoptionTimeline" type="radio" name="timeline" :value="timeline.value">
-                    <span>{{ timeline.label }}</span>
-                  </label>
+                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (timelineMenuOpen = false)">
+                  <button class="option-select-trigger" type="button" aria-label="Launch timeline" :aria-expanded="timelineMenuOpen" @click="timelineMenuOpen = !timelineMenuOpen" @keydown.esc.stop="timelineMenuOpen = false">
+                    <span :class="{ placeholder: !form.adoptionTimeline }">{{ selectedTimelineLabel }}</span><i></i>
+                  </button>
+                  <div v-if="timelineMenuOpen" class="option-select-menu" role="listbox" aria-label="Launch timeline">
+                    <button v-for="timeline in timelineOptions" :key="timeline.value" type="button" role="option" :aria-selected="form.adoptionTimeline === timeline.value" @click="selectTimeline(timeline.value)">
+                      <span>{{ timeline.label }}</span><b v-if="form.adoptionTimeline === timeline.value">✓</b>
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div class="field-block wide">
+              <div class="field-block wide dropdown-field" :class="{ 'is-open': featureMenuOpen }">
                 <span class="field-title">Must-have features</span>
-
-                <div class="option-grid feature-grid">
-                  <label
-                    v-for="feature in featureOptions"
-                    :key="feature.value"
-                    class="option-card compact"
-                    :class="{
-                      active: form.features.includes(feature.value),
-                      disabled: featureDisabled(feature.value)
-                    }"
-                  >
-                    <input
-                      v-model="form.features"
-                      type="checkbox"
-                      :value="feature.value"
-                      :disabled="featureDisabled(feature.value)"
-                      @change="limitFeatures"
-                    >
-                    <span>{{ feature.label }}</span>
-                  </label>
+                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (featureMenuOpen = false)">
+                  <button class="option-select-trigger" type="button" aria-label="Must-have features" :aria-expanded="featureMenuOpen" @click="featureMenuOpen = !featureMenuOpen" @keydown.esc.stop="featureMenuOpen = false">
+                    <span :class="{ placeholder: !form.features.length }">{{ selectedFeaturesLabel }}</span><i></i>
+                  </button>
+                  <div v-if="featureMenuOpen" class="option-select-menu feature-select-menu" role="listbox" aria-label="Must-have features" aria-multiselectable="true">
+                    <button v-for="feature in featureOptions" :key="feature.value" type="button" role="option" :aria-selected="form.features.includes(feature.value)" :disabled="featureDisabled(feature.value)" @click="toggleFeature(feature.value)">
+                      <span>{{ feature.label }}</span><b v-if="form.features.includes(feature.value)">✓</b>
+                    </button>
+                  </div>
                 </div>
 
                 <small>
@@ -212,7 +231,7 @@
               </div>
 
               <label class="wide">
-                <span>Anything else?</span>
+                <span>What would make this useful for you?</span>
                 <textarea
                   v-model.trim="form.message"
                   rows="3"
@@ -287,12 +306,19 @@
                 >
               </label>
 
-              <label class="wide">
+              <label class="wide phone-field">
                 <span>Phone number</span>
                 <div class="phone-row">
-                  <select v-model="form.countryCode" aria-label="Country calling code" required>
-                    <option v-for="country in countryCodeOptions" :key="`sales-${country.flag}-${country.code}`" :value="country.code">{{ country.flag }} {{ country.code }}</option>
-                  </select>
+                  <div class="country-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (countryMenuOpen = false)">
+                    <button class="country-select-trigger" type="button" aria-label="Country calling code" :aria-expanded="countryMenuOpen" @click="countryMenuOpen = !countryMenuOpen" @keydown.esc.stop="countryMenuOpen = false">
+                      <span>{{ selectedCountry.flag }}</span><strong>{{ selectedCountry.code }}</strong><i></i>
+                    </button>
+                    <div v-if="countryMenuOpen" class="country-select-menu" role="listbox" aria-label="Country calling code">
+                      <button v-for="country in countryCodeOptions" :key="`sales-${country.flag}-${country.code}`" type="button" role="option" :aria-selected="form.countryFlag === country.flag" @click="selectCountry(country)">
+                        <span>{{ country.flag }}</span><span class="country-select-name">{{ country.name }}</span><strong>{{ country.code }}</strong>
+                      </button>
+                    </div>
+                  </div>
                   <input v-model.trim="form.phoneNumber" autocomplete="tel-national" inputmode="tel" placeholder="312 555 0100" required>
                 </div>
               </label>
@@ -306,29 +332,31 @@
                 >
               </label>
 
-              <label class="wide">
-                <span>Business type</span>
-                <select
-                  v-model="form.industry"
-                  required
-                >
-                  <option value="" disabled>Select business type</option>
-                  <option
-                    v-for="type in businessTypeOptions"
-                    :key="type.value"
-                    :value="type.value"
-                  >
-                    {{ type.label }}
-                  </option>
-                </select>
+              <div class="field-block wide dropdown-field" :class="{ 'is-open': industryMenuOpen }">
+                <span class="field-title">Industry</span>
+                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (industryMenuOpen = false)">
+                  <button class="option-select-trigger" type="button" aria-label="Industry" :aria-expanded="industryMenuOpen" @click="industryMenuOpen = !industryMenuOpen" @keydown.esc.stop="industryMenuOpen = false">
+                    <span :class="{ placeholder: !form.industry }">{{ selectedIndustryLabel }}</span><i></i>
+                  </button>
+                  <div v-if="industryMenuOpen" class="option-select-menu" role="listbox" aria-label="Industry">
+                    <button v-for="type in businessTypeOptions" :key="`sales-${type.value}`" type="button" role="option" :aria-selected="form.industry === type.value" @click="selectIndustry(type.value)">
+                      <span>{{ type.label }}</span><b v-if="form.industry === type.value">✓</b>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <label v-if="form.industry === 'other'" class="wide">
+                <span>Enter your industry</span>
+                <input v-model.trim="form.otherIndustry" type="text" placeholder="For example, medical distribution" maxlength="100" required>
               </label>
 
               <label class="wide">
-                <span>What should we help with?</span>
+                <span>What do you want Voxa to take off your plate?</span>
                 <textarea
                   v-model.trim="form.message"
                   rows="5"
-                  placeholder="Tell us about the calls, workflows or customer journey you want to automate."
+                  placeholder="Example: answer order calls, check stock, confirm delivery times, and update our team."
                   required
                 ></textarea>
               </label>
@@ -352,6 +380,7 @@
               </button>
             </div>
           </form>
+          </div>
         </div>
       </div>
     </transition>
@@ -359,7 +388,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue"
+import { computed, onBeforeUnmount, ref, watch } from "vue"
 
 const props = defineProps({
   isOpen: Boolean,
@@ -377,13 +406,21 @@ const featureLimit = 5
 const phonePattern = /^[\d\s().-]{6,24}$/
 
 const countryCodeOptions = [
-  { flag: "🇺🇸", code: "+1" }, { flag: "🇨🇦", code: "+1" },
-  { flag: "🇬🇧", code: "+44" }, { flag: "🇮🇳", code: "+91" },
-  { flag: "🇦🇺", code: "+61" }, { flag: "🇸🇬", code: "+65" },
-  { flag: "🇦🇪", code: "+971" }, { flag: "🇩🇪", code: "+49" },
-  { flag: "🇫🇷", code: "+33" }, { flag: "🇳🇱", code: "+31" },
-  { flag: "🇲🇽", code: "+52" }, { flag: "🇧🇷", code: "+55" }
+  { name: "India", flag: "🇮🇳", code: "+91" }, { name: "United States", flag: "🇺🇸", code: "+1" },
+  { name: "Canada", flag: "🇨🇦", code: "+1" }, { name: "United Kingdom", flag: "🇬🇧", code: "+44" },
+  { name: "Australia", flag: "🇦🇺", code: "+61" }, { name: "Singapore", flag: "🇸🇬", code: "+65" },
+  { name: "United Arab Emirates", flag: "🇦🇪", code: "+971" }, { name: "Germany", flag: "🇩🇪", code: "+49" },
+  { name: "France", flag: "🇫🇷", code: "+33" }, { name: "Netherlands", flag: "🇳🇱", code: "+31" },
+  { name: "Mexico", flag: "🇲🇽", code: "+52" }, { name: "Brazil", flag: "🇧🇷", code: "+55" }
 ]
+
+const countryMenuOpen = ref(false)
+const selectedCountry = computed(() => countryCodeOptions.find(country => country.flag === form.value.countryFlag) || countryCodeOptions[0])
+const selectCountry = (country) => {
+  form.value.countryCode = country.code
+  form.value.countryFlag = country.flag
+  countryMenuOpen.value = false
+}
 
 const businessTypeOptions = [
   { label: "Healthcare or pharma", value: "healthcare" },
@@ -398,12 +435,30 @@ const businessTypeOptions = [
 ]
 
 const teamSizeOptions = [
-  { label: "Just me", value: "just-me" },
-  { label: "2-10 people", value: "2-10" },
-  { label: "11-50 people", value: "11-50" },
-  { label: "51-200 people", value: "51-200" },
-  { label: "201+ people", value: "201-plus" }
+  { label: "1 employee", value: "just-me" },
+  { label: "2-10 employees", value: "2-10" },
+  { label: "11-50 employees", value: "11-50" },
+  { label: "51-200 employees", value: "51-200" },
+  { label: "200+ employees", value: "200-plus" }
 ]
+
+const industryMenuOpen = ref(false)
+const employeeMenuOpen = ref(false)
+const selectedIndustryLabel = computed(() =>
+  businessTypeOptions.find(option => option.value === form.value.industry)?.label || "Select industry"
+)
+const selectedEmployeeLabel = computed(() =>
+  teamSizeOptions.find(option => option.value === form.value.companySize)?.label || "Select employee count"
+)
+const selectIndustry = (value) => {
+  form.value.industry = value
+  if (value !== "other") form.value.otherIndustry = ""
+  industryMenuOpen.value = false
+}
+const selectEmployeeCount = (value) => {
+  form.value.companySize = value
+  employeeMenuOpen.value = false
+}
 
 const pricingOptions = [
   {
@@ -435,6 +490,37 @@ const timelineOptions = [
   { label: "Just exploring", value: "exploring" }
 ]
 
+const pricingMenuOpen = ref(false)
+const timelineMenuOpen = ref(false)
+const featureMenuOpen = ref(false)
+const selectedPricingLabel = computed(() =>
+  pricingOptions.find(option => option.value === form.value.pricing)?.label || "Select preferred pricing"
+)
+const selectedTimelineLabel = computed(() =>
+  timelineOptions.find(option => option.value === form.value.adoptionTimeline)?.label || "Select launch timeline"
+)
+const selectedFeaturesLabel = computed(() => {
+  if (!form.value.features.length) return "Select features"
+  if (form.value.features.length === 1) return optionLabel(featureOptions, form.value.features[0])
+  return `${form.value.features.length} features selected`
+})
+const selectPricing = (value) => {
+  form.value.pricing = value
+  pricingMenuOpen.value = false
+}
+const selectTimeline = (value) => {
+  form.value.adoptionTimeline = value
+  timelineMenuOpen.value = false
+}
+const toggleFeature = (value) => {
+  const index = form.value.features.indexOf(value)
+  if (index >= 0) {
+    form.value.features.splice(index, 1)
+  } else if (form.value.features.length < featureLimit) {
+    form.value.features.push(value)
+  }
+}
+
 const featureOptions = [
   { label: "AI phone agent", value: "ai-phone-agent" },
   { label: "Appointment booking", value: "appointment-booking" },
@@ -451,9 +537,11 @@ const emptyForm = () => ({
   lastName: "",
   email: "",
   company: "",
-  countryCode: "+1",
+  countryCode: "+91",
+  countryFlag: "🇮🇳",
   phoneNumber: "",
   industry: "",
+  otherIndustry: "",
   companySize: "",
   useCase: "",
   pricing: "",
@@ -468,6 +556,55 @@ const registrationId = ref("")
 const isSubmitting = ref(false)
 const submitError = ref("")
 const successMessage = ref("")
+
+let pageScrollLock = null
+
+const lockPageScroll = () => {
+  if (pageScrollLock || typeof document === "undefined") return
+
+  const body = document.body
+  const root = document.documentElement
+  const scrollY = window.scrollY
+  const scrollbarWidth = Math.max(0, window.innerWidth - root.clientWidth)
+
+  pageScrollLock = {
+    scrollY,
+    bodyOverflow: body.style.overflow,
+    bodyPosition: body.style.position,
+    bodyTop: body.style.top,
+    bodyWidth: body.style.width,
+    bodyPaddingRight: body.style.paddingRight,
+    rootOverflow: root.style.overflow,
+    rootScrollBehavior: root.style.scrollBehavior
+  }
+
+  root.style.overflow = "hidden"
+  root.style.scrollBehavior = "auto"
+  body.style.overflow = "hidden"
+  body.style.position = "fixed"
+  body.style.top = `-${scrollY}px`
+  body.style.width = "100%"
+  if (scrollbarWidth) body.style.paddingRight = `${scrollbarWidth}px`
+}
+
+const unlockPageScroll = () => {
+  if (!pageScrollLock || typeof document === "undefined") return
+
+  const body = document.body
+  const root = document.documentElement
+  const saved = pageScrollLock
+  pageScrollLock = null
+
+  body.style.overflow = saved.bodyOverflow
+  body.style.position = saved.bodyPosition
+  body.style.top = saved.bodyTop
+  body.style.width = saved.bodyWidth
+  body.style.paddingRight = saved.bodyPaddingRight
+  root.style.overflow = saved.rootOverflow
+  root.style.scrollBehavior = "auto"
+  window.scrollTo(0, saved.scrollY)
+  root.style.scrollBehavior = saved.rootScrollBehavior
+}
 
 const modalCopy = computed(() => {
   if (props.mode === "sales") {
@@ -508,7 +645,12 @@ const contactReady = computed(() =>
 )
 
 const useCaseReady = computed(() =>
-  Boolean(form.value.industry && form.value.companySize && form.value.useCase)
+  Boolean(
+    form.value.industry &&
+    (form.value.industry !== "other" || form.value.otherIndustry.trim()) &&
+    form.value.companySize &&
+    form.value.useCase
+  )
 )
 
 const launchReady = computed(() =>
@@ -528,6 +670,7 @@ const salesReady = computed(() =>
     emailReady.value &&
     phoneReady.value &&
     form.value.industry &&
+    (form.value.industry !== "other" || form.value.otherIndustry.trim()) &&
     form.value.message
   )
 )
@@ -571,7 +714,10 @@ const registrationPayload = (intent) => {
     metadata: {
       source: "website-modal",
       intent,
-      businessTypeLabel: optionLabel(businessTypeOptions, form.value.industry),
+      businessTypeLabel: form.value.industry === "other"
+        ? form.value.otherIndustry
+        : optionLabel(businessTypeOptions, form.value.industry),
+      otherIndustry: form.value.industry === "other" ? form.value.otherIndustry : undefined,
       companySizeLabel: optionLabel(teamSizeOptions, form.value.companySize),
       pricingLabel: optionLabel(pricingOptions, form.value.pricing),
       selectedFeatures: form.value.features.map((feature) =>
@@ -634,6 +780,12 @@ const resetForm = () => {
   isSubmitting.value = false
   submitError.value = ""
   successMessage.value = ""
+  countryMenuOpen.value = false
+  industryMenuOpen.value = false
+  employeeMenuOpen.value = false
+  pricingMenuOpen.value = false
+  timelineMenuOpen.value = false
+  featureMenuOpen.value = false
 }
 
 const closeModal = () => {
@@ -687,10 +839,16 @@ watch(
   () => props.isOpen,
   (open) => {
     if (open) {
+      lockPageScroll()
       resetForm()
+    } else {
+      unlockPageScroll()
     }
-  }
+  },
+  { immediate: true }
 )
+
+onBeforeUnmount(unlockPageScroll)
 </script>
 
 <style scoped>
@@ -895,6 +1053,8 @@ label > span em{
 }
 
 .phone-row{
+  position:relative;
+  z-index:30;
   display:grid;
   grid-template-columns:120px minmax(0,1fr);
   gap:10px;
@@ -903,6 +1063,188 @@ label > span em{
 .phone-row select,
 .phone-row input{
   margin:0;
+}
+
+.country-select{
+  position:relative;
+  z-index:40;
+  min-width:0;
+}
+
+.phone-field{
+  position:relative;
+  z-index:100;
+}
+
+.country-select-trigger{
+  display:grid;
+  width:100%;
+  min-height:52px;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:8px;
+  padding:0 13px;
+  border:1px solid rgba(15,23,42,.10);
+  border-radius:14px;
+  color:var(--voxa-blue);
+  background:#f8fbff;
+  font:inherit;
+  cursor:pointer;
+}
+
+.country-select-trigger strong{ font-weight:700; text-align:left; }
+.country-select-trigger i{
+  width:8px;
+  height:8px;
+  border-right:2px solid currentColor;
+  border-bottom:2px solid currentColor;
+  transform:rotate(45deg) translateY(-2px);
+}
+
+.country-select-menu{
+  position:absolute;
+  z-index:50;
+  top:auto;
+  bottom:calc(100% + 6px);
+  left:0;
+  width:270px;
+  max-height:220px;
+  overflow-y:auto;
+  padding:6px;
+  border:1px solid rgba(15,23,42,.12);
+  border-radius:10px;
+  background:#fff;
+  box-shadow:0 18px 44px rgba(15,23,42,.2);
+}
+
+.country-select-menu button{
+  display:grid;
+  width:100%;
+  grid-template-columns:26px minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  min-height:40px;
+  padding:0 10px;
+  border:0;
+  border-radius:7px;
+  color:#475569;
+  background:#fff;
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+
+.country-select-menu button:hover,
+.country-select-menu button[aria-selected="true"]{
+  color:#14264d;
+  background:#eef2f8;
+}
+
+.country-select-name{
+  overflow:hidden;
+  font-size:13px;
+  font-weight:700;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.country-select-menu strong{ color:inherit; font-size:13px; }
+
+.dropdown-field{
+  position:relative;
+  z-index:1;
+}
+.dropdown-field.is-open{ z-index:200; }
+.option-select{ position:relative; }
+.option-select-trigger{
+  display:grid;
+  width:100%;
+  min-height:48px;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  padding:0 14px;
+  border:1px solid rgba(15,23,42,.12);
+  border-radius:8px;
+  color:#14264d;
+  background:#fff;
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+.option-select-trigger span{ overflow:hidden; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+.option-select-trigger .placeholder{ color:#94a3b8; font-weight:500; }
+.option-select-trigger i{
+  width:8px;
+  height:8px;
+  border-right:2px solid currentColor;
+  border-bottom:2px solid currentColor;
+  transform:rotate(45deg) translateY(-2px);
+}
+.option-select-trigger:focus{
+  border-color:#14264d;
+  box-shadow:0 0 0 4px rgba(20,38,77,.1);
+  outline:none;
+}
+.option-select-menu{
+  position:absolute;
+  z-index:210;
+  top:calc(100% + 6px);
+  right:0;
+  left:0;
+  max-height:210px;
+  overflow-y:auto;
+  padding:6px;
+  border:1px solid rgba(15,23,42,.12);
+  border-radius:10px;
+  background:#fff;
+  box-shadow:0 18px 44px rgba(15,23,42,.18);
+}
+.option-select-menu button{
+  display:grid;
+  width:100%;
+  min-height:40px;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  padding:0 10px;
+  border:0;
+  border-radius:7px;
+  color:#475569;
+  background:#fff;
+  font:inherit;
+  font-size:13px;
+  font-weight:700;
+  text-align:left;
+  cursor:pointer;
+}
+.option-select-menu button:hover,
+.option-select-menu button[aria-selected="true"]{
+  color:#14264d;
+  background:#eef2f8;
+}
+.option-select-menu b{ color:#14264d; }
+.employee-select-menu{ max-height:260px; }
+.pricing-select-menu{ max-height:240px; }
+.pricing-select-menu button{ min-height:54px; }
+.pricing-option-copy{
+  display:grid;
+  gap:2px;
+}
+.pricing-option-copy strong{
+  color:inherit;
+  font-size:13px;
+}
+.pricing-option-copy small{
+  color:#64748b;
+  font-size:11px;
+  font-weight:500;
+  line-height:1.35;
+}
+.feature-select-menu button:disabled{
+  color:#a8b3c4;
+  cursor:not-allowed;
+  background:#fff;
 }
 
 .choice-grid{
@@ -1038,6 +1380,8 @@ label > span em{
 }
 
 .form-actions{
+  position:relative;
+  z-index:1;
   display:flex;
   justify-content:space-between;
   gap:14px;
@@ -1134,5 +1478,299 @@ label > span em{
   .form-actions.single{
     align-items:stretch;
   }
+}
+
+/* Split lead-flow layout */
+.overlay{
+  padding:24px;
+  background:rgba(8,9,11,.78);
+  backdrop-filter:blur(10px);
+}
+
+.modal{
+  --lead-accent:#14264d;
+  --lead-accent-rgb:20,38,77;
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(290px,.8fr) minmax(430px,1.2fr);
+  width:min(900px,100%);
+  height:min(560px,calc(100vh - 48px));
+  min-height:0;
+  max-height:calc(100vh - 48px);
+  overflow:hidden;
+  padding:0;
+  border:1px solid rgba(255,255,255,.68);
+  border-radius:22px;
+  box-shadow:0 32px 100px rgba(0,0,0,.38);
+}
+
+.close{
+  position:absolute;
+  z-index:4;
+  top:20px;
+  right:20px;
+  width:36px;
+  height:36px;
+  background:#f4f7fb;
+}
+
+.modal-story{
+  position:relative;
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  padding:30px 34px 28px;
+  overflow:hidden;
+  border-right:1px solid rgba(15,23,42,.08);
+  background:#f8fbff;
+}
+
+.modal-story::after{
+  position:absolute;
+  right:-62px;
+  bottom:-78px;
+  width:210px;
+  height:210px;
+  border:1px solid rgba(var(--lead-accent-rgb),.12);
+  border-radius:50%;
+  content:"";
+}
+
+.modal-brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:var(--lead-accent);
+  font-size:18px;
+  font-weight:800;
+}
+
+.modal-brand-dot{
+  width:8px;
+  height:8px;
+  flex:0 0 auto;
+  border-radius:50%;
+  background:var(--lead-accent);
+  box-shadow:0 0 18px rgba(var(--lead-accent-rgb),.28);
+}
+
+.modal-header{
+  display:block;
+  margin:34px 0 0;
+}
+
+.eyebrow{
+  margin:0 0 12px;
+  color:var(--lead-accent);
+  font-family:"Inter",sans-serif;
+  letter-spacing:0;
+  text-transform:none;
+}
+
+.modal h2{
+  max-width:310px;
+  color:var(--lead-accent);
+  font-size:clamp(31px,3.5vw,38px);
+  letter-spacing:-.035em;
+}
+
+.intro{
+  max-width:290px;
+  margin:12px 0 0;
+  color:#64748b;
+  font-size:14px;
+  line-height:1.6;
+}
+
+.story-steps{
+  position:relative;
+  display:grid;
+  gap:18px;
+  margin-top:30px;
+  padding-top:4px;
+}
+
+.story-steps::before{
+  position:absolute;
+  top:18px;
+  bottom:0;
+  left:13px;
+  width:2px;
+  border-radius:2px;
+  background:#dce4ef;
+  content:"";
+}
+
+.story-steps div{
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:28px 1fr;
+  align-items:center;
+  gap:10px;
+  color:#94a3b8;
+}
+
+.story-steps span{
+  display:grid;
+  width:28px;
+  height:28px;
+  place-items:center;
+  border:2px solid #dce4ef;
+  border-radius:50%;
+  color:#64748b;
+  background:#f8fbff;
+  font-size:11px;
+  font-weight:800;
+}
+
+.story-steps small{ font-size:12px; font-weight:800; }
+.story-steps div.active{ color:var(--lead-accent); }
+.story-steps div.active span{
+  border-color:var(--lead-accent);
+  color:#fff;
+  background:var(--lead-accent);
+  box-shadow:0 0 0 5px rgba(var(--lead-accent-rgb),.1);
+}
+
+.modal-content{
+  min-width:0;
+  height:100%;
+  max-height:none;
+  overflow-y:auto;
+  padding:32px 38px 26px;
+  background:#fff;
+}
+
+.modal-content .form{ min-height:100%; gap:14px; }
+.modal-content .progress-row{ display:none; }
+.modal-content .step-panel{
+  position:relative;
+  z-index:10;
+  grid-template-columns:1fr;
+  gap:13px;
+  padding:0;
+  isolation:auto;
+  content-visibility:visible;
+  contain-intrinsic-size:auto;
+}
+.modal-content label.wide,
+.modal-content .field-block.wide{ grid-column:auto; }
+
+.form input,
+.form textarea,
+.form select{
+  min-height:44px;
+  padding:10px 13px;
+  border-radius:8px;
+  background:#fff;
+}
+
+.modal .country-select-trigger{
+  min-height:44px;
+  border-radius:8px;
+  color:var(--lead-accent);
+  background:#fff;
+}
+.modal .country-select-trigger:focus{
+  border-color:var(--lead-accent);
+  box-shadow:0 0 0 4px rgba(var(--lead-accent-rgb),.1);
+  outline:none;
+}
+
+.modal-content label,
+.modal-content .field-block{ gap:6px; }
+
+.modal .form input:focus,
+.modal .form textarea:focus,
+.modal .form select:focus{
+  border-color:var(--lead-accent);
+  background:#fff;
+  box-shadow:0 0 0 4px rgba(var(--lead-accent-rgb),.1);
+}
+
+.modal .form input:-webkit-autofill,
+.modal .form input:-webkit-autofill:hover,
+.modal .form input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--lead-accent);
+  box-shadow:0 0 0 1000px #fff inset;
+  transition:background-color 9999s ease-out 0s;
+}
+
+.choice-grid,
+.industry-grid,
+.size-grid,
+.timeline-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+.option-grid,
+.feature-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+.choice-pill,
+.option-card{ border-radius:8px; }
+
+.modal .choice-pill:hover{ border-color:rgba(var(--lead-accent-rgb),.4); }
+.modal .choice-pill.active,
+.modal .option-card.active{
+  border-color:var(--lead-accent);
+  background:rgba(var(--lead-accent-rgb),.07);
+  box-shadow:0 8px 20px rgba(var(--lead-accent-rgb),.1);
+}
+.modal .choice-pill.active span,
+.modal .option-card.active span,
+.modal .option-card.active strong{ color:var(--lead-accent); }
+
+.form-actions{
+  align-items:center;
+  margin-top:auto;
+  padding-top:16px;
+}
+
+.btn-primary,
+.btn-secondary{
+  min-height:50px;
+  border-radius:8px;
+}
+
+.btn-primary{ min-width:210px; background:var(--lead-accent); box-shadow:0 12px 26px rgba(var(--lead-accent-rgb),.2); }
+.btn-secondary{ background:#fff; }
+
+.success-card{
+  align-content:center;
+  min-height:480px;
+  padding:0;
+  border:0;
+  background:#fff;
+}
+
+@media(max-width:820px){
+  .overlay{ align-items:flex-start; padding:12px; overflow-y:auto; }
+  .modal{ grid-template-columns:1fr; height:auto; min-height:0; max-height:none; border-radius:16px; }
+  .modal-story{ padding:24px; border-right:0; border-bottom:1px solid rgba(15,23,42,.08); }
+  .modal-header{ margin-top:30px; }
+  .modal h2{ max-width:560px; font-size:32px; }
+  .intro{ max-width:560px; margin-top:12px; }
+  .story-steps{ grid-template-columns:repeat(3,1fr); gap:8px; margin-top:26px; padding:0; }
+  .story-steps::before{ top:13px; right:14%; bottom:auto; left:14%; width:auto; height:2px; }
+  .story-steps div{ grid-template-columns:28px; justify-content:center; gap:7px; text-align:center; }
+  .story-steps small{ font-size:10px; }
+  .modal-content{ max-height:none; overflow:visible; padding:30px 24px 26px; }
+  .modal-content .form{ min-height:430px; }
+}
+
+@media(max-width:520px){
+  .overlay{ padding:0; background:#fff; }
+  .modal{ min-height:100vh; border:0; border-radius:0; box-shadow:none; }
+  .modal-story{ padding:22px 20px 20px; }
+  .modal-header{ margin-top:28px; }
+  .modal h2{ padding-right:26px; font-size:29px; }
+  .modal-content{ padding:26px 20px 30px; }
+  .choice-grid,
+  .industry-grid,
+  .size-grid,
+  .timeline-grid,
+  .option-grid,
+  .feature-grid{ grid-template-columns:1fr; }
+  .phone-row{ grid-template-columns:96px minmax(0,1fr); gap:8px; }
+  .form-actions{ align-items:stretch; flex-direction:column-reverse; }
+  .form-actions.single{ align-items:stretch; }
+  .btn-primary{ width:100%; min-width:0; }
 }
 </style>

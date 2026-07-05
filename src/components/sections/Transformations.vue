@@ -1,1604 +1,376 @@
 <template>
-
-<section class="transformations">
-
-<div class="container-custom">
-
-<div class="heading">
-
-<span>
-
-REAL TRANSFORMATIONS
-
-</span>
-
-<h2>
-
-See how AI
-changes
-the way
-business works.
-
-</h2>
-
-<p>
-
-Every automation begins with a problem.
-Here's how intelligent systems transform
-daily operations across different industries.
-
-</p>
-
-</div>
-
-<!-- CARD 1 -->
-
-<article class="story">
-
-<div class="before">
-
-<small>
-
-BEFORE
-
-</small>
-
-<ul>
-
-<li>Missed customer calls</li>
-
-<li>Manual appointment booking</li>
-
-<li>Slow response times</li>
-
-<li>Limited working hours</li>
-
-</ul>
-
-</div>
-
-<div class="middle">
-
-<div class="arrow">
-
-↓
-
-</div>
-
-<div class="core">
-
-Voxa AI Receptionist
-
-</div>
-
-</div>
-
-<div class="after">
-
-<small>
-
-AFTER
-
-</small>
-
-<ul>
-
-<li>24/7 phone support</li>
-
-<li>Instant booking</li>
-
-<li>Zero missed enquiries</li>
-
-<li>Natural conversations</li>
-
-</ul>
-
-</div>
-
-</article>
-
-<!-- CARD 2 -->
-
-<article class="story">
-
-<div class="before">
-
-<small>
-
-BEFORE
-
-</small>
-
-<ul>
-
-<li>Employees copying data</li>
-
-<li>Spreadsheet errors</li>
-
-<li>Manual reporting</li>
-
-<li>Disconnected tools</li>
-
-</ul>
-
-</div>
-
-<div class="middle">
-
-<div class="arrow">
-
-↓
-
-</div>
-
-<div class="core">
-
-Workflow Automation
-
-</div>
-
-</div>
-
-<div class="after">
-
-<small>
-
-AFTER
-
-</small>
-
-<ul>
-
-<li>Connected applications</li>
-
-<li>Automatic workflows</li>
-
-<li>Real-time reporting</li>
-
-<li>Hours saved daily</li>
-
-</ul>
-
-</div>
-
-</article>
-
-</div>
-
-</section>
-
+  <section
+    id="approach"
+    class="transformations"
+    :class="{ 'is-paused': paused }"
+    @mouseenter="stopAuto"
+    @mouseleave="startAuto"
+    @focusin="stopAuto"
+    @focusout="startAuto"
+  >
+    <div class="grid-bg"></div>
+    <div class="ambient ambient-left"></div>
+    <div class="ambient ambient-right"></div>
+
+    <div class="container-custom">
+      <header class="heading">
+        <span>TRANSFORMATION, DELIVERED</span>
+        <h2>From daily friction to a business that moves.</h2>
+        <p>
+          See what changes when Voxa joins the workflow, then follow the clear
+          process that takes each idea from conversation to measurable result.
+        </p>
+      </header>
+
+      <div class="case-tabs" aria-label="Choose a transformation story">
+        <button
+          v-for="(slide, index) in slides"
+          :key="slide.tab"
+          type="button"
+          :class="{ active: activeSlide === index }"
+          :aria-pressed="activeSlide === index"
+          @click="selectSlide(index)"
+        >
+          <component :is="slide.icon" />
+          {{ slide.tab }}
+        </button>
+      </div>
+
+      <div class="story-stage">
+        <article
+          v-show="activeSlide < stories.length"
+          class="transformation-story"
+          :class="activeSlide === 0 ? 'story-conversations' : 'story-operations'"
+        >
+          <header class="story-heading">
+            <div>
+              <span>{{ currentStory.kicker }}</span>
+              <h3>{{ currentStory.panelTitle }}</h3>
+            </div>
+            <p>{{ currentStory.panelDescription }}</p>
+          </header>
+
+          <div class="transformation-grid">
+            <div class="state-card before-card">
+              <span class="state-label">BEFORE VOXA</span>
+              <h3>{{ currentStory.beforeTitle }}</h3>
+              <ul>
+                <li v-for="item in currentStory.before" :key="item">{{ item }}</li>
+              </ul>
+            </div>
+
+            <div class="transformation-core">
+              <span class="signal-dot"></span>
+              <div class="core-icon"><component :is="currentStory.icon" /></div>
+              <small>VOXA IN ACTION</small>
+              <strong>{{ currentStory.solution }}</strong>
+              <p>{{ currentStory.bridge }}</p>
+              <span class="signal-arrow">→</span>
+            </div>
+
+            <div class="state-card after-card">
+              <span class="state-label">WITH VOXA</span>
+              <h3>{{ currentStory.afterTitle }}</h3>
+              <ul>
+                <li v-for="item in currentStory.after" :key="item">{{ item }}</li>
+              </ul>
+              <div class="result-badge">
+                <CheckCircle2 />
+                <span>{{ currentStory.result }}</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <div v-show="activeSlide === stories.length" class="process-panel">
+          <header class="process-heading">
+            <div>
+              <span>HOW WE GET THERE</span>
+              <h3>A clear path from first conversation to lasting value.</h3>
+            </div>
+            <p>No mystery. No giant launch. Each step proves the next one is worth taking.</p>
+          </header>
+
+          <ol class="process-grid">
+            <li v-for="(step, index) in process" :key="step.title">
+              <div class="step-topline">
+                <span>STEP {{ String(index + 1).padStart(2, '0') }}</span>
+                <component :is="step.icon" />
+              </div>
+              <h4>{{ step.title }}</h4>
+              <p>{{ step.description }}</p>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
 </template>
 
 <script setup>
+import { computed, onMounted, onUnmounted, ref } from "vue"
+import {
+  CheckCircle2,
+  Headphones,
+  Network,
+  Route,
+  Search,
+  ShieldCheck,
+  TrendingUp,
+  Wrench
+} from "lucide-vue-next"
 
+const activeSlide = ref(0)
+const paused = ref(false)
+let storyTimer
+
+const stories = [
+  {
+    tab: "Customer conversations",
+    icon: Headphones,
+    kicker: "CUSTOMER CONVERSATIONS",
+    panelTitle: "Every call answered. Every next step handled.",
+    panelDescription: "Voxa turns the moment a customer reaches out into a clear, completed outcome.",
+    beforeTitle: "Every ring depends on one person.",
+    before: [
+      "Appointments wait for a callback",
+      "After-hours calls go unanswered",
+      "Customers repeat the same details",
+      "Follow-up slips when the day gets busy"
+    ],
+    solution: "Voxa AI Receptionist",
+    bridge: "Listens, answers, books and follows through in the same conversation.",
+    afterTitle: "Every customer leaves with a next step.",
+    after: [
+      "Calls are answered at any hour",
+      "Appointments are booked instantly",
+      "Staff receive the full context",
+      "Customers get immediate confirmation"
+    ],
+    result: "Available whenever customers call"
+  },
+  {
+    tab: "Business operations",
+    icon: Network,
+    kicker: "BUSINESS OPERATIONS",
+    panelTitle: "Routine work moves without being chased.",
+    panelDescription: "Voxa connects the systems, decisions and updates that keep the business moving.",
+    beforeTitle: "People spend the day moving information.",
+    before: [
+      "Teams copy data between systems",
+      "Routine updates require a handoff",
+      "Reports arrive after decisions are made",
+      "Small errors create hours of rework"
+    ],
+    solution: "Connected Automation",
+    bridge: "Moves information, updates tools and keeps every team in sync.",
+    afterTitle: "Work moves without being chased.",
+    after: [
+      "Applications update each other",
+      "Routine work completes automatically",
+      "Results stay visible in real time",
+      "People focus on exceptions and decisions"
+    ],
+    result: "Hours returned to the team each week"
+  }
+]
+
+const slides = [
+  { tab: "Customer conversations", icon: Headphones },
+  { tab: "Business operations", icon: Network },
+  { tab: "How we get there", icon: Route }
+]
+
+const process = [
+  { title: "Listen", description: "Understand the conversations, friction and outcomes that matter most.", icon: Search },
+  { title: "Design", description: "Shape the experience, actions, integrations and human handoffs.", icon: Network },
+  { title: "Build", description: "Create the voice, agents and automations around your real workflow.", icon: Wrench },
+  { title: "Prove", description: "Test real scenarios with your team before customers ever depend on it.", icon: ShieldCheck },
+  { title: "Grow", description: "Measure results, improve what works and expand with confidence.", icon: TrendingUp }
+]
+
+const currentStory = computed(() => stories[activeSlide.value] || stories[0])
+
+function selectSlide(index) {
+  activeSlide.value = index
+}
+
+function stopAuto() {
+  paused.value = true
+  window.clearInterval(storyTimer)
+}
+
+function startAuto() {
+  window.clearInterval(storyTimer)
+  paused.value = false
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+  storyTimer = window.setInterval(() => {
+    activeSlide.value = (activeSlide.value + 1) % slides.length
+  }, 5200)
+}
+
+onMounted(startAuto)
+onUnmounted(() => window.clearInterval(storyTimer))
 </script>
 
 <style scoped>
-
-.transformations{
-
-position:relative;
-
-padding:190px 0;
-
-overflow:hidden;
-
-background:
-
-radial-gradient(
-circle at top left,
-rgba(var(--voxa-accent-rgb),.10),
-transparent 35%
-),
-
-radial-gradient(
-circle at bottom right,
-rgba(15,23,42,.05),
-transparent 45%
-),
-
-linear-gradient(
-180deg,
-var(--voxa-white) 0%,
-var(--voxa-soft) 100%
-);
-
-isolation:isolate;
-
-}
-
-.heading{
-
-max-width:820px;
-
-margin:auto;
-
-text-align:center;
-
-margin-bottom:120px;
-
-}
-
-.heading span{
-
-display:inline-block;
-
-margin-bottom:22px;
-
-font-size:12px;
-
-letter-spacing:.3em;
-
-text-transform:uppercase;
-
-font-weight:600;
-
-color:var(--voxa-accent);
-
-}
-
-.heading h2{
-
-font-size:clamp(58px,6vw,92px);
-
-line-height:.95;
-
-margin-bottom:28px;
-
-color:var(--voxa-blue);
-
-}
-
-.heading p{
-
-font-size:20px;
-
-line-height:1.9;
-
-max-width:650px;
-
-margin:auto;
-
-color:#64748b;
-
-}
-
-.story{
-
-display:grid;
-
-grid-template-columns:1fr 220px 1fr;
-
-gap:60px;
-
-align-items:center;
-
-padding:70px 0;
-
-border-top:1px solid rgba(15,23,42,.08);
-
-}
-
-.story:last-child{
-
-border-bottom:1px solid rgba(15,23,42,.08);
-
-}
-
-.before,
-.after{
-
-padding:40px;
-
-border-radius:24px;
-
-background:rgba(255,255,255,.8);
-
-border:1px solid rgba(15,23,42,.08);
-
-box-shadow:0 20px 60px rgba(15,23,42,.08);
-
-}
-
-.middle{
-
-display:flex;
-
-flex-direction:column;
-
-align-items:center;
-
-justify-content:center;
-
-gap:24px;
-
-}
-
-.arrow{
-
-font-size:42px;
-
-color:var(--voxa-accent);
-
-}
-
-.core{
-
-padding:16px 24px;
-
-border-radius:999px;
-
-background:var(--voxa-accent);
-
-border:1px solid var(--voxa-accent);
-
-color:white;
-
-font-weight:600;
-
-}
-
-.before small,
-.after small{
-
-display:block;
-
-margin-bottom:24px;
-
-letter-spacing:.25em;
-
-font-size:12px;
-
-font-weight:700;
-
-color:var(--voxa-accent);
-
-}
-
-.before ul,
-.after ul{
-
-list-style:none;
-
-display:flex;
-
-flex-direction:column;
-
-gap:18px;
-
-}
-
-.before li,
-.after li{
-
-font-size:17px;
-
-color:#334155;
-
-position:relative;
-
-padding-left:28px;
-
-}
-
-.before li::before{
-
-content:"−";
-
-position:absolute;
-
-left:0;
-
-color:#FF7A7A;
-
-font-weight:700;
-
-}
-
-.after li::before{
-
-content:"+";
-
-position:absolute;
-
-left:0;
-
-color:#5BFFB2;
-
-font-weight:700;
-
-}
-/* ==========================================================
-BACKGROUND
-========================================================== */
-
-.transformations{
-
-isolation:isolate;
-
-}
-
-.transformations::before{
-
-content:"";
-
-position:absolute;
-
-inset:0;
-
-pointer-events:none;
-
-background-image:
-
-linear-gradient(
-rgba(15,23,42,.045) 1px,
-transparent 1px
-),
-
-linear-gradient(
-90deg,
-rgba(15,23,42,.045) 1px,
-transparent 1px
-);
-
-background-size:46px 46px;
-
-opacity:.55;
-
-animation:none;
-
-}
-
-.transformations::after{
-
-content:"";
-
-position:absolute;
-
-left:50%;
-
-top:50%;
-
-transform:translate(-50%,-50%);
-
-width:1100px;
-
-height:1100px;
-
-border-radius:50%;
-
-background:
-
-radial-gradient(
-
-circle,
-
-rgba(var(--voxa-accent-rgb),.08),
-
-transparent 72%
-
-);
-
-filter:blur(120px);
-
-pointer-events:none;
-
-}
-
-/* ==========================================================
-STORY
-========================================================== */
-
-.story{
-
-position:relative;
-
-transition:
-
-transform .45s cubic-bezier(.22,1,.36,1),
-
-padding .35s ease;
-
-}
-
-.story:hover{
-
-transform:translateY(-8px);
-
-}
-
-.story::before{
-
-content:"";
-
-position:absolute;
-
-left:0;
-
-right:0;
-
-top:0;
-
-height:1px;
-
-background:
-
-linear-gradient(
-
-90deg,
-
-transparent,
-
-rgba(var(--voxa-accent-rgb),.25),
-
-transparent
-
-);
-
-transition:.4s;
-
-}
-
-.story:hover::before{
-
-background:
-
-linear-gradient(
-
-90deg,
-
-transparent,
-
-var(--voxa-accent),
-
-transparent
-
-);
-
-box-shadow:
-
-0 0 18px rgba(var(--voxa-accent-rgb),.35);
-
-}
-
-/* ==========================================================
-CARDS
-========================================================== */
-
-.before,
-.after{
-
-position:relative;
-
-overflow:hidden;
-
-transition:
-
-transform .45s cubic-bezier(.22,1,.36,1),
-
-border-color .35s ease,
-
-background .35s ease,
-
-box-shadow .35s ease;
-
-}
-
-.before:hover,
-.after:hover{
-
-transform:translateY(-6px);
-
-border-color:var(--voxa-accent);
-
-background:
-
-linear-gradient(
-
-180deg,
-
-rgba(var(--voxa-accent-rgb),.08),
-
-rgba(255,255,255,.92)
-
-);
-
-box-shadow:
-
-0 25px 70px rgba(15,23,42,.10),
-
-0 0 40px rgba(var(--voxa-accent-rgb),.10);
-
-}
-
-.before::after,
-.after::after{
-
-content:"";
-
-position:absolute;
-
-top:-180%;
-
-left:-70%;
-
-width:60%;
-
-height:340%;
-
-background:
-
-linear-gradient(
-
-90deg,
-
-transparent,
-
-rgba(255,255,255,.08),
-
-transparent
-
-);
-
-transform:rotate(20deg);
-
-animation:none;
-
-}
-/* ==========================================================
-CENTER
-========================================================== */
-
-.core{
-
-transition:.35s;
-
-box-shadow:
-
-0 0 30px rgba(var(--voxa-accent-rgb),.15);
-
-}
-
-.story:hover .core{
-
-transform:scale(1.05);
-
-background:var(--voxa-accent);
-
-box-shadow:
-
-0 0 45px rgba(var(--voxa-accent-rgb),.35);
-
-}
-
-.arrow{
-
-animation:none;
-
-}
-@keyframes bounceArrow{
-
-0%,100%{
-
-transform:translateY(0);
-
-}
-
-50%{
-
-transform:translateY(8px);
-
-}
-
-}
-/* ==========================================================
-REVEAL ANIMATIONS
-========================================================== */
-
-.heading{
-
-animation:none;
-
-}
-
-.story:nth-child(2){
-
-animation:none;
-
-}
-
-.story:nth-child(3){
-
-animation:none;
-
-}
-
-/* ==========================================================
-CONNECTOR
-========================================================== */
-
-.middle{
-
-position:relative;
-
-}
-
-.middle::before{
-
-content:"";
-
-position:absolute;
-
-top:-80px;
-
-bottom:-80px;
-
-left:50%;
-
-width:2px;
-
-transform:translateX(-50%);
-
-background:
-
-linear-gradient(
-
-180deg,
-
-transparent,
-
-rgba(var(--voxa-accent-rgb),.35),
-
-transparent
-
-);
-
-}
-
-.middle::after{
-
-content:"";
-
-position:absolute;
-
-left:50%;
-
-top:-40px;
-
-width:8px;
-
-height:8px;
-
-border-radius:50%;
-
-background:var(--voxa-accent);
-
-transform:translateX(-50%);
-
-box-shadow:
-
-0 0 18px rgba(var(--voxa-accent-rgb),.55);
-
-animation:none;
-
-}
-/* ==========================================================
-LIST ITEMS
-========================================================== */
-
-.before li,
-.after li{
-
-transition:
-
-transform .35s ease,
-
-color .35s ease,
-
-opacity .35s ease;
-
-}
-
-.before:hover li{
-
-transform:translateX(6px);
-
-color:var(--voxa-blue);
-
-}
-
-.after:hover li{
-
-transform:translateX(6px);
-
-color:var(--voxa-blue);
-
-}
-
-.before li::before,
-.after li::before{
-
-transition:.35s;
-
-}
-
-.after:hover li::before{
-
-color:#6DFFBC;
-
-text-shadow:
-
-0 0 16px rgba(109,255,188,.5);
-
-}
-
-.before:hover li::before{
-
-color:#FF9393;
-
-text-shadow:
-
-0 0 16px rgba(255,147,147,.4);
-
-}
-
-/* ==========================================================
-BACKGROUND LIGHTS
-========================================================== */
-
-.before::before{
-
-content:"";
-
-position:absolute;
-
-left:-40px;
-
-top:-40px;
-
-width:140px;
-
-height:140px;
-
-border-radius:50%;
-
-background:
-
-radial-gradient(
-
-circle,
-
-rgba(255,90,90,.08),
-
-transparent 70%
-
-);
-
-filter:blur(30px);
-
-opacity:0;
-
-transition:.4s;
-
-}
-
-.after::before{
-
-content:"";
-
-position:absolute;
-
-right:-40px;
-
-bottom:-40px;
-
-width:140px;
-
-height:140px;
-
-border-radius:50%;
-
-background:
-
-radial-gradient(
-
-circle,
-
-rgba(91,255,178,.08),
-
-transparent 70%
-
-);
-
-filter:blur(30px);
-
-opacity:0;
-
-transition:.4s;
-
-}
-
-.before:hover::before,
-.after:hover::before{
-
-opacity:1;
-
-}
-
-/* ==========================================================
-CORE GLOW
-========================================================== */
-
-.story:hover .arrow{
-
-color:#8EB4FF;
-
-text-shadow:
-
-0 0 18px rgba(var(--voxa-accent-rgb),.45);
-
-}
-
-.story:hover .middle::before{
-
-background:
-
-linear-gradient(
-
-180deg,
-
-transparent,
-
-var(--voxa-accent),
-
-transparent
-
-);
-
-box-shadow:
-
-0 0 18px rgba(var(--voxa-accent-rgb),.3);
-
-}
-/* ==========================================================
-LARGE DESKTOP
-========================================================== */
-
-@media (max-width:1280px){
-
-.story{
-
-grid-template-columns:1fr 180px 1fr;
-
-gap:45px;
-
-}
-
-.heading{
-
-max-width:720px;
-
-}
-
-.heading h2{
-
-font-size:clamp(52px,6vw,78px);
-
-}
-
-.before,
-.after{
-
-padding:34px;
-
-}
-
-}
-
-/* ==========================================================
-TABLET
-========================================================== */
-
-@media (max-width:992px){
-
-.transformations{
-
-padding:140px 0;
-
-}
-
-.heading{
-
-margin-bottom:90px;
-
-}
-
-.heading h2{
-
-font-size:clamp(46px,8vw,66px);
-
-}
-
-.heading p{
-
-font-size:18px;
-
-}
-
-.story{
-
-grid-template-columns:1fr;
-
-gap:34px;
-
-padding:60px 0;
-
-}
-
-.middle{
-
-flex-direction:row;
-
-justify-content:flex-start;
-
-}
-
-.middle::before{
-
-display:none;
-
-}
-
-.middle::after{
-
-display:none;
-
-}
-
-.arrow{
-
-transform:rotate(-90deg);
-
-}
-
-.before,
-.after{
-
-padding:30px;
-
-}
-
-}
-
-/* ==========================================================
-MOBILE
-========================================================== */
-
-@media (max-width:768px){
-
-.transformations{
-
-padding:90px 0;
-
-}
-
-.heading{
-
-margin-bottom:60px;
-
-}
-
-.heading h2{
-
-font-size:clamp(38px,11vw,54px);
-
-line-height:1;
-
-}
-
-.heading p{
-
-font-size:16px;
-
-line-height:1.8;
-
-}
-
-.story{
-
-gap:26px;
-
-padding:45px 0;
-
-}
-
-.before,
-.after{
-
-padding:24px;
-
-border-radius:20px;
-
-}
-
-.before li,
-.after li{
-
-font-size:15px;
-
-padding-left:22px;
-
-}
-
-.core{
-
-padding:14px 20px;
-
-font-size:14px;
-
+.transformations {
+  position: relative;
+  padding: 150px 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--voxa-blue);
+}
+
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .04) 1px, transparent 1px);
+  background-size: 46px 46px;
+  opacity: .45;
+  pointer-events: none;
+}
+
+.ambient { display: none; }
+.ambient-left { left: -300px; top: 120px; background: rgba(52, 120, 246, .16); }
+.ambient-right { right: -320px; bottom: 80px; background: rgba(67, 133, 255, .1); }
+
+.container-custom { position: relative; z-index: 2; }
+
+.heading { max-width: 940px; margin: 0 auto 70px; text-align: center; }
+.heading > span { display: inline-block; margin-bottom: 22px; color: #8eb4ff; font-size: 11px; font-weight: 800; letter-spacing: .28em; }
+.heading h2 { margin: 0 0 28px; color: #fff; font-size: clamp(58px, 6vw, 88px); line-height: .96; letter-spacing: -.055em; text-wrap: balance; }
+.heading p { max-width: 700px; margin: auto; color: #aeb9cc; font-size: 18px; line-height: 1.8; text-wrap: pretty; }
+
+.case-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 34px; }
+.case-tabs button { position: relative; overflow: hidden; display: flex; align-items: center; gap: 9px; padding: 12px 18px; border: 1px solid rgba(255, 255, 255, .13); border-radius: 999px; background: rgba(255, 255, 255, .055); color: #aeb9cc; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: color .3s, background .3s, border-color .3s, box-shadow .3s; }
+.case-tabs button svg { width: 17px; height: 17px; }
+.case-tabs button.active { border-color: #4385ff; background: #3478f6; color: white; box-shadow: 0 12px 32px rgba(52, 120, 246, .3); }
+.case-tabs button.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: rgba(255, 255, 255, .82); transform-origin: left; animation: story-progress 5.2s linear both; }
+.transformations.is-paused .case-tabs button.active::after { animation-play-state: paused; }
+.case-tabs button:focus-visible { outline: 2px solid #3478f6; outline-offset: 3px; }
+
+.story-stage { min-height: 760px; }
+
+.transformation-story,
+.process-panel {
+  padding: 58px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 38px;
+  background:
+    linear-gradient(rgba(255, 255, 255, .025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .025) 1px, transparent 1px),
+    var(--voxa-blue-2);
+  background-size: 44px 44px, 44px 44px, auto;
+  box-shadow: 0 45px 110px rgba(0, 0, 0, .22);
+}
+
+.transformation-story { transition: transform .48s cubic-bezier(.22, 1, .36, 1); }
+.story-conversations { transform: translateX(-6px); }
+.story-operations { transform: translateX(6px); }
+
+.story-heading,
+.process-heading { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr); gap: 60px; align-items: end; margin-bottom: 48px; }
+.story-heading span,
+.process-heading span { display: block; margin-bottom: 14px; color: #8eb4ff; font-size: 10px; font-weight: 850; letter-spacing: .26em; }
+.story-heading h3,
+.process-heading h3 { max-width: 700px; margin: 0; color: white; font-size: clamp(38px, 4vw, 58px); line-height: 1.02; letter-spacing: -.045em; text-wrap: balance; }
+.story-heading > p,
+.process-heading > p { margin: 0; color: #aeb9cc; font-size: 15px; line-height: 1.75; }
+
+.transformation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px minmax(0, 1fr);
+  gap: 34px;
+  align-items: stretch;
+}
+
+.state-card {
+  min-height: 440px;
+  padding: 42px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 30px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .035));
+  box-shadow: 0 26px 70px rgba(0, 0, 0, .2);
+  backdrop-filter: blur(16px);
+}
+.state-label { display: block; margin-bottom: 24px; font-size: 10px; font-weight: 850; letter-spacing: .24em; }
+.before-card .state-label { color: #e56b6f; }
+.after-card .state-label { color: #129b6a; }
+.state-card h3 { max-width: 430px; margin: 0 0 30px; color: white; font-size: 30px; line-height: 1.15; letter-spacing: -.035em; }
+.state-card ul { list-style: none; display: grid; gap: 18px; margin: 0; padding: 0; }
+.state-card li { position: relative; padding-left: 25px; color: #c2cad8; font-size: 15px; line-height: 1.55; }
+.state-card li::before { position: absolute; left: 0; top: 0; font-weight: 850; }
+.before-card li::before { content: "×"; color: #e56b6f; }
+.after-card li::before { content: "✓"; color: #129b6a; }
+
+.transformation-core { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 12px; text-align: center; }
+.transformation-core::before { content: ""; position: absolute; left: 50%; top: 22px; bottom: 22px; width: 1px; background: linear-gradient(180deg, transparent, rgba(52, 120, 246, .5), transparent); }
+.signal-dot { position: absolute; left: 50%; top: 27px; width: 8px; height: 8px; border-radius: 50%; background: #3478f6; box-shadow: 0 0 18px rgba(52, 120, 246, .7); transform: translateX(-50%); }
+.core-icon { position: relative; width: 62px; height: 62px; display: grid; place-items: center; margin-bottom: 18px; border-radius: 18px; background: rgba(67, 133, 255, .13); border: 1px solid rgba(67, 133, 255, .24); color: #8eb4ff; box-shadow: 0 15px 36px rgba(52, 120, 246, .15); }
+.core-icon svg { width: 27px; height: 27px; }
+.transformation-core small { position: relative; margin-bottom: 10px; color: #8eb4ff; font-size: 9px; font-weight: 850; letter-spacing: .22em; }
+.transformation-core strong { position: relative; color: white; font-size: 20px; line-height: 1.25; }
+.transformation-core p { position: relative; margin: 13px 0 0; color: #aeb9cc; font-size: 12px; line-height: 1.55; }
+.signal-arrow { position: relative; width: 42px; height: 42px; display: grid; place-items: center; margin-top: 22px; border-radius: 50%; background: #3478f6; color: white; font-size: 20px; box-shadow: 0 12px 26px rgba(52, 120, 246, .25); }
+
+.after-card { position: relative; padding-bottom: 98px; }
+.result-badge { position: absolute; left: 42px; right: 42px; bottom: 36px; display: flex; align-items: center; gap: 10px; padding: 13px 15px; border: 1px solid rgba(74, 222, 167, .2); border-radius: 14px; background: rgba(74, 222, 167, .08); color: #83f0c6; font-size: 12px; font-weight: 750; }
+.result-badge svg { width: 17px; height: 17px; flex: 0 0 auto; }
+
+.process-grid { position: relative; list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 0; padding: 0; }
+.process-grid::before { content: ""; position: absolute; left: 4%; right: 4%; top: 27px; height: 1px; background: linear-gradient(90deg, transparent, rgba(67, 133, 255, .6), transparent); }
+.process-grid li { position: relative; min-height: 210px; padding: 26px 22px; border: 1px solid rgba(255, 255, 255, .08); border-radius: 22px; background: rgba(255, 255, 255, .035); transition: transform .3s, border-color .3s, background .3s; }
+.process-grid li:hover { transform: translateY(-6px); border-color: rgba(67, 133, 255, .55); background: rgba(67, 133, 255, .08); }
+.step-topline { position: relative; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.step-topline span { color: #8eb4ff; font-size: 9px; font-weight: 850; letter-spacing: .2em; }
+.step-topline svg { width: 20px; height: 20px; color: #4385ff; }
+.process-grid h4 { margin: 0 0 12px; color: white; font-size: 22px; }
+.process-grid p { margin: 0; color: #a7b2c5; font-size: 13px; line-height: 1.65; }
+
+@keyframes story-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+@media (max-width: 1100px) {
+  .transformations { padding: 120px 0; }
+  .transformation-grid { grid-template-columns: 1fr; }
+  .transformation-core { min-height: 220px; }
+  .transformation-core::before { left: 30px; right: 30px; top: 50%; bottom: auto; width: auto; height: 1px; background: linear-gradient(90deg, transparent, rgba(52, 120, 246, .5), transparent); }
+  .signal-dot { left: 34px; top: 50%; transform: translateY(-50%); }
+  .signal-arrow { position: absolute; right: 24px; top: 50%; margin: 0; transform: translateY(-50%); }
+  .process-grid { grid-template-columns: repeat(3, 1fr); }
+  .story-stage { min-height: 0; }
+}
+
+@media (max-width: 768px) {
+  .transformations { padding: 90px 0; }
+  .heading { margin-bottom: 50px; }
+  .heading h2 { font-size: 46px; }
+  .heading p { font-size: 16px; }
+  .case-tabs { flex-direction: column; align-items: stretch; }
+  .case-tabs button { justify-content: center; }
+  .state-card { min-height: auto; padding: 30px 24px; border-radius: 24px; }
+  .state-card h3 { font-size: 26px; }
+  .after-card { padding-bottom: 96px; }
+  .result-badge { left: 24px; right: 24px; bottom: 26px; }
+  .transformation-story,
+  .process-panel { padding: 36px 22px; border-radius: 28px; }
+  .story-heading,
+  .process-heading { grid-template-columns: 1fr; gap: 20px; }
+  .story-heading h3,
+  .process-heading h3 { font-size: 38px; }
+  .process-grid { grid-template-columns: 1fr; }
+  .process-grid::before { display: none; }
+  .process-grid li { min-height: auto; }
+}
+
+@media (max-width: 480px) {
+  .heading h2 { font-size: 38px; }
+  .transformation-core { min-height: 240px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
-
-.arrow{
-
-font-size:30px;
-
-}
-
-}
-
-/* ==========================================================
-SMALL MOBILE
-========================================================== */
-
-@media (max-width:480px){
-
-.transformations{
-
-padding:70px 0;
-
-}
-
-.heading{
-
-margin-bottom:45px;
-
-}
-
-.heading h2{
-
-font-size:34px;
-
-}
-
-.heading p{
-
-font-size:15px;
-
-}
-
-.story{
-
-padding:36px 0;
-
-gap:20px;
-
-}
-
-.before,
-.after{
-
-padding:20px;
-
-border-radius:18px;
-
-}
-
-.before li,
-.after li{
-
-font-size:14px;
-
-line-height:1.7;
-
-}
-
-.core{
-
-width:100%;
-
-text-align:center;
-
-}
-
-.arrow{
-
-display:none;
-
-}
-
-}
-/* ==========================================================
-ACCESSIBILITY
-========================================================== */
-
-.story:focus-within{
-
-outline:2px solid var(--voxa-accent);
-
-outline-offset:8px;
-
-border-radius:24px;
-
-}
-
-.before:focus-visible,
-.after:focus-visible,
-.core:focus-visible{
-
-outline:2px solid var(--voxa-accent);
-
-outline-offset:4px;
-
-}
-
-::selection{
-
-background:rgba(var(--voxa-accent-rgb),.22);
-
-color:white;
-
-}
-
-/* ==========================================================
-REDUCED MOTION
-========================================================== */
-
-@media (prefers-reduced-motion: reduce){
-
-*,
-*::before,
-*::after{
-
-animation:none !important;
-
-transition:none !important;
-
-scroll-behavior:auto !important;
-
-}
-
-}
-
-/* ==========================================================
-PERFORMANCE
-========================================================== */
-
-.transformations,
-.story,
-.before,
-.after,
-.middle{
-
-will-change:transform;
-
-}
-
-.transformations::before,
-.transformations::after{
-
-contain:paint;
-
-}
-
-.before,
-.after{
-
-contain:layout paint;
-
-transform:translateZ(0);
-
-backface-visibility:hidden;
-
-}
-
-/* ==========================================================
-TYPOGRAPHY
-========================================================== */
-
-.heading h2{
-
-text-wrap:balance;
-
-}
-
-.heading p{
-
-text-wrap:pretty;
-
-}
-
-.before li,
-.after li{
-
-text-wrap:pretty;
-
-}
-
-.core{
-
-white-space:nowrap;
-
-font-weight:600;
-
-letter-spacing:-.01em;
-
-}
-
-/* ==========================================================
-POLISH
-========================================================== */
-
-.story{
-
-position:relative;
-
-z-index:5;
-
-}
-
-.before,
-.after{
-
-background:
-
-linear-gradient(
-180deg,
-rgba(255,255,255,.94),
-rgba(248,251,255,.86)
-);
-
-}
-
-.story:hover .before{
-
-border-color:
-
-rgba(255,120,120,.28);
-
-}
-
-.story:hover .after{
-
-border-color:
-
-rgba(91,255,178,.30);
-
-}
-
-.before small{
-
-color:#FF9C9C;
-
-}
-
-.after small{
-
-color:#8CFFC6;
-
-}
-
-.heading{
-
-position:relative;
-
-z-index:5;
-
-}
-/* ==========================================================
-MICRO INTERACTIONS
-========================================================== */
-
-.story{
-
-transition:
-
-transform .45s cubic-bezier(.22,1,.36,1),
-
-opacity .35s ease;
-
-}
-
-.before,
-.after{
-
-transition:
-
-transform .45s cubic-bezier(.22,1,.36,1),
-
-background .35s ease,
-
-border-color .35s ease,
-
-box-shadow .35s ease;
-
-}
-
-.core{
-
-transition:
-
-transform .35s ease,
-
-background .35s ease,
-
-box-shadow .35s ease,
-
-color .35s ease;
-
-}
-
-.story:hover .core{
-
-transform:scale(1.08);
-
-}
-
-.story:hover .before{
-
-transform:translateX(-6px);
-
-}
-
-.story:hover .after{
-
-transform:translateX(6px);
-
-}
-
-/* ==========================================================
-GLOW
-========================================================== */
-
-.story::after{
-
-content:"";
-
-position:absolute;
-
-left:50%;
-
-top:50%;
-
-transform:translate(-50%,-50%);
-
-width:520px;
-
-height:220px;
-
-border-radius:999px;
-
-background:
-
-radial-gradient(
-
-circle,
-
-rgba(var(--voxa-accent-rgb),.05),
-
-transparent 72%
-
-);
-
-filter:blur(45px);
-
-opacity:0;
-
-transition:.45s;
-
-pointer-events:none;
-
-z-index:-1;
-
-}
-
-.story:hover::after{
-
-opacity:1;
-
-}
-
-/* ==========================================================
-LIST ANIMATION
-========================================================== */
-
-.before li,
-.after li{
-
-transition:
-
-transform .3s ease,
-
-color .3s ease;
-
-}
-
-.story:hover .before li:nth-child(1),
-.story:hover .after li:nth-child(1){
-
-transition-delay:.05s;
-
-}
-
-.story:hover .before li:nth-child(2),
-.story:hover .after li:nth-child(2){
-
-transition-delay:.10s;
-
-}
-
-.story:hover .before li:nth-child(3),
-.story:hover .after li:nth-child(3){
-
-transition-delay:.15s;
-
-}
-
-.story:hover .before li:nth-child(4),
-.story:hover .after li:nth-child(4){
-
-transition-delay:.20s;
-
-}
-
-/* ==========================================================
-PREMIUM DETAILS
-========================================================== */
-
-.transformations{
-
-isolation:isolate;
-
-}
-
-.story{
-
-backface-visibility:hidden;
-
-transform:translateZ(0);
-
-}
-
-.before,
-.after{
-
-overflow:hidden;
-
-}
-
-.core{
-
-background:
-
-linear-gradient(
-
-180deg,
-
-var(--voxa-accent),
-
-var(--voxa-accent-2)
-
-);
-
-}
-
-.heading span{
-
-color:var(--voxa-accent);
-
-}
-
-/* ==========================================================
-END
-========================================================== */
-
 </style>

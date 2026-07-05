@@ -28,7 +28,9 @@ import Footer from "@/components/Footer.vue"
 --voxa-blue-2:#162238;
 --voxa-blue-rgb:15,23,42;
 --voxa-white:#ffffff;
---voxa-soft:#f8fbff;
+--voxa-soft:#f8f9fb;
+--voxa-pale:#edf0f5;
+--voxa-heading:#11152b;
 --voxa-accent:#2563eb;
 --voxa-accent-2:#3b82f6;
 --voxa-accent-rgb:37,99,235;

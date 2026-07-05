@@ -7,19 +7,15 @@
 @open-demo="openDemoModal"
 />
 
+<Solutions/>
+
 <Manifesto/>
 
-<Capabilities/>
+<LiveDemo @join-waitlist="openDemoModal('waitlist')" />
 
 <WhyVoxa/>
 
-<Ecosystem/>
-
-<Solutions/>
-
 <Transformations/>
-
-<Approach/>
 
 <FAQ/>
 
@@ -44,13 +40,11 @@ import { onMounted, onUnmounted, ref } from "vue"
 import { useMotion } from "@/composables/useMotion"
 
 import Hero from "@/components/sections/Hero.vue"
+import LiveDemo from "@/components/sections/LiveDemo.vue"
 import Manifesto from "@/components/sections/Manifesto.vue"
-import Capabilities from "@/components/sections/Capabilities.vue"
 import WhyVoxa from "@/components/sections/WhyVoxa.vue"
-import Ecosystem from "@/components/sections/Ecosystem.vue"
 import Solutions from "@/components/sections/Solutions.vue"
 import Transformations from "@/components/sections/Transformations.vue"
-import Approach from "@/components/sections/Approach.vue"
 import FAQ from "@/components/sections/FAQ.vue"
 import CTA from "@/components/sections/CTA.vue"
 

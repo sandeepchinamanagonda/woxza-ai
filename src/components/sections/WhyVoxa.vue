@@ -1,1279 +1,406 @@
 <template>
+  <section id="why-voxa" class="why">
+    <div class="grid-bg"></div>
+    <div class="ambient-glow"></div>
 
-<section class="why">
+    <div class="why-shell">
+      <div class="why-copy">
+        <header class="intro">
+          <span class="eyebrow">WHY VOXA</span>
+          <h2>Every conversation should lead somewhere.</h2>
+          <p>
+            Voxa listens, understands and completes the next step while the
+            conversation is still happening.
+          </p>
+        </header>
 
-<div class="container-custom">
+        <div class="principles">
+          <button
+            v-for="(story, index) in stories"
+            :key="story.title"
+            class="principle"
+            :class="{ active: activeStory === index }"
+            type="button"
+            :aria-pressed="activeStory === index"
+            @click="activeStory = index"
+            @mouseenter="activeStory = index"
+          >
+            <span class="principle-marker"></span>
+            <div>
+              <h3>{{ story.title }}</h3>
+              <p>{{ story.description }}</p>
+            </div>
+          </button>
+        </div>
+      </div>
 
-<div class="intro">
+      <div class="ecosystem-panel">
+        <header :key="activeStory" class="ecosystem-heading">
+          <span>HOW VOXA WORKS</span>
+          <h3>{{ currentStory.heading }}</h3>
+          <p>{{ currentStory.body }}</p>
+        </header>
 
-<span>
+        <div class="ecosystem-map">
+          <div class="ring ring-outer" :class="{ lit: activeStory === 1 }"></div>
+          <div class="ring ring-middle" :class="{ lit: activeStory !== 2 }"></div>
+          <div class="ring ring-inner lit"></div>
+          <div class="connector connector-vertical"></div>
+          <div class="connector connector-horizontal"></div>
 
-WHY VOXA
+          <div class="core lit">
+            <small>AI CORE</small>
+            <strong>Voxa</strong>
+            <span>{{ currentStory.outcome }}</span>
+          </div>
 
-</span>
+          <div class="node node-top" :class="{ lit: isLit('voice') }">
+            <span class="node-icon"><Mic2 /></span>
+            <strong>Voice AI</strong>
+          </div>
+          <div class="node node-right" :class="{ lit: isLit('agents') }">
+            <span class="node-icon"><Bot /></span>
+            <strong>Agents</strong>
+          </div>
+          <div class="node node-bottom" :class="{ lit: isLit('automation') }">
+            <span class="node-icon"><Settings2 /></span>
+            <strong>Automation</strong>
+          </div>
+          <div class="node node-left" :class="{ lit: isLit('knowledge') }">
+            <span class="node-icon"><BookOpen /></span>
+            <strong>Knowledge</strong>
+          </div>
 
-<h2>
+          <div class="service service-top-left" :class="{ lit: isLit('incoming') }">
+            <PhoneIncoming />
+            <div><strong>Incoming call</strong><span>Customer intent</span></div>
+          </div>
+          <div class="service service-top-right" :class="{ lit: isLit('crm') }">
+            <ContactRound />
+            <div><strong>CRM updated</strong><span>Context saved</span></div>
+          </div>
+          <div class="service service-bottom-left" :class="{ lit: isLit('analytics') }">
+            <ChartNoAxesCombined />
+            <div><strong>Outcome tracked</strong><span>Visible result</span></div>
+          </div>
+          <div class="service service-bottom-right" :class="{ lit: isLit('calendar') }">
+            <CalendarDays />
+            <div><strong>Appointment booked</strong><span>Time confirmed</span></div>
+          </div>
+        </div>
 
-Technology changes.
-
-Good systems evolve.
-
-Great experiences remain.
-
-</h2>
-
-</div>
-
-<div class="principles">
-
-<article>
-
-<div class="index">
-
-01
-
-</div>
-
-<div>
-
-<h3>
-
-Human First
-
-</h3>
-
-<p>
-
-Every interaction is designed to feel natural,
-helpful and genuinely conversational—not robotic.
-
-</p>
-
-</div>
-
-</article>
-
-<article>
-
-<div class="index">
-
-02
-
-</div>
-
-<div>
-
-<h3>
-
-Built to Scale
-
-</h3>
-
-<p>
-
-From one workflow to enterprise-wide AI
-employees, every solution is designed to grow.
-
-</p>
-
-</div>
-
-</article>
-
-<article>
-
-<div class="index">
-
-03
-
-</div>
-
-<div>
-
-<h3>
-
-Designed for Trust
-
-</h3>
-
-<p>
-
-Reliable architecture, transparent automation
-and secure deployment from day one.
-
-</p>
-
-</div>
-
-</article>
-
-</div>
-
-</div>
-
-</section>
-
+        <div class="assurance-bar" :class="{ active: activeStory === 2 }">
+          <span><ShieldCheck /> Guardrails</span>
+          <span><UserRoundCheck /> Human handoff</span>
+          <span><ListChecks /> Audit trail</span>
+        </div>
+      </div>
+    </div>
+  </section>
 </template>
 
 <script setup>
+import { computed, ref } from "vue"
+import {
+  Bot,
+  BookOpen,
+  CalendarDays,
+  ChartNoAxesCombined,
+  ContactRound,
+  ListChecks,
+  Mic2,
+  PhoneIncoming,
+  Settings2,
+  ShieldCheck,
+  UserRoundCheck
+} from "lucide-vue-next"
 
+const activeStory = ref(0)
+
+const stories = [
+  {
+    title: "Feels Human",
+    description: "Customers speak naturally, get a clear answer and never have to repeat themselves.",
+    heading: "A conversation that feels understood.",
+    body: "Voice AI listens. Knowledge brings the right context. Customers get thoughtful help from the first hello.",
+    outcome: "Customer understood",
+    active: ["incoming", "voice", "knowledge"]
+  },
+  {
+    title: "Takes Action",
+    description: "Voxa books, updates and follows through before the conversation is over.",
+    heading: "The next step is already handled.",
+    body: "Agents decide what needs to happen. Automation updates the calendar and CRM before the call ends.",
+    outcome: "Work completed",
+    active: ["voice", "knowledge", "agents", "automation", "crm", "calendar"]
+  },
+  {
+    title: "Earns Trust",
+    description: "Every action stays visible, controlled and ready for a person to review.",
+    heading: "You can see what happened and why.",
+    body: "Guardrails keep actions in bounds. Outcomes stay visible. A person can step in whenever they are needed.",
+    outcome: "Ready for review",
+    active: ["analytics"]
+  }
+]
+
+const currentStory = computed(() => stories[activeStory.value])
+const activeKeys = computed(() => new Set(currentStory.value.active))
+const isLit = key => activeKeys.value.has(key)
 </script>
 
 <style scoped>
-
-.why{
-
-position:relative;
-
-padding:180px 0;
-
-overflow:hidden;
-
-background:
-
-radial-gradient(
-circle at top left,
-rgba(var(--voxa-accent-rgb),.14),
-transparent 35%
-),
-
-radial-gradient(
-circle at bottom right,
-rgba(var(--voxa-accent-rgb),.08),
-transparent 45%
-),
-
-linear-gradient(
-180deg,
-var(--voxa-blue) 0%,
-var(--voxa-blue-2) 100%
-);
-
-isolation:isolate;
-
-}
-
-.intro{
-
-max-width:900px;
-
-margin-bottom:120px;
-
-}
-
-.intro span{
-
-display:inline-block;
-
-margin-bottom:20px;
-
-font-size:12px;
-
-letter-spacing:.28em;
-
-text-transform:uppercase;
-
-font-weight:600;
-
-color:var(--voxa-accent-soft);
-
-}
-
-.intro h2{
-
-font-size:clamp(58px,6vw,92px);
-
-line-height:.95;
-
-max-width:850px;
-
-}
-
-.principles{
-
-display:flex;
-
-flex-direction:column;
-
-}
-
-article{
-
-display:grid;
-
-grid-template-columns:120px 1fr;
-
-gap:70px;
-
-padding:55px 0;
-
-border-top:1px solid rgba(255,255,255,.08);
-
-}
-
-article:last-child{
-
-border-bottom:1px solid rgba(255,255,255,.08);
-
-}
-
-.index{
-
-font-size:18px;
-
-font-weight:700;
-
-letter-spacing:.25em;
-
-color:var(--voxa-accent);
-
-}
-
-article h3{
-
-font-size:38px;
-
-margin-bottom:18px;
-
-}
-
-article p{
-
-font-size:18px;
-
-line-height:1.9;
-
-max-width:650px;
-
-color:#A6AFBC;
-
-}
-/* ==========================================================
-BACKGROUND
-========================================================== */
-
-.why{
-
-overflow:hidden;
-
-}
-
-.why::before{
-
-content:"";
-
-position:absolute;
-
-inset:0;
-
-pointer-events:none;
-
-background-image:
-
-linear-gradient(
-rgba(255,255,255,.035) 1px,
-transparent 1px
-),
-
-linear-gradient(
-90deg,
-rgba(255,255,255,.035) 1px,
-transparent 1px
-);
-
-background-size:46px 46px;
-
-opacity:.55;
-
-animation:none;
-
-}
-
-.why::after{
-
-content:"";
-
-position:absolute;
-
-left:50%;
-
-top:50%;
-
-transform:translate(-50%,-50%);
-
-width:1100px;
-
-height:1100px;
-
-border-radius:50%;
-
-background:
-
-radial-gradient(
-
-circle,
-
-rgba(var(--voxa-accent-rgb),.10),
-
-transparent 72%
-
-);
-
-filter:blur(120px);
-
-pointer-events:none;
-
-}
-
-/* ==========================================================
-INTRO
-========================================================== */
-
-.intro{
-
-position:relative;
-
-z-index:2;
-
-animation:none;
-
-}
-
-.intro h2{
-
-text-wrap:balance;
-
-}
-
-/* ==========================================================
-ROWS
-========================================================== */
-
-.principles{
-
-position:relative;
-
-z-index:2;
-
-}
-
-article{
-
-position:relative;
-
-transition:
-
-transform .45s cubic-bezier(.22,1,.36,1);
-
-overflow:hidden;
-
-}
-
-article::before{
-
-content:"";
-
-position:absolute;
-
-left:0;
-
-top:0;
-
-width:100%;
-
-height:1px;
-
-background:var(--voxa-accent);
-
-transform:scaleX(0);
-
-transform-origin:left center;
-
-transition:
-transform .45s cubic-bezier(.22,1,.36,1),
-opacity .35s ease;
-
-}
-
-article:hover{
-
-transform:translateX(10px);
-
-}
-
-article:hover::before{
-
-transform:scaleX(1);
-
-box-shadow:
-
-0 0 18px rgba(var(--voxa-accent-rgb),.35);
-
-}
-
-/* ==========================================================
-NUMBER
-========================================================== */
-
-.index{
-
-transition:.35s;
-
-text-shadow:
-
-0 0 18px rgba(var(--voxa-accent-rgb),.2);
-
-}
-
-article:hover .index{
-
-transform:translateX(6px);
-
-color:var(--voxa-accent-soft);
-
-text-shadow:
-
-0 0 35px rgba(var(--voxa-accent-rgb),.45);
-
-}
-
-/* ==========================================================
-TITLE
-========================================================== */
-
-article h3{
-
-display:inline-block;
-
-position:relative;
-
-transition:.35s;
-
-}
-
-article h3::after{
-
-content:"";
-
-position:absolute;
-
-left:0;
-
-bottom:-8px;
-
-width:100%;
-
-height:2px;
-
-background:var(--voxa-accent);
-
-transform:scaleX(0);
-
-transform-origin:left center;
-
-transition:transform .35s ease;
-
-}
-
-article:hover h3{
-
-color:var(--voxa-accent);
-
-}
-
-article:hover h3::after{
-
-transform:scaleX(1);
-
-}
-
-/* ==========================================================
-TEXT
-========================================================== */
-
-article p{
-
-transition:.35s;
-
-}
-
-article:hover p{
-
-color:#E4EAF3;
-
-}
-
-/* ==========================================================
-REVEAL
-========================================================== */
-
-article:nth-child(1){
-
-animation:none;
-
-}
-
-article:nth-child(2){
-
-animation:none;
-
-}
-
-article:nth-child(3){
-
-animation:none;
-
-}
-/* ==========================================================
-VERTICAL ACCENT
-========================================================== */
-
-article{
-
-isolation:isolate;
-
-}
-
-article::after{
-
-content:"";
-
-position:absolute;
-
-left:42px;
-
-top:50%;
-
-transform:translateY(-50%) scaleY(0);
-
-transform-origin:center top;
-
-width:2px;
-
-height:70%;
-
-background:
-
-linear-gradient(
-180deg,
-var(--voxa-accent),
-transparent
-);
-
-transition:
-transform .45s cubic-bezier(.22,1,.36,1),
-opacity .35s ease;
-
-opacity:.8;
-
-}
-
-article:hover::after{
-
-transform:translateY(-50%) scaleY(1);
-
-box-shadow:
-
-0 0 24px rgba(var(--voxa-accent-rgb),.45);
-
-}
-
-/* ==========================================================
-GLASS HIGHLIGHT
-========================================================== */
-
-article>div:last-child{
-
-position:relative;
-
-padding:10px 0;
-
-}
-
-article>div:last-child::before{
-
-content:"";
-
-position:absolute;
-
-left:-40px;
-
-top:50%;
-
-transform:translateY(-50%);
-
-width:120px;
-
-height:120px;
-
-border-radius:50%;
-
-background:
-
-radial-gradient(
-
-circle,
-
-rgba(var(--voxa-accent-rgb),.08),
-
-transparent 72%
-
-);
-
-opacity:0;
-
-transition:.45s;
-
-pointer-events:none;
-
-}
-
-article:hover>div:last-child::before{
-
-opacity:1;
-
-}
-
-/* ==========================================================
-AMBIENT LIGHT
-========================================================== */
-
-.intro::after{
-
-content:"";
-
-position:absolute;
-
-right:-120px;
-
-top:-120px;
-
-width:220px;
-
-height:220px;
-
-border-radius:50%;
-
-background:
-
-radial-gradient(
-
-circle,
-
-rgba(var(--voxa-accent-rgb),.14),
-
-transparent 72%
-
-);
-
-filter:blur(40px);
-
-pointer-events:none;
-
-}
-
-/* ==========================================================
-RESPONSIVE
-========================================================== */
-
-@media(max-width:992px){
-
-.why{
-
-padding:130px 0;
-
-}
-
-.intro{
-
-margin-bottom:80px;
-
-}
-
-article{
-
-grid-template-columns:80px 1fr;
-
-gap:40px;
-
-}
-
-article h3{
-
-font-size:32px;
-
-}
-
-article p{
-
-font-size:17px;
-
-max-width:100%;
-
-}
-
-}
-
-@media(max-width:768px){
-
-.why{
-
-padding:90px 0;
-
-}
-
-.intro{
-
-margin-bottom:60px;
-
-}
-
-.intro h2{
-
-font-size:clamp(40px,11vw,58px);
-
-line-height:1;
-
-}
-
-article{
-
-grid-template-columns:1fr;
-
-gap:18px;
-
-padding:36px 0;
-
-}
-
-.index{
-
-font-size:14px;
-
-}
-
-article h3{
-
-font-size:28px;
-
-margin-bottom:14px;
-
-}
-
-article p{
-
-font-size:16px;
-
-line-height:1.8;
-
-}
-
-article::after{
-
-display:none;
-
-}
-
-article:hover{
-
-transform:translateX(6px);
-
-}
-
-}
-
-@media(max-width:480px){
-
-.why{
-
-padding:70px 0;
-
-}
-
-.intro h2{
-
-font-size:34px;
-
-}
-
-article{
-
-padding:28px 0;
-
-}
-
-article h3{
-
-font-size:24px;
-
-}
-
-article p{
-
-font-size:15px;
-
-line-height:1.75;
-
-}
-
-}
-
-/* ==========================================================
-POLISH
-========================================================== */
-
-.intro h2{
-
-text-wrap:balance;
-
-}
-
-article p{
-
-text-wrap:pretty;
-
-}
-
-article h3{
-
-text-wrap:balance;
-
-}
-/* ==========================================================
-ANIMATED DIVIDER
-========================================================== */
-
-.principles{
-
-position:relative;
-
-}
-
-.principles::before{
-
-content:"";
-
-position:absolute;
-
-left:0;
-
-right:0;
-
-top:0;
-
-height:1px;
-
-background:
-
-linear-gradient(
-90deg,
-transparent,
-rgba(var(--voxa-accent-rgb),.25),
-transparent
-);
-
-}
-
-.principles::after{
-
-content:"";
-
-position:absolute;
-
-left:-30%;
-
-top:0;
-
-width:30%;
-
-height:1px;
-
-background:
-
-linear-gradient(
-90deg,
-transparent,
-var(--voxa-accent),
-transparent
-);
-
-animation:none;
-
-}
-/* ==========================================================
-GLASS SWEEP
-========================================================== */
-
-article{
-
-overflow:hidden;
-
-}
-
-article>div:last-child::after{
-
-content:"";
-
-position:absolute;
-
-top:-180%;
-
-left:-70%;
-
-width:60%;
-
-height:350%;
-
-background:
-
-linear-gradient(
-
-90deg,
-
-transparent,
-
-rgba(255,255,255,.06),
-
-transparent
-
-);
-
-transform:rotate(18deg);
-
-animation:none;
-
-opacity:.55;
-
-}
-/* ==========================================================
-HOVER DEPTH
-========================================================== */
-
-article{
-
-border-radius:22px;
-
-}
-
-article:hover{
-
-background:
-
-linear-gradient(
-
-90deg,
-
-rgba(var(--voxa-accent-rgb),.04),
-
-transparent
-
-);
-
-}
-
-article:hover{
-
-box-shadow:
-
-0 18px 60px rgba(0,0,0,.22);
-
-}
-
-/* ==========================================================
-AMBIENT GLOW
-========================================================== */
-
-article:hover{
-
-filter:
-
-drop-shadow(0 0 24px rgba(var(--voxa-accent-rgb),.08));
-
-}
-
-/* ==========================================================
-STAGGER
-========================================================== */
-
-article:nth-child(1){
-
-animation-delay:.1s;
-
-}
-
-article:nth-child(2){
-
-animation-delay:.25s;
-
-}
-
-article:nth-child(3){
-
-animation-delay:.4s;
-
-}
-
-/* ==========================================================
-PREMIUM DETAILS
-========================================================== */
-
-article{
-
-backface-visibility:hidden;
-
-transform:translateZ(0);
-
-}
-
-.index{
-
-user-select:none;
-
-}
-
-.intro span{
-
-position:relative;
-
-}
-
-.intro span::after{
-
-content:"";
-
-position:absolute;
-
-left:calc(100% + 18px);
-
-top:50%;
-
-transform:translateY(-50%);
-
-width:70px;
-
-height:1px;
-
-background:
-
-linear-gradient(
-90deg,
-var(--voxa-accent),
-transparent
-);
-
-}
-
-article h3{
-
-letter-spacing:-.03em;
-
-}
-
-article p{
-
-opacity:.92;
-
-}
-/* ==========================================================
-ACCESSIBILITY
-========================================================== */
-
-article:focus-within{
-
-outline:2px solid var(--voxa-accent);
-
-outline-offset:8px;
-
-}
-
-::selection{
-
-background:rgba(var(--voxa-accent-rgb),.24);
-
-color:white;
-
-}
-
-/* ==========================================================
-REDUCED MOTION
-========================================================== */
-
-@media(prefers-reduced-motion:reduce){
-
-*,
-*::before,
-*::after{
-
-animation:none !important;
-
-transition:none !important;
-
-scroll-behavior:auto !important;
-
-}
-
-}
-
-/* ==========================================================
-PERFORMANCE
-========================================================== */
-
-.why,
-.intro,
-.principles,
-article{
-
-will-change:transform;
-
-}
-
-.why::before,
-.why::after{
-
-contain:paint;
-
-}
-
-article{
-
-contain:layout paint;
-
-}
-
-/* ==========================================================
-PREMIUM TYPOGRAPHY
-========================================================== */
-
-.intro h2{
-
-text-wrap:balance;
-
-}
-
-article h3{
-
-text-wrap:balance;
-
-}
-
-article p{
-
-text-wrap:pretty;
-
-}
-
-/* ==========================================================
-MICRO INTERACTIONS
-========================================================== */
-
-article{
-
-transition:
-
-transform .45s cubic-bezier(.22,1,.36,1),
-
-background .35s ease,
-
-box-shadow .35s ease;
-
-}
-
-.index{
-
-transition:
-
-transform .35s ease,
-
-color .35s ease,
-
-text-shadow .35s ease;
-
-}
-
-article h3{
-
-transition:
-
-color .35s ease,
-
-transform .35s ease;
-
-}
-
-article:hover h3{
-
-transform:translateX(6px);
-
-}
-
-article p{
-
-transition:
-
-color .35s ease,
-
-opacity .35s ease;
-
-}
-
-article:hover p{
-
-opacity:1;
-
-}
-
-/* ==========================================================
-POLISH
-========================================================== */
-
-.why{
-
-isolation:isolate;
-
-}
-
-.intro{
-
-position:relative;
-
-z-index:5;
-
-}
-
-.principles{
-
-position:relative;
-
-z-index:5;
-
+.why {
+  position: relative;
+  padding: 120px 0;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(var(--voxa-accent-rgb), .08), transparent 32%),
+    #fff;
+}
+
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(20, 38, 77, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 38, 77, .045) 1px, transparent 1px);
+  background-size: 46px 46px;
+  opacity: .55;
+  pointer-events: none;
+}
+
+.ambient-glow {
+  position: absolute;
+  width: 900px;
+  height: 900px;
+  left: -360px;
+  bottom: -380px;
+  border-radius: 50%;
+  background: rgba(var(--voxa-accent-rgb), .07);
+  filter: blur(130px);
+  pointer-events: none;
+}
+
+.why-shell {
+  position: relative;
+  z-index: 2;
+  width: min(1560px, calc(100% - 64px));
+  margin: auto;
+  display: grid;
+  grid-template-columns: minmax(0, .92fr) minmax(620px, 1.08fr);
+  gap: clamp(44px, 5vw, 86px);
+  align-items: stretch;
+}
+
+.why-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.intro { max-width: 680px; margin-bottom: 74px; }
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+  color: #3478f6;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .3em;
+}
+
+.eyebrow::after { content: ""; width: 56px; height: 1px; background: #4385ff; }
+
+.intro h2 {
+  margin: 0 0 30px;
+  color: #091329;
+  font-size: clamp(50px, 4.4vw, 76px);
+  font-weight: 730;
+  line-height: .98;
+  letter-spacing: -.052em;
+  text-wrap: balance;
+}
+
+.intro > p { max-width: 600px; margin: 0; color: #66758f; font-size: 17px; line-height: 1.8; }
+
+.principles { border-bottom: 1px solid rgba(20, 38, 77, .1); }
+
+.principle {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 22px;
+  padding: 29px 18px 29px 0;
+  border-top: 1px solid rgba(20, 38, 77, .1);
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: padding .35s ease, background .35s ease;
+}
+
+.principle:hover,
+.principle.active { padding-left: 16px; background: linear-gradient(90deg, rgba(67, 133, 255, .1), transparent); }
+.principle:focus { outline: none; }
+.principle:focus-visible { outline: 2px solid #4385ff; outline-offset: -2px; border-radius: 12px; }
+.principle-marker { width: 7px; height: 7px; margin-top: 10px; border: 1px solid #4385ff; border-radius: 50%; transition: background .3s, box-shadow .3s; }
+.principle.active .principle-marker { background: #4385ff; box-shadow: 0 0 18px rgba(67, 133, 255, .8); }
+.principles h3 { margin: 0 0 9px; color: #14264d; font-size: 25px; letter-spacing: -.025em; }
+.principles p { max-width: 540px; margin: 0; color: #66758f; font-size: 15px; line-height: 1.7; }
+
+.ecosystem-panel {
+  min-height: 940px;
+  padding: 52px 38px 36px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .48);
+  border-radius: 42px;
+  background:
+    linear-gradient(rgba(20, 38, 77, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 38, 77, .045) 1px, transparent 1px),
+    linear-gradient(145deg, #ffffff, #f2f6fc);
+  background-size: 46px 46px, 46px 46px, auto;
+  box-shadow: 0 38px 110px rgba(20, 38, 77, .14);
+}
+
+.ecosystem-heading { max-width: 540px; min-height: 122px; margin: 0 auto 18px; text-align: center; animation: story-in .45s ease both; }
+.ecosystem-heading > span { color: #3478f6; font-size: 10px; font-weight: 800; letter-spacing: .26em; }
+.ecosystem-heading h3 { margin: 13px 0 13px; color: #11152b; font-size: clamp(34px, 3vw, 48px); line-height: 1; letter-spacing: -.04em; }
+.ecosystem-heading p { max-width: 460px; margin: auto; color: #6d7890; font-size: 14px; line-height: 1.65; }
+
+.ecosystem-map { position: relative; height: 650px; max-width: 720px; margin: auto; }
+
+.ring,
+.connector { position: absolute; left: 50%; top: 50%; pointer-events: none; }
+.ring { border: 1px solid rgba(52, 120, 246, .12); border-radius: 50%; transform: translate(-50%, -50%); transition: border-color .45s, box-shadow .45s; }
+.ring.lit { border-color: rgba(52, 120, 246, .48); box-shadow: inset 0 0 42px rgba(52, 120, 246, .035); }
+.ring-outer { width: 510px; height: 510px; }
+.ring-middle { width: 380px; height: 380px; border-color: rgba(52, 120, 246, .38); }
+.ring-inner { width: 235px; height: 235px; border-color: rgba(52, 120, 246, .3); }
+.ring.lit { border-color: rgba(52, 120, 246, .48); box-shadow: inset 0 0 42px rgba(52, 120, 246, .035); }
+.connector { background: rgba(52, 120, 246, .13); transform: translate(-50%, -50%); }
+.connector-vertical { width: 1px; height: 510px; }
+.connector-horizontal { width: 510px; height: 1px; }
+
+.core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 5;
+  width: 164px;
+  height: 164px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(52, 120, 246, .24);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 20px 60px rgba(52, 120, 246, .16);
+  transform: translate(-50%, -50%);
+}
+
+.core small { margin-bottom: 8px; color: #4385ff; font-size: 9px; font-weight: 800; letter-spacing: .28em; }
+.core strong { color: #11152b; font-size: 38px; letter-spacing: -.04em; }
+.core span { margin-top: 7px; color: #7b879d; font-size: 11px; text-transform: capitalize; }
+
+.node {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 17px;
+  border: 1px solid rgba(52, 120, 246, .18);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 12px 35px rgba(20, 38, 77, .09);
+  color: #14264d;
+  opacity: .36;
+  filter: saturate(.45);
+  transition: opacity .4s, filter .4s, border-color .4s, box-shadow .4s;
+}
+.node.lit { opacity: 1; filter: saturate(1); border-color: rgba(52, 120, 246, .5); box-shadow: 0 14px 40px rgba(52, 120, 246, .16); }
+.node-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; background: #eef4ff; color: #3478f6; }
+.node-icon svg { width: 18px; height: 18px; }
+.node strong { font-size: 13px; }
+.node-top { left: 50%; top: 66px; transform: translateX(-50%); }
+.node-right { right: 26px; top: 50%; transform: translateY(-50%); }
+.node-bottom { left: 50%; bottom: 64px; transform: translateX(-50%); }
+.node-left { left: 26px; top: 50%; transform: translateY(-50%); }
+
+.service {
+  position: absolute;
+  z-index: 7;
+  width: 154px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(20, 38, 77, .09);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 14px 36px rgba(20, 38, 77, .07);
+  opacity: .32;
+  filter: saturate(.4);
+  transition: opacity .4s, filter .4s, border-color .4s, box-shadow .4s;
+}
+.service.lit { opacity: 1; filter: saturate(1); border-color: rgba(52, 120, 246, .42); box-shadow: 0 15px 42px rgba(52, 120, 246, .14); }
+.service > svg { width: 19px; height: 19px; flex: 0 0 auto; color: #3478f6; }
+.service div { display: grid; gap: 3px; }
+.service strong { color: #14264d; font-size: 11px; }
+.service span { color: #8994a8; font-size: 9px; }
+.service-top-left { left: 0; top: 16px; }
+.service-top-right { right: 0; top: 16px; }
+.service-bottom-left { left: 0; bottom: 14px; }
+.service-bottom-right { right: 0; bottom: 14px; }
+
+.assurance-bar {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  opacity: .42;
+  transition: opacity .4s;
+}
+.assurance-bar.active { opacity: 1; }
+.assurance-bar span { display: flex; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid rgba(20, 38, 77, .1); border-radius: 999px; background: rgba(255, 255, 255, .72); color: #667085; font-size: 10px; font-weight: 700; }
+.assurance-bar svg { width: 14px; height: 14px; color: #3478f6; }
+
+@keyframes story-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1240px) {
+  .why-shell { grid-template-columns: 1fr; max-width: 940px; }
+  .why-copy { padding: 20px 0; }
+  .intro { max-width: 780px; }
+  .ecosystem-panel { min-height: 900px; }
+}
+
+@media (max-width: 768px) {
+  .why { padding: 90px 0; }
+  .why-shell { width: calc(100% - 32px); gap: 54px; }
+  .intro { margin-bottom: 52px; }
+  .intro h2 { font-size: 46px; }
+  .principle { grid-template-columns: 14px 1fr; gap: 14px; }
+  .ecosystem-panel { min-height: 700px; padding: 38px 14px 20px; border-radius: 28px; }
+  .ecosystem-map { height: 500px; transform: scale(.76); transform-origin: top center; width: 620px; left: 50%; margin-left: -310px; }
+  .ecosystem-heading h3 { font-size: 35px; }
+  .assurance-bar { margin-top: -76px; flex-wrap: wrap; }
+}
+
+@media (max-width: 430px) {
+  .intro h2 { font-size: 40px; }
+  .ecosystem-panel { min-height: 650px; }
+  .ecosystem-map { transform: scale(.68); }
 }
-
-article{
-
-position:relative;
-
-z-index:5;
-
-backface-visibility:hidden;
-
-transform:translateZ(0);
-
-}
-
-.index{
-
-user-select:none;
-
-}
-
-.intro span{
-
-color:var(--voxa-accent-soft);
-
-}
-
-/* ==========================================================
-END
-========================================================== */
-
 </style>

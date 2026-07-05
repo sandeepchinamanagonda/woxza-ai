@@ -87,7 +87,7 @@ test("creates a registration with optional company and completes preferences", a
     desiredFeatures: ["ai-phone-agent", "crm-integrations"],
     primaryChallenge: "Handling calls after business hours",
     adoptionTimeline: "1-3-months",
-    teamSize: "11-50"
+    teamSize: "200-plus"
   });
   assert.equal(completed.response.status, 200);
   assert.equal(completed.body.status, "completed");

@@ -1,617 +1,222 @@
 <template>
-
-<section id="about" class="manifesto">
-
+  <section id="about" class="manifesto">
     <div class="grid-bg"></div>
-
-    <div class="glow glow-left"></div>
-
-    <div class="glow glow-right"></div>
+    <div class="glow"></div>
 
     <div class="container-custom">
+      <aside class="manifesto-label">
+        <span>OUR MANIFESTO</span>
+        <p>Built for the people who answer the calls, and the people waiting on the other end.</p>
+      </aside>
 
-        <div class="left">
+      <article class="manifesto-story">
+        <span class="section-tag">WHY WE BUILT VOXA</span>
 
-            <span class="eyebrow">
+        <h2>No one should have to choose which customer gets heard.</h2>
 
-                OUR MANIFESTO
+        <div class="story-copy">
+          <p>
+            There was one desk, one phone, and one person trying to be everywhere at once.
+          </p>
 
-            </span>
+          <p>
+            Every ring asked for something. An appointment. An answer. A little
+            reassurance. When the day got busy, someone had to wait. Sometimes that
+            person never called back.
+          </p>
 
+          <p>
+            Voxa gives a business room to breathe. It welcomes the customer a
+            thousand kilometers away with the same patience as the person next door.
+            It listens, helps, and follows through, even when the team is already
+            giving everything they have.
+          </p>
+
+          <p>
+            The people behind the business get something back too. Time to solve the
+            hard problem. Time to sit with a customer who needs more than a quick
+            answer. Time to do the work only they can do.
+          </p>
+
+          <p class="closing-line">
+            Being there for everyone once felt impossible. Now it can simply be how
+            the business runs.
+          </p>
         </div>
-
-        <div class="right">
-
-            <div class="glass-card">
-
-                <span class="section-tag">
-
-                    WHY WE EXIST
-
-                </span>
-
-                <h2>
-
-                    Technology should
-                    remove friction,
-                    not create it.
-
-                </h2>
-
-                <p>
-
-                    We believe artificial intelligence becomes valuable
-                    when it quietly integrates into everyday work.
-                    Great AI should never interrupt people—it should
-                    remove repetitive effort, accelerate decisions,
-                    and create more time for meaningful work.
-
-                </p>
-
-                <p>
-
-                    Every conversation, workflow and customer interaction
-                    should feel connected. That is why every platform we
-                    build is engineered around clarity, reliability,
-                    scalability and long-term value rather than temporary
-                    automation.
-
-                </p>
-
-            </div>
-
-        </div>
-
+      </article>
     </div>
-
-</section>
-
+  </section>
 </template>
 
 <script setup>
-
 </script>
 
 <style scoped>
-
-.manifesto{
-
-position:relative;
-
-padding:180px 0;
-
-overflow:hidden;
-
-background:var(--voxa-blue);
-
+.manifesto {
+  position: relative;
+  padding: 180px 0;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 84% 28%, rgba(20, 38, 77, .1), transparent 30%),
+    linear-gradient(128deg, #ffffff 0%, #fafbfc 48%, #f0f3f7 100%);
 }
 
-.grid-bg{
-
-position:absolute;
-
-inset:0;
-
-background-image:
-
-linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
-
-linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
-
-background-size:46px 46px;
-
-opacity:.55;
-
-animation:none;
-
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(15, 23, 42, .055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, .055) 1px, transparent 1px);
+  background-size: 66px 66px;
+  mask-image: linear-gradient(90deg, rgba(0, 0, 0, .38), #000 40%, rgba(0, 0, 0, .72));
+  pointer-events: none;
 }
 
-.glow{
-
-position:absolute;
-
-border-radius:50%;
-
-filter:blur(120px);
-
-pointer-events:none;
-
+.glow {
+  position: absolute;
+  width: 780px;
+  height: 780px;
+  right: -280px;
+  top: -260px;
+  border-radius: 50%;
+  background: conic-gradient(from 210deg, rgba(20, 38, 77, .02), rgba(20, 38, 77, .16), rgba(20, 38, 77, .04));
+  filter: blur(70px);
+  pointer-events: none;
 }
 
-.glow-left{
-
-width:700px;
-
-height:700px;
-
-left:-260px;
-
-top:-240px;
-
-background:rgba(var(--voxa-accent-rgb),.14);
-
+.container-custom {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: clamp(70px, 9vw, 150px);
+  align-items: start;
 }
 
-.glow-right{
-
-width:700px;
-
-height:700px;
-
-right:-260px;
-
-bottom:-260px;
-
-background:rgba(var(--voxa-accent-rgb),.08);
-
+.manifesto-label {
+  position: sticky;
+  top: 150px;
+  padding-top: 14px;
 }
 
-.container-custom{
-
-position:relative;
-
-z-index:2;
-
-display:grid;
-
-grid-template-columns:260px 1fr;
-
-gap:90px;
-
-align-items:start;
-
+.manifesto-label span {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #14264d;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .28em;
 }
 
-.left{
-
-position:sticky;
-
-top:140px;
-
+.manifesto-label span::before {
+  content: "";
+  width: 42px;
+  height: 2px;
+  background: #2563eb;
 }
 
-.eyebrow{
-
-display:flex;
-
-align-items:center;
-
-gap:14px;
-
-font-size:12px;
-
-font-weight:700;
-
-letter-spacing:.32em;
-
-text-transform:uppercase;
-
-color:var(--voxa-accent-soft);
-
+.manifesto-label p {
+  margin: 28px 0 0 56px;
+  color: #7b879d;
+  font-size: 13px;
+  line-height: 1.7;
 }
 
-.eyebrow::before{
-
-content:"";
-
-width:44px;
-
-height:2px;
-
-background:var(--voxa-accent-2);
-
+.manifesto-story {
+  position: relative;
+  max-width: 980px;
+  padding: clamp(54px, 6vw, 84px);
+  overflow: hidden;
+  border: 1px solid rgba(20, 38, 77, .1);
+  border-radius: 36px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 40px 100px rgba(20, 38, 77, .1);
+  backdrop-filter: blur(18px);
 }
 
-.right{
-
-max-width:900px;
-
+.manifesto-story::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, #2563eb, rgba(37, 99, 235, .15), transparent 72%);
 }
 
-.glass-card{
-
-position:relative;
-
-padding:70px;
-
-border-radius:34px;
-
-background:rgba(255,255,255,.05);
-
-border:1px solid rgba(255,255,255,.08);
-
-box-shadow:
-
-0 35px 80px rgba(0,0,0,.25);
-
-overflow:hidden;
-
+.section-tag {
+  display: inline-flex;
+  padding: 9px 15px;
+  border: 1px solid rgba(20, 38, 77, .12);
+  border-radius: 999px;
+  color: #14264d;
+  background: rgba(20, 38, 77, .045);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .2em;
+  margin-bottom: 34px;
 }
 
-.glass-card::before{
-
-content:"";
-
-position:absolute;
-
-top:0;
-
-left:0;
-
-right:0;
-
-height:1px;
-
-background:
-
-linear-gradient(
-
-90deg,
-
-transparent,
-
-rgba(var(--voxa-accent-rgb),.55),
-
-transparent
-
-);
-
+.manifesto-story h2 {
+  max-width: 860px;
+  margin: 0 0 54px;
+  color: #11152b;
+  font-size: clamp(52px, 5.2vw, 80px);
+  font-weight: 750;
+  line-height: .98;
+  letter-spacing: -.055em;
+  text-wrap: balance;
 }
 
-.section-tag{
-
-display:inline-flex;
-
-padding:10px 18px;
-
-border-radius:999px;
-
-background:rgba(var(--voxa-accent-rgb),.12);
-
-border:1px solid rgba(var(--voxa-accent-rgb),.22);
-
-font-size:12px;
-
-font-weight:700;
-
-letter-spacing:.22em;
-
-text-transform:uppercase;
-
-color:var(--voxa-accent-soft);
-
-margin-bottom:28px;
-
+.story-copy {
+  max-width: 780px;
+  padding-left: 32px;
+  border-left: 2px solid rgba(37, 99, 235, .3);
 }
 
-.glass-card h2{
-
-font-size:clamp(58px,6vw,88px);
-
-line-height:.95;
-
-letter-spacing:-.05em;
-
-color:white;
-
-margin-bottom:34px;
-
+.story-copy p {
+  margin: 0 0 28px;
+  color: #58657b;
+  font-size: 19px;
+  line-height: 1.85;
+  text-wrap: pretty;
 }
 
-.glass-card p{
-
-font-size:20px;
-
-line-height:2;
-
-color:#CBD5E1;
-
-margin-bottom:30px;
-
-max-width:760px;
-
+.story-copy p:first-child {
+  color: #14264d;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.65;
 }
 
-.glass-card p:last-child{
-
-margin-bottom:0;
-
-}
-.glass-card{
-
-transition:
-
-transform .45s cubic-bezier(.22,1,.36,1),
-
-border-color .35s,
-
-box-shadow .35s,
-
-background .35s;
-
+.story-copy .closing-line {
+  margin-bottom: 0;
+  color: #14264d;
+  font-weight: 650;
 }
 
-.glass-card:hover{
-
-transform:translateY(-10px);
-
-border-color:rgba(var(--voxa-accent-rgb),.28);
-
-box-shadow:
-
-0 45px 110px rgba(var(--voxa-accent-rgb),.14);
-
+@media (max-width: 1100px) {
+  .manifesto { padding: 140px 0; }
+  .container-custom { grid-template-columns: 1fr; gap: 46px; }
+  .manifesto-label { position: static; }
+  .manifesto-label p { max-width: 360px; }
 }
 
-.glass-card::after{
-
-content:"";
-
-position:absolute;
-
-top:-180%;
-
-left:-70%;
-
-width:60%;
-
-height:340%;
-
-background:
-
-linear-gradient(
-
-90deg,
-
-transparent,
-
-rgba(255,255,255,.10),
-
-transparent
-
-);
-
-transform:rotate(18deg);
-
-animation:none;
-
+@media (max-width: 768px) {
+  .manifesto { padding: 100px 0; }
+  .container-custom { width: 92%; }
+  .manifesto-label p { margin-left: 0; }
+  .manifesto-story { padding: 38px 30px; border-radius: 26px; }
+  .manifesto-story h2 { margin-bottom: 38px; font-size: 44px; }
+  .story-copy { padding-left: 22px; }
+  .story-copy p { font-size: 16px; line-height: 1.8; }
+  .story-copy p:first-child { font-size: 19px; }
 }
 
-.glass-card h2{
-
-transition:.35s;
-
+@media (max-width: 480px) {
+  .manifesto { padding: 80px 0; }
+  .manifesto-story { padding: 32px 24px; }
+  .manifesto-story h2 { font-size: 37px; }
+  .story-copy { padding-left: 18px; }
 }
-
-.glass-card:hover h2{
-
-transform:translateY(-4px);
-
-color:#F8FAFC;
-
-}
-
-.glass-card p{
-
-transition:.35s;
-
-}
-
-.glass-card:hover p{
-
-color:#E2E8F0;
-
-}
-
-.left{
-
-animation:none;
-
-}
-
-.right{
-
-animation:none;
-
-}
-@keyframes fadeLeft{
-
-from{
-
-opacity:0;
-
-transform:translateX(-30px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateX(0);
-
-}
-
-}
-@keyframes fadeUp{
-
-from{
-
-opacity:0;
-
-transform:translateY(40px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-}
-@media(max-width:1100px){
-
-.manifesto{
-
-padding:140px 0;
-
-}
-
-.container-custom{
-
-grid-template-columns:1fr;
-
-gap:50px;
-
-}
-
-.left{
-
-position:relative;
-
-top:auto;
-
-}
-
-.glass-card{
-
-padding:48px;
-
-}
-
-.glass-card h2{
-
-font-size:clamp(46px,7vw,68px);
-
-}
-
-.glass-card p{
-
-font-size:18px;
-
-line-height:1.9;
-
-}
-
-}
-
-@media(max-width:768px){
-
-.manifesto{
-
-padding:100px 0;
-
-}
-
-.container-custom{
-
-width:92%;
-
-}
-
-.glass-card{
-
-padding:30px;
-
-border-radius:24px;
-
-}
-
-.glass-card h2{
-
-font-size:40px;
-
-line-height:1;
-
-margin-bottom:24px;
-
-}
-
-.glass-card p{
-
-font-size:16px;
-
-line-height:1.85;
-
-}
-
-.eyebrow{
-
-font-size:11px;
-
-letter-spacing:.24em;
-
-}
-
-.eyebrow::before{
-
-width:28px;
-
-}
-
-.section-tag{
-
-font-size:11px;
-
-padding:8px 14px;
-
-}
-
-}
-
-@media(max-width:480px){
-
-.manifesto{
-
-padding:80px 0;
-
-}
-
-.glass-card{
-
-padding:24px;
-
-}
-
-.glass-card h2{
-
-font-size:34px;
-
-}
-
-.glass-card p{
-
-font-size:15px;
-
-}
-
-}
-
-.manifesto{
-
-isolation:isolate;
-
-}
-
-.glass-card h2{
-
-text-wrap:balance;
-
-}
-
-.glass-card p{
-
-text-wrap:pretty;
-
-}
-
-.glass-card *{
-
-backface-visibility:hidden;
-
-}
-
 </style>
