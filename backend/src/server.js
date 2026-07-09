@@ -4,7 +4,7 @@ import { createDatabase } from "./database.js";
 import { createDemoRuntime } from "./demo/runtime.js";
 
 const port = Number(process.env.PORT ?? 8787);
-const allowedOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:3000")
+const allowedOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:3456")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);

@@ -143,7 +143,7 @@ This installs:
 npm run dev
 ```
 
-Opens at `http://localhost:3000` with hot reload.
+Opens at `http://localhost:3456` with hot reload.
 
 ### Step 4: Build for Production
 ```bash
@@ -285,7 +285,7 @@ npm install
 # 3. Start development server
 npm run dev
 
-# 4. Browser opens at http://localhost:3000
+# 4. Browser opens at http://localhost:3456
 # 5. Edit any component
 # 6. See changes instantly
 ```

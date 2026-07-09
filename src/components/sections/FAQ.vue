@@ -15,14 +15,14 @@
             <h2>
 
                 Everything you
-                need to know.
+                need to know
 
             </h2>
 
             <p>
 
                 Answers to the questions we hear most
-                before beginning an AI transformation.
+                before beginning an AI transformation
 
             </p>
 
@@ -49,7 +49,7 @@
                     We design Voice AI, AI agents,
                     workflow automations, enterprise
                     knowledge systems and custom AI
-                    integrations.
+                    integrations
 
                 </p>
 
@@ -71,9 +71,9 @@
 
                 <p>
 
-                    Yes. We connect AI with your CRM,
+                    Yes, we connect AI with your CRM,
                     ERP, APIs, databases and existing
-                    business applications.
+                    business applications
 
                 </p>
 
@@ -97,7 +97,7 @@
 
                     Depending on complexity,
                     projects generally range from
-                    several weeks to a few months.
+                    several weeks to a few months
 
                 </p>
 
@@ -119,9 +119,9 @@
 
                 <p>
 
-                    Yes. Continuous optimisation,
+                    Yes, continuous optimisation,
                     monitoring and improvements
-                    are included after deployment.
+                    are included after deployment
 
                 </p>
 
@@ -297,34 +297,6 @@ color:#667085;
 /* ==========================================================
 BACKGROUND
 ========================================================== */
-
-.faq::before{
-
-content:"";
-
-position:absolute;
-
-inset:0;
-
-pointer-events:none;
-
-background-image:
-
-linear-gradient(rgba(59,130,246,.04) 1px,transparent 1px),
-
-linear-gradient(90deg,rgba(59,130,246,.04) 1px,transparent 1px);
-
-background-size:48px 48px;
-
-mask-image:
-
-radial-gradient(circle,#000 60%,transparent 100%);
-
-opacity:.45;
-
-animation:none;
-
-}
 
 .faq::after{
 

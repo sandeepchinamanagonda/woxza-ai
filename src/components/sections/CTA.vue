@@ -21,7 +21,7 @@ on your phones?
 
 <p>
 Join the waitlist for early access, or talk with sales if you
-already know which calls and workflows you want Voxa to handle.
+already know which calls and workflows you want Voxa to handle
 </p>
 
 <div class="actions">
@@ -37,7 +37,7 @@ Join the Waitlist
 class="btn-secondary"
 @click="$emit('open-demo','sales')"
 >
-Call Sales
+Get a Demo
 </button>
 
 </div>

@@ -49,7 +49,7 @@ This installs Vue 3, Vite, Vue Router, and Tailwind CSS.
 npm run dev
 ```
 
-Server starts at `http://localhost:3000` and opens automatically.
+Server starts at `http://localhost:3456` and opens automatically.
 
 ### Step 3: Edit & See Changes
 Changes to any component automatically update in browser (hot reload).

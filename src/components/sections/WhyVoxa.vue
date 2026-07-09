@@ -1,16 +1,15 @@
 <template>
   <section id="why-voxa" class="why">
-    <div class="grid-bg"></div>
     <div class="ambient-glow"></div>
 
     <div class="why-shell">
       <div class="why-copy">
         <header class="intro">
           <span class="eyebrow">WHY VOXA</span>
-          <h2>Every conversation should lead somewhere.</h2>
+          <h2>Every conversation should lead somewhere</h2>
           <p>
             Voxa listens, understands and completes the next step while the
-            conversation is still happening.
+            conversation is still happening
           </p>
         </header>
 
@@ -120,25 +119,25 @@ const activeStory = ref(0)
 const stories = [
   {
     title: "Feels Human",
-    description: "Customers speak naturally, get a clear answer and never have to repeat themselves.",
-    heading: "A conversation that feels understood.",
-    body: "Voice AI listens. Knowledge brings the right context. Customers get thoughtful help from the first hello.",
+    description: "Customers speak naturally, get a clear answer and never have to repeat themselves",
+    heading: "A conversation that feels understood",
+    body: "Voice AI listens, knowledge brings the right context, and customers get thoughtful help from the first hello",
     outcome: "Customer understood",
     active: ["incoming", "voice", "knowledge"]
   },
   {
     title: "Takes Action",
-    description: "Books appointments, updates systems, sends confirmations, and completes workflows automatically.",
-    heading: "The next step is already handled.",
-    body: "Agents decide what needs to happen. Automation updates the calendar and CRM before the call ends.",
+    description: "Books appointments, updates systems, sends confirmations, and completes workflows automatically",
+    heading: "The next step is already handled",
+    body: "Agents decide what needs to happen, and automation updates the calendar and CRM before the call ends",
     outcome: "Work completed",
     active: ["voice", "knowledge", "agents", "automation", "crm", "calendar"]
   },
   {
     title: "Earns Trust",
-    description: "Every conversation is logged, auditable, and ready for human review whenever needed.",
-    heading: "You can see what happened and why.",
-    body: "Guardrails keep actions in bounds. Outcomes stay visible. A person can step in whenever they are needed.",
+    description: "Every conversation is logged, auditable, and ready for human review whenever needed",
+    heading: "You can see what happened and why",
+    body: "Guardrails keep actions in bounds, outcomes stay visible, and a person can step in whenever they are needed",
     outcome: "Ready for review",
     active: ["analytics"]
   }
@@ -158,17 +157,6 @@ const isLit = key => activeKeys.value.has(key)
   background:
     radial-gradient(circle at 12% 18%, rgba(var(--voxa-accent-rgb), .08), transparent 32%),
     #fff;
-}
-
-.grid-bg {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(20, 38, 77, .045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(20, 38, 77, .045) 1px, transparent 1px);
-  background-size: 46px 46px;
-  opacity: .55;
-  pointer-events: none;
 }
 
 .ambient-glow {
@@ -263,11 +251,7 @@ const isLit = key => activeKeys.value.has(key)
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, .48);
   border-radius: 42px;
-  background:
-    linear-gradient(rgba(20, 38, 77, .045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(20, 38, 77, .045) 1px, transparent 1px),
-    linear-gradient(145deg, #ffffff, #f2f6fc);
-  background-size: 46px 46px, 46px 46px, auto;
+  background: linear-gradient(145deg, #ffffff, #f2f6fc);
   box-shadow: 0 38px 110px rgba(20, 38, 77, .14);
 }
 

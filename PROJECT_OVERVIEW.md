@@ -124,7 +124,7 @@ Reusable UI elements
 
 **vite.config.js**
 - Vite build tool configuration
-- Server port (3000)
+- Server port (3456)
 - Build output directory (dist/)
 - Alias for importing (@/ = src/)
 
@@ -404,7 +404,7 @@ const features = ref([
 ### Development
 ```bash
 npm run dev
-# Server at http://localhost:3000
+# Server at http://localhost:3456
 # Hot reload enabled
 # SourceMaps for debugging
 ```

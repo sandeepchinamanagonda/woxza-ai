@@ -1,678 +1,348 @@
 <template>
-<section
-id="integrations"
-ref="sectionRef"
-class="integrations"
-:class="{ 'is-visible': isVisible }"
->
+  <section id="integrations" class="integrations">
+    <div class="ambient ambient-left" aria-hidden="true" />
+    <div class="ambient ambient-right" aria-hidden="true" />
 
-<div class="container-custom">
+    <div class="container-custom">
+      <header class="section-heading">
+        <span class="eyebrow">CONNECTED ECOSYSTEM</span>
+        <h2>Every conversation flows into the tools that run your business</h2>
+        <p>Choose a category to see how Voxa moves live customer data into the systems your team already uses</p>
+      </header>
 
-<div class="section-header">
+      <nav class="flow-tabs" aria-label="Integration categories">
+        <button
+          v-for="(flow, index) in flows"
+          :key="flow.id"
+          type="button"
+          :class="{ active: activeFlow === index }"
+          :aria-pressed="activeFlow === index"
+          @click="selectFlow(index)"
+        >
+          {{ flow.label }}
+        </button>
+      </nav>
 
-<span class="eyebrow">
+      <div class="flow-panel">
+        <div class="panel-topline">
+          <div>
+            <span>{{ selectedFlow.kicker }}</span>
+            <strong>{{ selectedFlow.title }}</strong>
+          </div>
+          <span class="live-status"><i /> Live data flow</span>
+        </div>
 
-ECOSYSTEM
+        <div :key="selectedFlow.id" class="signal-stage">
+          <div class="tool-column source-column">
+            <span class="column-label">TOUCHPOINTS</span>
+            <article v-for="tool in selectedFlow.left" :key="tool.name" class="flow-tool">
+              <span class="logo-wrap"><img :src="tool.logo" alt=""></span>
+              <strong>{{ tool.name }}</strong>
+              <small>{{ tool.detail }}</small>
+            </article>
+          </div>
 
-</span>
+          <svg class="signal-map" viewBox="0 0 1000 420" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="route-in" x1="0" x2="1">
+                <stop offset="0" stop-color="#cbd7ec" stop-opacity=".42" />
+                <stop offset="1" stop-color="#3478f6" stop-opacity=".88" />
+              </linearGradient>
+              <linearGradient id="route-out" x1="0" x2="1">
+                <stop offset="0" stop-color="#3478f6" stop-opacity=".88" />
+                <stop offset="1" stop-color="#cbd7ec" stop-opacity=".42" />
+              </linearGradient>
+              <filter id="signal-glow" x="-100%" y="-100%" width="300%" height="300%">
+                <feGaussianBlur stdDeviation="5" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            </defs>
 
-<h2>
+            <g class="routes incoming-routes">
+              <path v-for="(path, index) in leftPaths" :id="`left-route-${index}`" :key="`left-${index}`" :d="path" />
+            </g>
+            <g class="routes outgoing-routes">
+              <path v-for="(path, index) in rightPaths" :id="`right-route-${index}`" :key="`right-${index}`" :d="path" />
+            </g>
 
-Works with the tools
-your business already uses.
+            <g v-for="(_, index) in leftPaths" :key="`incoming-signal-${index}`" class="signal signal-in" filter="url(#signal-glow)">
+              <circle r="7">
+                <animateMotion dur="2.4s" repeatCount="indefinite" :begin="`${index * 0.34}s`">
+                  <mpath :href="`#left-route-${index}`" />
+                </animateMotion>
+              </circle>
+              <circle r="2.5" class="signal-core">
+                <animateMotion dur="2.4s" repeatCount="indefinite" :begin="`${index * 0.34}s`">
+                  <mpath :href="`#left-route-${index}`" />
+                </animateMotion>
+              </circle>
+            </g>
 
-</h2>
+            <g v-for="(_, index) in rightPaths" :key="`outgoing-signal-${index}`" class="signal signal-out" filter="url(#signal-glow)">
+              <circle r="7">
+                <animateMotion dur="2.4s" repeatCount="indefinite" :begin="`${1.05 + index * 0.34}s`">
+                  <mpath :href="`#right-route-${index}`" />
+                </animateMotion>
+              </circle>
+              <circle r="2.5" class="signal-core">
+                <animateMotion dur="2.4s" repeatCount="indefinite" :begin="`${1.05 + index * 0.34}s`">
+                  <mpath :href="`#right-route-${index}`" />
+                </animateMotion>
+              </circle>
+            </g>
+          </svg>
 
-<p>
+          <div class="voxa-core" aria-label="Voxa processes and routes the data">
+            <span class="core-rings" aria-hidden="true"><i /><i /><i /></span>
+            <span class="voxa-mark" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+            <strong>VOXA</strong>
+            <small>Understanding and routing</small>
+          </div>
 
-VOXA connects with your existing business ecosystem,
-making AI employees a natural extension of your workflows.
+          <div class="tool-column destination-column">
+            <span class="column-label">BUSINESS SYSTEMS</span>
+            <article v-for="tool in selectedFlow.right" :key="tool.name" class="flow-tool">
+              <span class="logo-wrap"><img :src="tool.logo" alt=""></span>
+              <strong>{{ tool.name }}</strong>
+              <small>{{ tool.detail }}</small>
+            </article>
+          </div>
+        </div>
 
-</p>
-
-</div>
-
-<div
-class="integration-grid"
-:style="{ '--scroll-progress': scrollProgress }"
->
-
-<div
-v-for="item in integrations"
-:key="item.name"
-class="integration-card"
-:style="{
-  '--card-index': item.index,
-  '--float-x': item.floatX,
-  '--float-y': item.floatY,
-  '--delay': `${item.index * 80}ms`
-}"
->
-
-<div class="icon">
-
-{{ item.short }}
-
-</div>
-
-<h3>
-
-{{ item.name }}
-
-</h3>
-
-</div>
-
-</div>
-
-</div>
-
-</section>
+        <footer class="panel-footer">
+          <span><i class="footer-dot" /> {{ selectedFlow.footer }}</span>
+          <span>Encrypted in transit</span>
+          <span>Real-time sync</span>
+        </footer>
+      </div>
+    </div>
+  </section>
 </template>
 
 <script setup>
+import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 
-import {
-ref,
-onMounted,
-onUnmounted
-} from "vue"
+const asset = (name) => `/brand-logos/${name}.svg`
 
-const integrations=[
-
-{
-name:"CRM Systems",
-short:"CRM",
-floatX:"-18px",
-floatY:"-22px"
-},
-
-{
-name:"WhatsApp Business",
-short:"WA",
-floatX:"-6px",
-floatY:"18px"
-},
-
-{
-name:"Microsoft Teams",
-short:"MS",
-floatX:"8px",
-floatY:"-18px"
-},
-
-{
-name:"Slack",
-short:"SL",
-floatX:"20px",
-floatY:"16px"
-},
-
-{
-name:"Google Workspace",
-short:"GW",
-floatX:"-16px",
-floatY:"20px"
-},
-
-{
-name:"Calendars",
-short:"CAL",
-floatX:"-4px",
-floatY:"-16px"
-},
-
-{
-name:"Email Platforms",
-short:"EM",
-floatX:"10px",
-floatY:"22px"
-},
-
-{
-name:"Custom APIs",
-short:"API",
-floatX:"18px",
-floatY:"-20px"
+const tools = {
+  salesforce: { name: "Salesforce", logo: asset("salesforce"), detail: "Customer records" },
+  hubspot: { name: "HubSpot", logo: asset("hubspot"), detail: "Sales workflows" },
+  zoho: { name: "Zoho", logo: asset("zoho"), detail: "CRM activity" },
+  whatsapp: { name: "WhatsApp", logo: asset("whatsapp"), detail: "Customer messages" },
+  slack: { name: "Slack", logo: asset("slack"), detail: "Team updates" },
+  teams: { name: "Microsoft Teams", logo: asset("microsoftteams"), detail: "Internal alerts" },
+  google: { name: "Google", logo: asset("google"), detail: "Workspace data" },
+  microsoft: { name: "Microsoft 365", logo: asset("microsoft"), detail: "Business documents" },
+  notion: { name: "Notion", logo: asset("notion"), detail: "Shared knowledge" },
+  calendar: { name: "Google Calendar", logo: asset("googlecalendar"), detail: "Live scheduling" },
+  calendly: { name: "Calendly", logo: asset("calendly"), detail: "Meeting booking" },
+  gmail: { name: "Gmail", logo: asset("gmail"), detail: "Email confirmation" },
+  sendgrid: { name: "SendGrid", logo: asset("sendgrid"), detail: "Automated email" },
+  mailchimp: { name: "Mailchimp", logo: asset("mailchimp"), detail: "Customer journeys" },
+  sap: { name: "SAP", logo: asset("sap"), detail: "Enterprise operations" },
+  oracle: { name: "Oracle", logo: asset("oracle"), detail: "Business data" },
+  odoo: { name: "Odoo", logo: asset("odoo"), detail: "Operational workflows" },
+  aws: { name: "AWS", logo: asset("aws"), detail: "Cloud services" },
+  googleCloud: { name: "Google Cloud", logo: asset("googlecloud"), detail: "Cloud data" },
+  github: { name: "GitHub", logo: asset("github"), detail: "Developer workflows" }
 }
 
-].map((item,index)=>({
-...item,
-index
-}))
+const flows = [
+  {
+    id: "crm",
+    label: "CRM",
+    kicker: "CUSTOMER CONTEXT",
+    title: "Keep every customer record current",
+    left: [tools.salesforce, tools.hubspot, tools.zoho],
+    right: [tools.gmail, tools.slack, tools.calendar],
+    footer: "Records, notes and follow-ups stay synchronized"
+  },
+  {
+    id: "communication",
+    label: "Communication",
+    kicker: "CUSTOMER TOUCHPOINTS",
+    title: "Turn every message into the right business action",
+    left: [tools.whatsapp, tools.slack, tools.teams],
+    right: [tools.salesforce, tools.oracle, tools.gmail],
+    footer: "Messages are understood, routed and completed"
+  },
+  {
+    id: "productivity",
+    label: "Productivity",
+    kicker: "TEAM PRODUCTIVITY",
+    title: "Move conversations directly into daily work",
+    left: [tools.google, tools.microsoft, tools.notion],
+    right: [tools.salesforce, tools.calendar, tools.slack],
+    footer: "Updates reach the right people without manual handoffs"
+  },
+  {
+    id: "business",
+    label: "Business Systems",
+    kicker: "CORE OPERATIONS",
+    title: "Connect customer intent with enterprise systems",
+    left: [tools.sap, tools.oracle, tools.odoo],
+    right: [tools.salesforce, tools.gmail, tools.teams],
+    footer: "Operational data moves securely between systems"
+  },
+  {
+    id: "developer",
+    label: "Developer Tools",
+    kicker: "DEVELOPER ECOSYSTEM",
+    title: "Give every workflow a reliable technical foundation",
+    left: [tools.aws, tools.googleCloud, tools.github],
+    right: [tools.salesforce, tools.oracle, tools.slack],
+    footer: "Cloud events and business actions stay in sync"
+  }
+]
 
-const sectionRef=ref(null)
-const isVisible=ref(false)
-const scrollProgress=ref(0)
+const leftPaths = [
+  "M210 92 C338 92 360 210 455 210",
+  "M210 210 L455 210",
+  "M210 328 C338 328 360 210 455 210"
+]
 
-let observer
-let frame=0
+const rightPaths = [
+  "M545 210 C640 210 662 92 790 92",
+  "M545 210 L790 210",
+  "M545 210 C640 210 662 328 790 328"
+]
 
-const updateScrollProgress=()=>{
+const activeFlow = ref(0)
+const selectedFlow = computed(() => flows[activeFlow.value])
+let rotationTimer
 
-frame=0
-
-const section=sectionRef.value
-
-if(!section) return
-
-const rect=section.getBoundingClientRect()
-const travel=window.innerHeight+rect.height
-const raw=(window.innerHeight-rect.top)/travel
-
-scrollProgress.value=Math.min(
-1,
-Math.max(0,raw)
-).toFixed(3)
-
+const startRotation = () => {
+  window.clearInterval(rotationTimer)
+  rotationTimer = window.setInterval(() => {
+    activeFlow.value = (activeFlow.value + 1) % flows.length
+  }, 5000)
 }
 
-const requestProgressUpdate=()=>{
-
-if(frame) return
-
-frame=requestAnimationFrame(updateScrollProgress)
-
+const selectFlow = (index) => {
+  activeFlow.value = index
+  startRotation()
 }
 
-onMounted(()=>{
-
-const section=sectionRef.value
-
-if(!section) return
-
-observer=new IntersectionObserver(
-([entry])=>{
-
-isVisible.value=entry.isIntersecting
-
-if(entry.isIntersecting){
-
-requestProgressUpdate()
-
-}
-
-},
-{
-threshold:.18
-}
-)
-
-observer.observe(section)
-
-window.addEventListener(
-"scroll",
-requestProgressUpdate,
-{ passive:true }
-)
-
-window.addEventListener(
-"resize",
-requestProgressUpdate,
-{ passive:true }
-)
-
-requestProgressUpdate()
-
-})
-
-onUnmounted(()=>{
-
-observer?.disconnect()
-
-window.removeEventListener(
-"scroll",
-requestProgressUpdate
-)
-
-window.removeEventListener(
-"resize",
-requestProgressUpdate
-)
-
-if(frame){
-
-cancelAnimationFrame(frame)
-
-}
-
-})
-
+onMounted(startRotation)
+onBeforeUnmount(() => window.clearInterval(rotationTimer))
 </script>
 
 <style scoped>
-
-.integrations{
-
-padding:140px 0;
-
-overflow:hidden;
-
-background:
-radial-gradient(circle at 15% 20%,rgba(91,140,255,.10),transparent 30%),
-radial-gradient(circle at 82% 70%,rgba(16,185,129,.08),transparent 28%),
-linear-gradient(180deg,#FFFFFF 0%,#F8FBFF 100%);
-
-isolation:isolate;
-
+.integrations {
+  position: relative;
+  padding: 138px 0 130px;
+  overflow: hidden;
+  color: #14264d;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fd 100%);
+  isolation: isolate;
 }
 
-.integrations::before{
+.ambient { position: absolute; width: 540px; height: 540px; border-radius: 50%; filter: blur(110px); pointer-events: none; opacity: .22; }
+.ambient-left { left: -340px; top: 18%; background: #90b7ff; }
+.ambient-right { right: -340px; bottom: 2%; background: #b8c8e7; }
+.container-custom { position: relative; z-index: 2; }
 
-content:"";
+.section-heading { max-width: 900px; margin: 0 auto 34px; text-align: center; }
+.eyebrow { display: inline-block; margin-bottom: 17px; color: #3478f6; font-size: 10px; font-weight: 850; letter-spacing: .28em; }
+.section-heading h2 { margin: 0; color: #14264d; font-size: clamp(44px, 4.35vw, 66px); line-height: 1; letter-spacing: -.055em; text-wrap: balance; }
+.section-heading p { max-width: 720px; margin: 22px auto 0; color: #697894; font-size: 16px; line-height: 1.7; }
 
-position:absolute;
+.flow-tabs { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; margin: 0 auto 26px; }
+.flow-tabs button { min-height: 42px; padding: 0 18px; border: 1px solid rgba(20,38,77,.11); border-radius: 999px; color: #64728d; background: rgba(255,255,255,.82); font: inherit; font-size: 12px; font-weight: 760; cursor: pointer; box-shadow: 0 8px 24px rgba(20,38,77,.04); transition: color .25s, border-color .25s, background .25s, transform .25s, box-shadow .25s; }
+.flow-tabs button:hover { color: #14264d; border-color: rgba(52,120,246,.32); transform: translateY(-1px); }
+.flow-tabs button.active { color: #fff; border-color: #14264d; background: #14264d; box-shadow: 0 12px 30px rgba(20,38,77,.2); }
 
-inset:0;
+.flow-panel { max-width: 1240px; margin: auto; overflow: hidden; border: 1px solid rgba(20,38,77,.1); border-radius: 32px; background: rgba(255,255,255,.86); box-shadow: 0 34px 100px rgba(20,38,77,.1); }
+.panel-topline { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 28px; border-bottom: 1px solid rgba(20,38,77,.08); }
+.panel-topline > div { display: grid; gap: 5px; }
+.panel-topline > div span { color: #7f8da5; font-size: 9px; font-weight: 850; letter-spacing: .2em; }
+.panel-topline strong { color: #14264d; font-size: 17px; }
+.live-status { display: inline-flex; align-items: center; gap: 8px; color: #60708d; font-size: 10px; font-weight: 750; }
+.live-status i { width: 8px; height: 8px; border-radius: 50%; background: #22a35b; box-shadow: 0 0 0 5px rgba(34,163,91,.12); animation: live-pulse 1.8s ease-in-out infinite; }
 
-background-image:
-linear-gradient(rgba(20,38,77,.045) 1px,transparent 1px),
-linear-gradient(90deg,rgba(20,38,77,.045) 1px,transparent 1px);
+.signal-stage { position: relative; min-height: 470px; display: grid; grid-template-columns: 245px 1fr 245px; align-items: center; padding: 20px 30px; animation: stage-enter .42s cubic-bezier(.22,1,.36,1) both; }
+.signal-map { position: absolute; z-index: 1; inset: 35px 0 15px; width: 100%; height: calc(100% - 50px); pointer-events: none; }
+.routes path { fill: none; stroke-width: 2.2; vector-effect: non-scaling-stroke; }
+.incoming-routes path { stroke: url(#route-in); }
+.outgoing-routes path { stroke: url(#route-out); }
+.signal > circle:first-child { fill: rgba(52,120,246,.19); }
+.signal-core { fill: #3478f6; }
 
-background-size:58px 58px;
+.tool-column { position: relative; z-index: 3; display: grid; gap: 16px; }
+.column-label { margin: 0 5px 2px; color: #8793a7; font-size: 9px; font-weight: 850; letter-spacing: .2em; }
+.flow-tool { min-height: 84px; display: grid; grid-template-columns: 48px 1fr; grid-template-rows: auto auto; column-gap: 13px; align-items: center; padding: 13px 15px; border: 1px solid rgba(20,38,77,.09); border-radius: 17px; background: rgba(255,255,255,.94); box-shadow: 0 12px 30px rgba(20,38,77,.06); }
+.flow-tool .logo-wrap { grid-row: 1 / 3; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 14px; background: #f5f8fd; }
+.flow-tool img { width: auto; max-width: 34px; height: 31px; object-fit: contain; }
+.flow-tool strong { align-self: end; color: #14264d; font-size: 12px; line-height: 1.2; }
+.flow-tool small { align-self: start; color: #8a96aa; font-size: 9px; line-height: 1.25; }
 
-mask-image:linear-gradient(180deg,transparent,#000 18%,#000 78%,transparent);
+.voxa-core { position: relative; z-index: 4; width: 172px; height: 172px; display: flex; flex-direction: column; align-items: center; justify-content: center; justify-self: center; border: 1px solid rgba(52,120,246,.34); border-radius: 50%; color: #fff; background: radial-gradient(circle at 35% 28%, #315ea8, #14264d 68%); box-shadow: 0 24px 65px rgba(20,38,77,.28), inset 0 1px 0 rgba(255,255,255,.14); animation: core-process 2.4s ease-in-out infinite; }
+.voxa-core::after { content: ""; position: absolute; inset: 10px; border: 1px solid rgba(255,255,255,.15); border-radius: inherit; }
+.core-rings, .core-rings i { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+.core-rings i { border: 1px solid rgba(52,120,246,.22); animation: ring-out 2.4s ease-out infinite; }
+.core-rings i:nth-child(2) { animation-delay: .8s; }
+.core-rings i:nth-child(3) { animation-delay: 1.6s; }
+.voxa-mark { height: 25px; display: flex; align-items: center; gap: 3px; margin-bottom: 8px; }
+.voxa-mark i { width: 3px; border-radius: 3px; background: #fff; animation: mark-wave 1s ease-in-out infinite alternate; }
+.voxa-mark i:nth-child(1), .voxa-mark i:nth-child(5) { height: 9px; }
+.voxa-mark i:nth-child(2), .voxa-mark i:nth-child(4) { height: 18px; animation-delay: -.25s; }
+.voxa-mark i:nth-child(3) { height: 25px; animation-delay: -.5s; }
+.voxa-core strong { position: relative; z-index: 2; font-size: 24px; letter-spacing: -.035em; }
+.voxa-core small { position: relative; z-index: 2; margin-top: 5px; color: #bfcef0; font-size: 8px; }
 
-pointer-events:none;
+.panel-footer { min-height: 58px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 28px; padding: 12px 24px; border-top: 1px solid rgba(20,38,77,.08); color: #728099; font-size: 9px; font-weight: 700; }
+.panel-footer span { display: inline-flex; align-items: center; gap: 7px; }
+.footer-dot { width: 6px; height: 6px; border-radius: 50%; background: #3478f6; }
 
+@keyframes stage-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes live-pulse { 50% { opacity: .45; transform: scale(.78); } }
+@keyframes core-process { 0%, 36%, 54%, 100% { filter: brightness(1); transform: scale(1); } 44% { filter: brightness(1.35); transform: scale(1.035); box-shadow: 0 28px 78px rgba(52,120,246,.36), 0 0 0 9px rgba(52,120,246,.08); } }
+@keyframes ring-out { 0% { opacity: 0; transform: scale(.9); } 25% { opacity: .7; } 75%, 100% { opacity: 0; transform: scale(1.42); } }
+@keyframes mark-wave { to { transform: scaleY(.48); opacity: .72; } }
+
+@media (max-width: 1000px) {
+  .signal-stage { grid-template-columns: 210px 1fr 210px; padding-inline: 22px; }
+  .flow-tool { grid-template-columns: 42px 1fr; padding-inline: 11px; }
+  .flow-tool .logo-wrap { width: 40px; height: 40px; }
+  .voxa-core { width: 148px; height: 148px; }
 }
 
-.integrations::after{
-
-content:"";
-
-position:absolute;
-
-left:50%;
-
-top:56%;
-
-width:min(860px,70vw);
-
-height:min(360px,34vw);
-
-transform:translate(-50%,-50%);
-
-border:1px solid rgba(91,140,255,.14);
-
-border-radius:50%;
-
-opacity:.65;
-
-pointer-events:none;
-
+@media (max-width: 760px) {
+  .integrations { padding: 104px 0 90px; }
+  .section-heading h2 { font-size: 42px; }
+  .flow-tabs { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 0 2px 8px; scrollbar-width: none; }
+  .flow-tabs::-webkit-scrollbar { display: none; }
+  .flow-tabs button { flex: 0 0 auto; }
+  .panel-topline { align-items: flex-start; }
+  .live-status { margin-top: 4px; }
+  .signal-stage { min-height: auto; grid-template-columns: 1fr 120px 1fr; gap: 12px; padding: 28px 14px; }
+  .signal-map { display: none; }
+  .tool-column { gap: 10px; }
+  .column-label { font-size: 7px; }
+  .flow-tool { min-height: 94px; display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 10px 6px; text-align: center; }
+  .flow-tool .logo-wrap { flex: 0 0 auto; }
+  .flow-tool small { display: none; }
+  .voxa-core { width: 108px; height: 108px; }
+  .voxa-core strong { font-size: 18px; }
+  .voxa-core small { display: none; }
+  .voxa-mark { transform: scale(.8); margin-bottom: 3px; }
 }
 
-.container-custom{
-
-position:relative;
-
-z-index:1;
-
+@media (max-width: 480px) {
+  .flow-panel { border-radius: 24px; }
+  .panel-topline { padding: 16px 18px; }
+  .panel-topline strong { font-size: 14px; }
+  .live-status { display: none; }
+  .signal-stage { grid-template-columns: 1fr 82px 1fr; gap: 6px; padding-inline: 8px; }
+  .voxa-core { width: 76px; height: 76px; }
+  .voxa-core strong { font-size: 14px; }
+  .voxa-mark { display: none; }
+  .flow-tool strong { font-size: 9px; }
+  .panel-footer { gap: 12px; }
 }
 
-.section-header{
-
-max-width:760px;
-
-margin:0 auto 90px;
-
-text-align:center;
-
-opacity:0;
-
-transform:translateY(24px);
-
-transition:
-opacity .7s cubic-bezier(.22,1,.36,1),
-transform .7s cubic-bezier(.22,1,.36,1);
-
+@media (prefers-reduced-motion: reduce) {
+  animateMotion { display: none; }
+  .voxa-core, .core-rings i, .voxa-mark i, .live-status i { animation: none; }
 }
-
-.is-visible .section-header{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-.eyebrow{
-
-display:inline-block;
-
-margin-bottom:18px;
-
-font-size:12px;
-
-font-weight:700;
-
-letter-spacing:.28em;
-
-text-transform:uppercase;
-
-color:#5B8CFF;
-
-}
-
-.section-header h2{
-
-font-size:clamp(42px,5vw,64px);
-
-line-height:1.08;
-
-margin-bottom:22px;
-
-color:#111827;
-
-}
-
-.section-header p{
-
-max-width:700px;
-
-margin:auto;
-
-font-size:18px;
-
-line-height:1.8;
-
-color:#667085;
-
-}
-
-.integration-grid{
-
-display:grid;
-
-grid-template-columns:repeat(4,1fr);
-
-gap:26px;
-
-position:relative;
-
-perspective:1200px;
-
---scroll-progress:0;
-
-}
-
-.integration-grid::before{
-
-content:"";
-
-position:absolute;
-
-inset:50% 8%;
-
-height:2px;
-
-background:
-linear-gradient(90deg,transparent,rgba(91,140,255,.24),rgba(16,185,129,.20),transparent);
-
-transform:translateY(-50%) scaleX(calc(.15 + (var(--scroll-progress) * .85)));
-
-transform-origin:center;
-
-opacity:calc(.15 + (var(--scroll-progress) * .55));
-
-pointer-events:none;
-
-}
-
-.integration-card{
-
-position:relative;
-
-height:180px;
-
-display:flex;
-
-flex-direction:column;
-
-justify-content:center;
-
-align-items:center;
-
-background:white;
-
-border:1px solid #E5E7EB;
-
-border-radius:22px;
-
-box-shadow:
-0 16px 50px rgba(15,23,42,.05);
-
-opacity:0;
-
-transform:
-translate3d(
-calc(var(--float-x) * (1 - var(--scroll-progress))),
-calc(44px + (var(--float-y) * (1 - var(--scroll-progress)))),
-0
-)
-rotateX(calc((1 - var(--scroll-progress)) * 10deg))
-scale(.94);
-
-transition:
-opacity .7s cubic-bezier(.22,1,.36,1) var(--delay),
-transform .7s cubic-bezier(.22,1,.36,1) var(--delay),
-box-shadow .35s cubic-bezier(.22,1,.36,1),
-border-color .35s cubic-bezier(.22,1,.36,1);
-
-cursor:pointer;
-
-overflow:hidden;
-
-will-change:transform,opacity;
-
-}
-
-.is-visible .integration-card{
-
-opacity:1;
-
-transform:
-translate3d(
-calc(var(--float-x) * (var(--scroll-progress) - .5) * .7),
-calc(var(--float-y) * (var(--scroll-progress) - .5) * .7),
-0
-)
-rotateX(0deg)
-scale(1);
-
-}
-
-.integration-card::before{
-
-content:"";
-
-position:absolute;
-
-inset:-1px;
-
-border-radius:22px;
-
-background:
-linear-gradient(135deg,rgba(91,140,255,.22),transparent 38%,rgba(16,185,129,.16));
-
-opacity:0;
-
-transition:opacity .35s cubic-bezier(.22,1,.36,1);
-
-z-index:0;
-
-}
-
-.integration-card::after{
-
-content:"";
-
-position:absolute;
-
-top:-30%;
-
-left:-70%;
-
-width:48%;
-
-height:160%;
-
-background:
-linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);
-
-transform:rotate(18deg);
-
-transition:left .9s cubic-bezier(.22,1,.36,1);
-
-z-index:1;
-
-pointer-events:none;
-
-}
-
-.integration-card:hover{
-
-transform:
-translate3d(
-calc(var(--float-x) * (var(--scroll-progress) - .5) * .7),
-calc(-10px + (var(--float-y) * (var(--scroll-progress) - .5) * .7)),
-0
-)
-scale(1.02);
-
-box-shadow:
-
-0 26px 70px rgba(91,140,255,.16);
-
-border-color:#5B8CFF;
-
-}
-
-.integration-card:hover::before{
-
-opacity:1;
-
-}
-
-.integration-card:hover::after{
-
-left:125%;
-
-}
-
-.icon{
-
-position:relative;
-
-z-index:2;
-
-width:56px;
-
-height:56px;
-
-display:grid;
-
-place-items:center;
-
-border-radius:16px;
-
-background:#F3F4F6;
-
-font-size:18px;
-
-font-weight:700;
-
-color:#5B8CFF;
-
-margin-bottom:20px;
-
-transition:.35s cubic-bezier(.22,1,.36,1);
-
-box-shadow:
-inset 0 0 0 1px rgba(91,140,255,.05);
-
-}
-
-.integration-card:hover .icon{
-
-background:#EEF4FF;
-
-transform:translateY(-3px) rotate(-4deg);
-
-}
-
-.integration-card h3{
-
-position:relative;
-
-z-index:2;
-
-font-size:18px;
-
-font-weight:600;
-
-color:#14264D;
-
-}
-
-@media(max-width:1000px){
-
-.integration-grid{
-
-grid-template-columns:repeat(2,1fr);
-
-}
-
-}
-
-@media(max-width:640px){
-
-.integrations{
-
-padding:90px 0;
-
-}
-
-.integration-grid{
-
-grid-template-columns:1fr;
-
-}
-
-.integration-card{
-
-height:150px;
-
-}
-
-}
-
-@media (prefers-reduced-motion:reduce){
-
-.integration-card,
-.section-header,
-.integration-card::after{
-
-transition:none;
-
-}
-
-.integration-card,
-.is-visible .integration-card{
-
-opacity:1;
-
-transform:none;
-
-}
-
-.integration-grid::before{
-
-transform:translateY(-50%);
-
-}
-
-}
-
 </style>

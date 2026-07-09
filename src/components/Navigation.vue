@@ -2,7 +2,7 @@
 
 <header
 class="navbar"
-:class="{ scrolled: isScrolled }"
+:class="{ scrolled: isScrolled, scrolling: isScrolling }"
 >
 
 <div class="navbar-inner">
@@ -96,10 +96,19 @@ RIGHT
 
 <button
 class="cta"
-@click="$emit('open-demo')"
+@click="openLeadModal('waitlist')"
 >
 
 Join Waitlist
+
+</button>
+
+<button
+class="cta cta-secondary"
+@click="openLeadModal('sales')"
+>
+
+Get a Demo
 
 </button>
 
@@ -159,10 +168,19 @@ FAQ
 
 <button
 class="cta mobile-btn"
-@click="$emit('open-demo')"
+@click="openLeadModal('waitlist')"
 >
 
 Join Waitlist
+
+</button>
+
+<button
+class="cta cta-secondary mobile-btn"
+@click="openLeadModal('sales')"
+>
+
+Get a Demo
 
 </button>
 
@@ -178,6 +196,7 @@ Join Waitlist
 
 import { ref, onMounted, onUnmounted } from "vue"
 import { RouterLink } from "vue-router"
+import { scrollSectionIntoView } from "@/utils/sectionScroll"
 
 const emit = defineEmits([
   "open-demo"
@@ -187,7 +206,12 @@ const mobile = ref(false)
 
 const isScrolled = ref(false)
 
+const isScrolling = ref(false)
+
 const activeSection = ref("")
+
+let scrollFrame = 0
+let scrollStopTimer = 0
 
 const sections = [
 
@@ -211,6 +235,13 @@ scrollTo("demo")
 
 }
 
+const openLeadModal = (intent) => {
+  mobile.value = false
+  window.dispatchEvent(new CustomEvent("voxa:open-demo", {
+    detail: { intent }
+  }))
+}
+
 const scrollTo = (id) => {
 
   mobile.value = false
@@ -219,23 +250,8 @@ const scrollTo = (id) => {
 
   if (!section) return
 
-  const navbarHeight = 90
-
-  const y =
-
-    section.getBoundingClientRect().top +
-
-    window.pageYOffset -
-
-    navbarHeight
-
-  window.scrollTo({
-
-    top: y,
-
-    behavior: "smooth"
-
-  })
+  window.history.replaceState(null, "", `#${id}`)
+  scrollSectionIntoView(section)
 
 }
 
@@ -269,6 +285,36 @@ const updateNavbar = () => {
 
 }
 
+const requestNavbarUpdate = () => {
+
+  if (scrollFrame) return
+
+  scrollFrame = window.requestAnimationFrame(() => {
+
+    scrollFrame = 0
+
+    updateNavbar()
+
+  })
+
+}
+
+const handleWindowScroll = () => {
+
+  isScrolling.value = true
+
+  window.clearTimeout(scrollStopTimer)
+
+  scrollStopTimer = window.setTimeout(() => {
+
+    isScrolling.value = false
+
+  }, 220)
+
+  requestNavbarUpdate()
+
+}
+
 onMounted(() => {
 
   updateNavbar()
@@ -277,7 +323,7 @@ onMounted(() => {
 
     "scroll",
 
-    updateNavbar,
+    handleWindowScroll,
 
     {
 
@@ -295,9 +341,19 @@ onUnmounted(() => {
 
     "scroll",
 
-    updateNavbar
+    handleWindowScroll
 
   )
+
+  if (scrollFrame) {
+
+    window.cancelAnimationFrame(scrollFrame)
+
+    scrollFrame = 0
+
+  }
+
+  window.clearTimeout(scrollStopTimer)
 
 })
 
@@ -332,6 +388,26 @@ transition:all .45s cubic-bezier(.22,1,.36,1);
 .navbar.scrolled{
 
 top:16px;
+
+}
+
+.navbar.scrolling{
+
+opacity:0;
+
+pointer-events:none;
+
+transform:translate3d(0,calc(-100% - 24px),0);
+
+}
+
+@media(prefers-reduced-motion:reduce){
+
+.navbar{
+
+transition:none;
+
+}
 
 }
 
@@ -606,6 +682,28 @@ transform:translateY(-2px);
 box-shadow:
 
 0 18px 42px rgba(20,38,77,.18);
+
+}
+
+.cta-secondary{
+
+border:1px solid #14264D;
+
+background:#14264D;
+
+color:#ffffff;
+
+box-shadow:0 10px 28px rgba(20,38,77,.12);
+
+}
+
+.cta-secondary:hover{
+
+border-color:#1d3568;
+
+background:#1d3568;
+
+box-shadow:0 18px 42px rgba(20,38,77,.22);
 
 }
 
@@ -1088,7 +1186,7 @@ FINAL LAYOUT
 
 width:min(1800px,98%);
 
-grid-template-columns:320px 1fr 240px;
+grid-template-columns:300px 1fr 350px;
 
 padding:0 42px;
 
@@ -1175,7 +1273,7 @@ justify-self:end;
 /* Better spacing when scrolled */
 .navbar.scrolled .navbar-inner{
 
-grid-template-columns:300px 1fr 220px;
+grid-template-columns:280px 1fr 340px;
 
 }
 
@@ -1210,6 +1308,40 @@ width:52%;
 .navbar-inner{
 
 padding:0 64px;
+
+}
+
+@media(max-width:1180px){
+
+.navbar-inner,
+.navbar.scrolled .navbar-inner{
+
+grid-template-columns:230px 1fr 300px;
+
+padding:0 24px;
+
+}
+
+.actions{ gap:10px; }
+
+.cta{ padding:13px 20px; font-size:13px; }
+
+.nav-links{ padding:0 12px; }
+
+}
+
+@media(max-width:980px){
+
+.navbar-inner,
+.navbar.scrolled .navbar-inner{
+
+grid-template-columns:1fr auto;
+
+}
+
+.actions .cta{ display:none; }
+
+.actions .mobile-toggle{ display:block; }
 
 }
 

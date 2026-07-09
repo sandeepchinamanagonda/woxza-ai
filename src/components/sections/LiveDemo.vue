@@ -1,10 +1,10 @@
 <template>
-  <section id="live-demo" class="demo-section">
+  <section id="demo" class="demo-section">
     <div class="demo-shell">
       <div class="demo-visual">
         <span class="eyebrow">LIVE VOXA DEMO</span>
-        <h2>Hear what your next caller could hear.</h2>
-        <p>Pick a workflow and Voxa will call you for a focused, 90-second live demonstration.</p>
+        <h2>Hear what your next caller could hear</h2>
+        <p>Pick a workflow and Voxa will call you for a focused, 90-second live demonstration</p>
         <VoiceRibbon :state="ribbonState" />
         <div class="call-state" aria-live="polite">
           <i :class="ribbonState"></i>
@@ -73,12 +73,12 @@
         </label>
         <p v-if="error" class="form-error" role="alert">{{ error }}</p>
         <button class="submit-demo" type="submit" :disabled="busy">
-          {{ busy ? "Calling you now..." : "Try our live demo" }}
+          {{ busy ? "Calling you now" : "Try our live demo" }}
         </button>
         <button v-if="limitReached" class="waitlist-link" type="button" @click="$emit('join-waitlist')">
-          Demo limit reached for now. Join the waitlist instead.
+          Demo limit reached for now, join the waitlist instead
         </button>
-        <small>Carrier rates may apply. One demo per number every 30 minutes.</small>
+        <small>Carrier rates may apply, one demo per number every 30 minutes</small>
       </form>
     </div>
   </section>
@@ -112,7 +112,7 @@ const selectedUseCase = computed(() => useCases.find(useCase => useCase.value ==
 const ribbonState = computed(() => status.value === "connected" ? "connected" : busy.value ? "calling" : "idle")
 const statusCopy = computed(() => ({
   idle:"Ready when you are", pending:"Starting your call…", ringing:"Your phone is ringing…", connected:"You’re live with Voxa",
-  completed:"Demo complete. Thanks for calling.", no_answer:"We couldn’t reach you", failed:"The call could not connect"
+  completed:"Demo complete, thanks for calling", no_answer:"We couldn’t reach you", failed:"The call could not connect"
 }[status.value] || "Ready when you are"))
 
 function selectUseCase(value) {
@@ -150,7 +150,7 @@ const submitDemo = async () => {
     const body = await response.json().catch(() => ({}))
     if (response.status === 429) {
       limitReached.value = true
-      throw new Error("Demo limit reached for now. Join the waitlist instead.")
+      throw new Error("Demo limit reached for now, join the waitlist instead")
     }
     if (!response.ok) throw new Error(body.error || "We could not start the demo call")
     status.value = "ringing"

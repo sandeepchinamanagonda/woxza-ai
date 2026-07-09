@@ -55,7 +55,7 @@ npm install
 npm run dev
 ```
 
-Browser opens automatically at `http://localhost:3000`
+Browser opens automatically at `http://localhost:3456`
 
 ### 3. Build for Production
 ```bash
@@ -306,7 +306,7 @@ npm run test
 
 1. Install dependencies: `npm install`
 2. Start dev server: `npm run dev`
-3. View website at `http://localhost:3000`
+3. View website at `http://localhost:3456`
 4. Customize content in components
 5. Deploy when ready: `npm run build`
 

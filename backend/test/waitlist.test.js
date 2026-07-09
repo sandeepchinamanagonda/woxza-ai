@@ -84,7 +84,7 @@ test("creates a registration with optional company and completes preferences", a
 
   const completed = await request(`/api/waitlist/registrations/${created.body.registrationId}/preferences`, {
     priceRange: "300-999",
-    desiredFeatures: ["ai-phone-agent", "crm-integrations"],
+    desiredFeatures: ["ai-phone-agent", "crm-integrations", "custom:Delivery tracking"],
     primaryChallenge: "Handling calls after business hours",
     adoptionTimeline: "1-3-months",
     teamSize: "200-plus"

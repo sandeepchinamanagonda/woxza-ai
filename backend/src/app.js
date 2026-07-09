@@ -49,7 +49,7 @@ async function readForm(req) {
 
 const csvCell = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
 
-export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_TOKEN, allowedOrigins = ["http://localhost:3000"] }) {
+export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_TOKEN, allowedOrigins = ["http://localhost:3456"] }) {
   return async function app(req, res) {
     const cors = corsHeaders(req, allowedOrigins);
     if (req.method === "OPTIONS") {

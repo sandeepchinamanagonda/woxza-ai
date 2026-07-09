@@ -174,7 +174,7 @@
                 <textarea
                   v-model.trim="form.useCase"
                   rows="4"
-                  placeholder="Example: answer order calls, check stock, confirm delivery times, and update our team."
+                  placeholder="Example: answer order calls, check stock, confirm delivery times, and update our team"
                   required
                 ></textarea>
               </label>
@@ -215,14 +215,32 @@
               <div class="field-block wide dropdown-field" :class="{ 'is-open': featureMenuOpen }">
                 <span class="field-title">Must-have features</span>
                 <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (featureMenuOpen = false)">
-                  <button class="option-select-trigger" type="button" aria-label="Must-have features" :aria-expanded="featureMenuOpen" @click="featureMenuOpen = !featureMenuOpen" @keydown.esc.stop="featureMenuOpen = false">
+                  <button class="option-select-trigger feature-select-trigger" type="button" aria-label="Must-have features" :aria-expanded="featureMenuOpen" @click="featureMenuOpen = !featureMenuOpen" @keydown.esc.stop="featureMenuOpen = false">
                     <span :class="{ placeholder: !form.features.length }">{{ selectedFeaturesLabel }}</span><i></i>
                   </button>
                   <div v-if="featureMenuOpen" class="option-select-menu feature-select-menu" role="listbox" aria-label="Must-have features" aria-multiselectable="true">
                     <button v-for="feature in featureOptions" :key="feature.value" type="button" role="option" :aria-selected="form.features.includes(feature.value)" :disabled="featureDisabled(feature.value)" @click="toggleFeature(feature.value)">
                       <span>{{ feature.label }}</span><b v-if="form.features.includes(feature.value)">✓</b>
                     </button>
+                    <div class="custom-feature-entry">
+                      <input
+                        v-model.trim="form.customFeature"
+                        type="text"
+                        maxlength="100"
+                        placeholder="Add your own feature"
+                        aria-label="Custom feature"
+                        @keydown.enter.prevent="addCustomFeature"
+                      >
+                      <button type="button" :disabled="!canAddCustomFeature" @click="addCustomFeature">Add</button>
+                    </div>
                   </div>
+                </div>
+
+                <div v-if="form.features.length" class="selected-feature-list" aria-label="Selected features">
+                  <span v-for="feature in form.features" :key="feature">
+                    {{ featureLabel(feature) }}
+                    <button type="button" :aria-label="`Remove ${featureLabel(feature)}`" @click="toggleFeature(feature)">×</button>
+                  </span>
                 </div>
 
                 <small>
@@ -274,7 +292,7 @@
                 type="submit"
                 :disabled="!canContinue || isSubmitting"
               >
-                {{ isSubmitting ? "Joining..." : "Join Waitlist" }}
+                {{ isSubmitting ? "Joining" : "Join Waitlist" }}
               </button>
             </div>
           </form>
@@ -356,7 +374,7 @@
                 <textarea
                   v-model.trim="form.message"
                   rows="5"
-                  placeholder="Example: answer order calls, check stock, confirm delivery times, and update our team."
+                  placeholder="Example: answer order calls, check stock, confirm delivery times, and update our team"
                   required
                 ></textarea>
               </label>
@@ -376,7 +394,7 @@
                 type="submit"
                 :disabled="!salesReady || isSubmitting"
               >
-                {{ isSubmitting ? "Sending..." : "Request a Sales Call" }}
+                {{ isSubmitting ? "Requesting" : "Request My Demo" }}
               </button>
             </div>
           </form>
@@ -501,8 +519,16 @@ const selectedTimelineLabel = computed(() =>
 )
 const selectedFeaturesLabel = computed(() => {
   if (!form.value.features.length) return "Select features"
-  if (form.value.features.length === 1) return optionLabel(featureOptions, form.value.features[0])
-  return `${form.value.features.length} features selected`
+  return form.value.features.map(featureLabel).join(", ")
+})
+const featureLabel = (value) => {
+  if (value.startsWith("custom:")) return value.slice(7)
+  return optionLabel(featureOptions, value)
+}
+const canAddCustomFeature = computed(() => {
+  const label = form.value.customFeature.trim()
+  if (!label || form.value.features.length >= featureLimit) return false
+  return !form.value.features.some(feature => featureLabel(feature).toLowerCase() === label.toLowerCase())
 })
 const selectPricing = (value) => {
   form.value.pricing = value
@@ -519,6 +545,11 @@ const toggleFeature = (value) => {
   } else if (form.value.features.length < featureLimit) {
     form.value.features.push(value)
   }
+}
+const addCustomFeature = () => {
+  if (!canAddCustomFeature.value) return
+  form.value.features.push(`custom:${form.value.customFeature.trim()}`)
+  form.value.customFeature = ""
 }
 
 const featureOptions = [
@@ -547,6 +578,7 @@ const emptyForm = () => ({
   pricing: "",
   adoptionTimeline: "",
   features: [],
+  customFeature: "",
   message: ""
 })
 
@@ -609,23 +641,23 @@ const unlockPageScroll = () => {
 const modalCopy = computed(() => {
   if (props.mode === "sales") {
     return {
-      eyebrow: "CALL SALES",
-      title: "Talk to our sales team.",
-      intro: "Tell us what you want to automate and we'll help map the right Voxa setup for your business."
+      eyebrow: "GET A DEMO",
+      title: "Get a tailored Voxa demo",
+      intro: "Tell us what you want to automate and we'll help map the right Voxa setup for your business"
     }
   }
 
   return {
     eyebrow: "JOIN THE WAITLIST",
-    title: "Join the Voxa waitlist.",
-    intro: "Share the basics now. We will use this to prioritize early access and the first Voxa launch packages."
+    title: "Join the Voxa waitlist",
+    intro: "Share the basics now, and we will use this to prioritize early access and the first Voxa launch packages"
   }
 })
 
 const successDetail = computed(() =>
   props.mode === "sales"
-    ? "Your sales inquiry was saved in the backend."
-    : "Your waitlist registration and preferences were saved in the backend."
+    ? "Your sales inquiry was saved in the backend"
+    : "Your waitlist registration and preferences were saved in the backend"
 )
 
 const emailReady = computed(() =>
@@ -695,8 +727,8 @@ const postJson = async (path, payload) => {
   }
 
   if (!response.ok) {
-    const details = Array.isArray(body.details) ? ` ${body.details.join(". ")}` : ""
-    throw new Error(`${body.error || "Request failed."}${details}`)
+    const details = Array.isArray(body.details) ? ` ${body.details.join(", ")}` : ""
+    throw new Error(`${body.error || "Request failed"}${details}`)
   }
 
   return body
@@ -720,9 +752,7 @@ const registrationPayload = (intent) => {
       otherIndustry: form.value.industry === "other" ? form.value.otherIndustry : undefined,
       companySizeLabel: optionLabel(teamSizeOptions, form.value.companySize),
       pricingLabel: optionLabel(pricingOptions, form.value.pricing),
-      selectedFeatures: form.value.features.map((feature) =>
-        optionLabel(featureOptions, feature)
-      ),
+      selectedFeatures: form.value.features.map(featureLabel),
       message: form.value.message || undefined
     }
   }
@@ -794,14 +824,14 @@ const closeModal = () => {
 }
 
 const friendlyError = (error) => {
-  const message = error instanceof Error ? error.message : "Something went wrong."
+  const message = error instanceof Error ? error.message : "Something went wrong"
 
   if (message.includes("already on the waitlist")) {
-    return "That email is already on the waitlist. Use another email, or call sales if you want to talk now."
+    return "That email is already on the waitlist, use another email or call sales if you want to talk now"
   }
 
   if (message.includes("Failed to fetch")) {
-    return "I could not reach the backend. Make sure the API server is running on port 8787."
+    return "I could not reach the backend, make sure the API server is running on port 8787"
   }
 
   return message
@@ -816,10 +846,10 @@ const handleSubmit = async () => {
   try {
     if (props.mode === "sales") {
       await submitSales()
-      successMessage.value = "Sales request received."
+      successMessage.value = "Sales request received"
     } else {
       await submitWaitlist()
-      successMessage.value = "You are on the Voxa waitlist."
+      successMessage.value = "You are on the Voxa waitlist"
     }
   } catch (error) {
     submitError.value = friendlyError(error)
@@ -1173,6 +1203,8 @@ label > span em{
   cursor:pointer;
 }
 .option-select-trigger span{ overflow:hidden; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+.feature-select-trigger{ min-height:54px; padding-top:9px; padding-bottom:9px; }
+.feature-select-trigger span{ overflow:visible; line-height:1.45; text-overflow:clip; white-space:normal; }
 .option-select-trigger .placeholder{ color:#94a3b8; font-weight:500; }
 .option-select-trigger i{
   width:8px;
@@ -1245,6 +1277,64 @@ label > span em{
   color:#a8b3c4;
   cursor:not-allowed;
   background:#fff;
+}
+.custom-feature-entry{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  margin-top:6px;
+  padding:10px 6px 4px;
+  border-top:1px solid rgba(15,23,42,.1);
+}
+.custom-feature-entry input{
+  width:100%;
+  min-height:40px;
+  padding:0 10px;
+  border:1px solid rgba(15,23,42,.14);
+  border-radius:7px;
+  color:#14264d;
+  background:#fff;
+  font:inherit;
+  font-size:13px;
+}
+.custom-feature-entry button{
+  width:auto;
+  min-height:40px;
+  padding:0 14px;
+  color:#fff;
+  background:#14264d;
+}
+.custom-feature-entry button:hover{ color:#fff; background:#203969; }
+.custom-feature-entry button:disabled{ color:#8f9aab; background:#eef1f5; cursor:not-allowed; }
+.selected-feature-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:9px;
+}
+.selected-feature-list > span{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:6px 8px 6px 10px;
+  border:1px solid rgba(20,38,77,.12);
+  border-radius:999px;
+  color:#314261;
+  background:#f7f9fc;
+  font-size:11px;
+  font-weight:700;
+}
+.selected-feature-list button{
+  width:18px;
+  height:18px;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  color:#63708a;
+  background:rgba(20,38,77,.08);
+  font:inherit;
+  line-height:1;
+  cursor:pointer;
 }
 
 .choice-grid{

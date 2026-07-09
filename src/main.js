@@ -14,7 +14,7 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: {
-      title: 'Voxa - Enterprise AI Voice Platform'
+      title: 'Voxa | Enterprise AI Voice Platform'
     }
   },
   {

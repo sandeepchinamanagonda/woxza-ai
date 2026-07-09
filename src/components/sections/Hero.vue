@@ -1,71 +1,32 @@
 <template>
   <section id="hero" class="hero">
-
-    <div class="hero-grid-bg"></div>
-    <div class="hero-glow"></div>
-    <div class="hero-orbit orbit-large"></div>
-    <div class="hero-orbit orbit-small"></div>
-    <div class="signal-thread"></div>
+    <div class="hero-glow" />
 
     <div class="hero-container">
-
-      <!-- LEFT -->
       <div class="hero-content">
-
-        <span class="hero-badge">
-          AI voice agent platform
-        </span>
+        <span class="hero-badge">AI voice agent platform</span>
 
         <div class="headline-stage" aria-live="polite">
-
           <h1
             v-for="(headline, index) in headlines"
-            :key="headline.accent"
+            :key="headline.id"
             :class="{ active: index === headlineIndex }"
             :aria-hidden="index !== headlineIndex"
           >
-
-            <span class="headline-line">
-              {{ headline.top }}
+            <span v-for="(line, lineIndex) in headline.lines" :key="lineIndex" class="headline-line">
+              <template v-for="segment in line" :key="segment.text">
+                <em v-if="segment.accent" :class="{ underlined: segment.underline }">{{ segment.text }}</em>
+                <template v-else>{{ segment.text }}</template>
+              </template>
             </span>
-
-            <span class="headline-line">
-              {{ headline.bottom }}
-              <em>{{ headline.accent }}</em>
-            </span>
-
           </h1>
-
         </div>
 
-        <p
-          :key="headlineIndex"
-          class="headline-description"
-          aria-live="polite"
-        >
+        <p :key="headlineIndex" class="headline-description" aria-live="polite">
           {{ headlines[headlineIndex].description }}
         </p>
 
-        <!-- BUTTONS -->
-
-        <div class="hero-actions">
-
-  <button
-    class="primary-btn"
-    @click="$emit('open-demo')"
-  >
-    Join Early Access
-  </button>
-
-</div>
-
-        <!-- DOTS -->
-
-        <div
-          class="caption-controls"
-          :aria-label="`Headline ${headlineIndex + 1} of ${headlines.length}`"
-        >
-
+        <div class="caption-controls" :aria-label="`Headline ${headlineIndex + 1} of ${headlines.length}`">
           <button
             v-for="(_, index) in headlines"
             :key="index"
@@ -73,71 +34,67 @@
             :aria-label="`Show headline ${index + 1}`"
             @click="headlineIndex = index"
           />
-
         </div>
 
-        <!-- EARLY ACCESS -->
-
-        <div class="early-access">
-
-          <p class="access-title">
-            EARLY ACCESS AVAILABLE FOR
-          </p>
-
-          <div class="industry-list">
-
-            <span>Healthcare</span>
-            <span>Education</span>
-            <span>Retail</span>
-            <span>Hospitality</span>
-            <span>Real Estate</span>
-            <span>Restaurants</span>
-
+        <div class="hero-proof-grid" aria-label="Voxa capabilities">
+          <div v-for="capability in capabilities" :key="capability.title" class="proof-item">
+            <span class="proof-icon" :style="{ '--icon-color': capability.color, '--icon-soft': capability.soft }"><component :is="capability.icon" /></span>
+            <div><strong>{{ capability.title }}</strong><small>{{ capability.description }}</small></div>
           </div>
-
         </div>
-
       </div>
-
-      <!-- RIGHT -->
 
       <div class="hero-visual">
-
         <ChatOverlay />
-
       </div>
-
     </div>
 
   </section>
-
 </template>
 
 <script setup>
 import { onMounted, onUnmounted, ref } from "vue"
+import { BrainCircuit, Languages, PhoneCall, Workflow } from "lucide-vue-next"
 import ChatOverlay from "@/components/three/ChatOverlay.vue"
-
-defineEmits(["open-demo"])
 
 const headlines = [
   {
-    top: "Where business",
-    bottom: "finds its",
-    accent: "voice.",
-    description: "Your business has something to say. Voxa helps it speak to everyone."
+    id: "voice-agents",
+    lines: [
+      [{ text: "AI voice agents that" }],
+      [{ text: "answer calls, understand" }],
+      [{ text: "customers and " }, { text: "get", accent: true }],
+      [{ text: "work done", accent: true, underline: true }]
+    ],
+    description: "Voxa answers every call, understands intent and takes action so your team can focus on what matters"
   },
   {
-    top: "One platform.",
-    bottom: "Every business",
-    accent: "conversation.",
-    description: "Many conversations move your business. Voxa keeps them working as one."
+    id: "every-call",
+    lines: [
+      [{ text: "Every call answered" }],
+      [{ text: "Every customer" }],
+      [{ text: "understood Every" }],
+      [{ text: "step handled", accent: true, underline: true }]
+    ],
+    description: "From the first hello to the finished task, Voxa keeps every customer conversation moving forward"
   },
   {
-    top: "Every call answered.",
-    bottom: "Every next step",
-    accent: "handled.",
-    description: "Every call holds possibility. Voxa turns it into something real."
+    id: "one-platform",
+    lines: [
+      [{ text: "One platform for" }],
+      [{ text: "every conversation" }],
+      [{ text: "your business needs" }],
+      [{ text: "completed", accent: true, underline: true }]
+    ],
+    description: "Many conversations move your business and Voxa connects them, understands them and completes the work behind them"
   }
+]
+
+const capabilities = [
+  { title: "Never miss a call", description: "24/7 AI availability", icon: PhoneCall, color: "#2563eb", soft: "#edf4ff" },
+  { title: "Understand intent", description: "Human-like conversations", icon: BrainCircuit, color: "#15966a", soft: "#eafaf3" },
+  { title: "Take action", description: "Book, update, notify & more", icon: Workflow, color: "#7c3aed", soft: "#f4edff" },
+  { title: "Speak every language", description: "Multilingual by default", icon: Languages, color: "#087ea4", soft: "#e8f8fc" }
 ]
 
 const headlineIndex = ref(0)
@@ -165,73 +122,22 @@ onUnmounted(() => window.clearInterval(headlineTimer))
   padding: 124px 0 46px;
   isolation: isolate;
   background:
-    radial-gradient(circle at 72% 46%, rgba(20,38,77,.20), transparent 27%),
-    radial-gradient(circle at 88% 18%, rgba(20,38,77,.10), transparent 24%),
-    linear-gradient(105deg, #ffffff 0%, #fbfcff 48%, #e9edf5 100%);
-}
-
-.hero-grid-bg {
-  position: absolute;
-  inset: 0;
-  background-image: linear-gradient(rgba(15, 23, 42, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 23, 42, .06) 1px, transparent 1px);
-  background-size: 66px 66px;
-  mask-image: linear-gradient(90deg, rgba(0,0,0,.55) 0%, #000 34%, #000 100%);
-  pointer-events: none;
+    radial-gradient(circle at 76% 34%, rgba(15, 23, 42, .2), transparent 31%),
+    linear-gradient(128deg, #ffffff 0%, #f8f9fb 43%, #edf0f5 100%);
 }
 
 .hero-glow {
   position: absolute;
-  width: 980px;
-  height: 980px;
-  right: -190px;
-  top: -120px;
+  width: 920px;
+  height: 920px;
+  right: -180px;
+  top: -160px;
   border-radius: 50%;
   background: conic-gradient(from 210deg, rgba(20,38,77,.06), rgba(20,38,77,.32), rgba(20,38,77,.12), rgba(20,38,77,.06));
-  filter: blur(64px);
-  opacity: .62;
+  filter: blur(54px);
+  opacity: .78;
   pointer-events: none;
   animation: ambient-drift 13s ease-in-out infinite alternate;
-}
-
-.hero-orbit{
-  position:absolute;
-  right:9%;
-  top:50%;
-  transform:translateY(-50%);
-  border-radius:50%;
-  pointer-events:none;
-  z-index:1;
-}
-
-.orbit-large{
-  width:min(680px,48vw);
-  height:min(680px,48vw);
-  border:1px solid rgba(20,38,77,.12);
-  box-shadow:
-    inset 0 0 0 92px rgba(20,38,77,.08),
-    0 34px 110px rgba(20,38,77,.16);
-}
-
-.orbit-small{
-  width:min(470px,34vw);
-  height:min(470px,34vw);
-  border:1px solid rgba(20,38,77,.08);
-  background:rgba(20,38,77,.05);
-}
-
-.signal-thread{
-  position:absolute;
-  right:7%;
-  top:51%;
-  width:50vw;
-  height:130px;
-  z-index:1;
-  pointer-events:none;
-  opacity:.52;
-  background:
-    linear-gradient(100deg, transparent 0 8%, rgba(20,38,77,.30) 8% 10%, transparent 10% 16%, rgba(20,38,77,.22) 16% 18%, transparent 18%) 0 44%/120px 2px repeat-x,
-    linear-gradient(170deg, transparent 0 44%, rgba(20,38,77,.18) 44% 46%, transparent 46%);
-  mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent);
 }
 
 .hero-glow::before,
@@ -254,28 +160,28 @@ onUnmounted(() => window.clearInterval(headlineTimer))
   display: grid;
   grid-template-columns: minmax(0, .96fr) minmax(0, 1.04fr);
   align-items: center;
-  gap: 70px;
+  gap: 24px;
 }
 
-.hero-content { width: 100%; max-width: 820px; padding: 24px 0 28px 8px; }
+.hero-content { width: 100%; max-width: 760px; padding: 24px 0 28px 8px; }
 
-.hero-badge { display: inline-flex; margin-bottom: 22px; padding: 8px 16px; border: 1px solid rgba(20,38,77,.14); border-radius: 999px; color: var(--hero-blue); background: rgba(20,38,77,.06); font-size: 10px; font-weight: 850; letter-spacing: .15em; text-transform: uppercase; }
+.hero-badge { display: inline-flex; margin-bottom: 22px; padding: 7px 13px; border: 1px solid rgba(20,38,77,.14); border-radius: 999px; color: var(--hero-blue); background: rgba(20,38,77,.06); font-size: 9px; font-weight: 850; letter-spacing: .15em; text-transform: uppercase; }
 
-.headline-stage { position: relative; height: clamp(205px, 19vw, 270px); }
+.headline-stage { position: relative; height: clamp(300px, 24vw, 365px); }
 
 .headline-stage h1 {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   margin: 0;
   color: #11152b;
-font-size: clamp(58px, 5vw, 88px);
+  font-size: clamp(48px, 3.75vw, 66px);
   font-weight: 780;
-  line-height: .92;
-  letter-spacing: -.074em;
+  line-height: .96;
+  letter-spacing: -.062em;
   opacity: 0;
   filter: blur(9px);
   transform: translateY(25px);
@@ -285,160 +191,24 @@ font-size: clamp(58px, 5vw, 88px);
 
 .headline-stage h1.active { opacity: 1; filter: blur(0); transform: translateY(0); }
 .headline-stage .headline-line { display: block; width: 100%; color: var(--hero-blue); }
-.headline-stage .headline-line em { color: var(--hero-blue); font-style: normal; }
+.headline-stage .headline-line em { position: relative; display: inline-block; color: #2563eb; font-style: normal; }
+.headline-stage .headline-line em.underlined::after { content: ""; position: absolute; left: 2%; right: -4%; bottom: -9px; height: 13px; border-top: 4px solid #2563eb; border-radius: 50%; transform: rotate(-2deg); opacity: .92; }
 
-.hero-content > p{
+.hero-content > p { max-width: 640px; margin: 17px 0 0; color: #66708a; font-size: 16px; line-height: 1.62; }
+.headline-description { min-height: 58px; animation: description-in .55s cubic-bezier(.2,.8,.2,1) both; }
 
-max-width:620px;
-
-margin:26px 0 0;
-
-color:#667085;
-
-font-size:19px;
-
-line-height:1.75;
-
-}
-
-.headline-description{
-
-min-height:58px;
-
-animation:description-in .55s cubic-bezier(.2,.8,.2,1) both;
-
-}
-
-/* ===========================
-HERO BUTTONS
-=========================== */
-
-.hero-actions{
-
-display:flex;
-
-margin-top:30px;
-
-}
-
-.primary-btn{
-
-min-width:220px;
-
-}
-
-.primary-btn{
-
-padding:15px 28px;
-
-background:#14264d;
-
-color:white;
-
-border:none;
-
-border-radius:999px;
-
-font-weight:600;
-
-cursor:pointer;
-
-transition:.3s;
-
-}
-
-.primary-btn:hover{
-
-transform:translateY(-2px);
-
-}
-
-.secondary-btn{
-
-padding:15px 28px;
-
-background:white;
-
-border:1px solid rgba(20,38,77,.12);
-
-border-radius:999px;
-
-font-weight:600;
-
-cursor:pointer;
-
-transition:.3s;
-
-}
-
-.secondary-btn:hover{
-
-background:#F8FAFD;
-
-}
-.caption-controls { display: flex; gap: 8px; margin-top: 28px; }
+.caption-controls { display: flex; gap: 8px; margin-top: 14px; }
 .caption-controls button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 10px; background: #c7cde0; cursor: pointer; transition: width .25s ease, background .25s ease; }
 .caption-controls button.active { width: 32px; background: var(--hero-blue); }
 
-.early-access{
-
-margin-top:38px;
-
-}
-
-.access-title{
-
-font-size:11px;
-
-font-weight:700;
-
-letter-spacing:.18em;
-
-color:#94A3B8;
-
-margin-bottom:18px;
-
-}
-
-.industry-list{
-
-display:flex;
-
-flex-wrap:wrap;
-
-gap:12px;
-
-}
-
-.industry-list span{
-
-padding:12px 18px;
-
-border-radius:999px;
-
-background:#fff;
-
-border:1px solid rgba(20,38,77,.08);
-
-font-size:13px;
-
-font-weight:600;
-
-color:#475467;
-
-transition:.3s;
-
-}
-
-.industry-list span:hover{
-
-background:#F5F9FF;
-
-border-color:#3B82F6;
-
-transform:translateY(-2px);
-
-}
+.hero-proof-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 18px; border: 1px solid rgba(20,38,77,.11); border-radius: 22px; background: rgba(255,255,255,.68); box-shadow: 0 18px 48px rgba(20,38,77,.08); backdrop-filter: blur(16px); overflow: hidden; }
+.proof-item { display: grid; grid-template-columns: 38px 1fr; align-items: center; gap: 9px; min-width: 0; padding: 17px 12px; }
+.proof-item + .proof-item { border-left: 1px solid rgba(20,38,77,.09); }
+.proof-item > div { display: grid; gap: 3px; min-width: 0; }
+.proof-item strong { color: var(--hero-blue); font-size: 10px; line-height: 1.25; }
+.proof-item small { color: #7b879d; font-family: inherit; font-size: 8px; line-height: 1.35; }
+.proof-icon { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--icon-color) 20%, white); border-radius: 50%; color: var(--icon-color); background: var(--icon-soft); box-shadow: 0 7px 20px color-mix(in srgb, var(--icon-color) 13%, transparent); }
+.proof-icon svg { width: 19px; height: 19px; stroke-width: 1.9; }
 
 .hero-visual { position: relative; width: 100%; height: clamp(560px, calc(100vh - 170px), 710px); min-height: 0; }
 
@@ -448,7 +218,7 @@ transform:translateY(-2px);
 
 @media (max-width: 1120px) {
   .hero-container { grid-template-columns: minmax(0, .94fr) minmax(0, 1.06fr); gap: 0; }
-  .headline-stage h1 { font-size: clamp(54px, 5.7vw, 72px); }
+  .headline-stage h1 { font-size: clamp(45px, 4.7vw, 60px); }
 }
 
 @media (max-height: 820px) and (min-width: 861px) {
@@ -456,24 +226,26 @@ transform:translateY(-2px);
   .hero-container { min-height: calc(100vh - 120px); }
   .hero-content { padding: 10px 0 16px 8px; }
   .hero-badge { margin-bottom: 10px; }
-  .headline-stage { height: clamp(170px, 23vh, 205px); }
-  .headline-stage h1 { font-size: clamp(48px, 4.1vw, 66px); }
+  .headline-stage { height: clamp(220px, 32vh, 255px); }
+  .headline-stage h1 { font-size: clamp(40px, 3.55vw, 51px); }
   .hero-content > p { margin-top: 10px; font-size: 16px; line-height: 1.5; }
   .headline-description { min-height: 48px; }
-  .caption-controls { margin-top: 14px; }
-.early-access{
-
-margin-top:18px;
-
-}  .hero-visual { height: calc(100vh - 120px); min-height: 500px; max-height: 620px; }
+  .caption-controls { margin-top: 10px; }
+  .hero-proof-grid { margin-top: 10px; }
+  .proof-item { grid-template-columns: 31px 1fr; padding: 11px 8px; }
+  .proof-icon { width: 31px; height: 31px; }
+  .proof-icon svg { width: 15px; height: 15px; }
+  .proof-item strong { font-size: 8px; }
+  .proof-item small { font-size: 7px; }
+  .hero-visual { height: calc(100vh - 120px); min-height: 500px; max-height: 620px; }
 }
 
 @media (max-width: 860px) {
   .hero { padding-top: 112px; }
   .hero-container { width: calc(100% - 32px); grid-template-columns: 1fr; }
   .hero-content { max-width: 720px; padding: 58px 12px 0; }
-  .headline-stage { height: 280px; }
-  .headline-stage h1 { font-size: clamp(58px, 11.4vw, 86px); }
+  .headline-stage { height: 350px; }
+  .headline-stage h1 { font-size: clamp(48px, 8.8vw, 68px); }
   .hero-visual { height: 730px; margin-top: 12px; }
 }
 
@@ -481,18 +253,19 @@ margin-top:18px;
   .hero { padding-top: 92px; }
   .hero-content { padding-top: 50px; }
   .eyebrow { font-size: 9px; }
-  .headline-stage { height: 265px; }
-  .headline-stage h1 { font-size: clamp(45px, 13vw, 58px); line-height: .94; }
+  .headline-stage { height: 285px; }
+  .headline-stage h1 { font-size: clamp(38px, 10.4vw, 51px); line-height: .98; }
   .hero-content > p { margin-top: 8px; font-size: 16px; line-height: 1.58; }
-.industry-list{
-
-justify-content:center;
-
-}  .hero-visual { height: 700px; min-height: 700px; margin-left: -16px; width: calc(100% + 32px); }
+  .hero-proof-grid { grid-template-columns: repeat(2, 1fr); }
+  .proof-item + .proof-item { border-left: 0; }
+  .proof-item:nth-child(even) { border-left: 1px solid rgba(20,38,77,.09); }
+  .proof-item:nth-child(n + 3) { border-top: 1px solid rgba(20,38,77,.09); }
+  .proof-item strong { font-size: 10px; }
+  .proof-item small { font-size: 9px; }
+  .hero-visual { height: 700px; min-height: 700px; margin-left: -16px; width: calc(100% + 32px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hero *, .hero *::before, .hero *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
 }
-
 </style>

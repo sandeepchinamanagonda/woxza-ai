@@ -95,7 +95,10 @@ export function validatePreferences(input) {
     if (uniqueFeatures.length > 5) {
       errors.push("desiredFeatures can contain at most 5 features");
     }
-    const invalid = uniqueFeatures.filter((feature) => !FEATURE_OPTIONS.includes(feature));
+    const invalid = uniqueFeatures.filter((feature) => {
+      if (FEATURE_OPTIONS.includes(feature)) return false;
+      return typeof feature !== "string" || !/^custom:.{1,100}$/.test(feature.trim());
+    });
     if (invalid.length) {
       errors.push(`desiredFeatures contains unsupported values: ${invalid.join(", ")}`);
     }

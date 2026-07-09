@@ -30,7 +30,7 @@ AI built for
 
 <p>
 
-Voxa adapts to the way your industry works—
+Voxa adapts to the way your industry works.
 automating workflows, enhancing customer
 experiences and driving real business impact.
 

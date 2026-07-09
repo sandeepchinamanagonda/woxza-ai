@@ -2,24 +2,13 @@
   <section
     id="approach"
     class="transformations"
-    :class="{ 'is-paused': paused }"
-    @mouseenter="stopAuto"
-    @mouseleave="startAuto"
-    @focusin="stopAuto"
-    @focusout="startAuto"
   >
-    <div class="grid-bg"></div>
-    <div class="ambient ambient-left"></div>
-    <div class="ambient ambient-right"></div>
-
+    <div class="grid-bg" />
     <div class="container-custom">
       <header class="heading">
         <span>TRANSFORMATION, DELIVERED</span>
-        <h2>From daily friction to a business that moves.</h2>
-        <p>
-          See what changes when Voxa joins the workflow, then follow the clear
-          process that takes each idea from conversation to measurable result.
-        </p>
+        <h2>From daily friction to a <em>business that moves</em></h2>
+        <p>See what changes when Voxa joins the workflow, every conversation becomes a visible, measurable result</p>
       </header>
 
       <div class="case-tabs" aria-label="Choose a transformation story">
@@ -37,71 +26,48 @@
       </div>
 
       <div class="story-stage">
-        <article
-          v-show="activeSlide < stories.length"
-          class="transformation-story"
-          :class="activeSlide === 0 ? 'story-conversations' : 'story-operations'"
-        >
-          <header class="story-heading">
-            <div>
-              <span>{{ currentStory.kicker }}</span>
-              <h3>{{ currentStory.panelTitle }}</h3>
-            </div>
-            <p>{{ currentStory.panelDescription }}</p>
-          </header>
+        <article v-if="activeSlide < stories.length" class="comparison" :key="activeSlide">
+          <div class="state-card before-card">
+            <span class="state-label">BEFORE VOXA</span>
+            <h3>{{ currentStory.beforeTitle }}</h3>
+            <ul>
+              <li v-for="item in currentStory.before" :key="item.text"><component :is="item.icon" /><span>{{ item.text }}</span></li>
+            </ul>
+          </div>
 
-          <div class="transformation-grid">
-            <div class="state-card before-card">
-              <span class="state-label">BEFORE VOXA</span>
-              <h3>{{ currentStory.beforeTitle }}</h3>
-              <ul>
-                <li v-for="item in currentStory.before" :key="item">{{ item }}</li>
-              </ul>
+          <div class="voxa-hub">
+            <div class="channels" :aria-label="currentStory.inputLabel">
+              <span v-for="(icon, index) in currentStory.inputs" :key="index"><component :is="icon" /></span>
             </div>
+            <div class="connector-lines" />
+            <div class="core-orb"><component :is="currentStory.coreIcon" /><strong>VOXA</strong><small>{{ currentStory.solution }}</small></div>
+            <div class="tool-row" :aria-label="currentStory.outputLabel">
+              <span v-for="(icon, index) in currentStory.outputs" :key="index"><component :is="icon" /></span>
+            </div>
+          </div>
 
-            <div class="transformation-core">
-              <span class="signal-dot"></span>
-              <div class="core-icon"><component :is="currentStory.icon" /></div>
-              <small>VOXA IN ACTION</small>
-              <strong>{{ currentStory.solution }}</strong>
-              <p>{{ currentStory.bridge }}</p>
-              <span class="signal-arrow">→</span>
-            </div>
-
-            <div class="state-card after-card">
-              <span class="state-label">WITH VOXA</span>
-              <h3>{{ currentStory.afterTitle }}</h3>
-              <ul>
-                <li v-for="item in currentStory.after" :key="item">{{ item }}</li>
-              </ul>
-              <div class="result-badge">
-                <CheckCircle2 />
-                <span>{{ currentStory.result }}</span>
-              </div>
-            </div>
+          <div class="state-card after-card">
+            <span class="state-label">WITH VOXA</span>
+            <h3>{{ currentStory.afterTitle }}</h3>
+            <ul>
+              <li v-for="item in currentStory.after" :key="item.text"><component :is="item.icon" /><span>{{ item.text }}</span></li>
+            </ul>
+            <div class="result-badge"><Clock3 /><span>{{ currentStory.result }}</span></div>
           </div>
         </article>
 
-        <div v-show="activeSlide === stories.length" class="process-panel">
-          <header class="process-heading">
-            <div>
-              <span>HOW WE GET THERE</span>
-              <h3>A clear path from first conversation to lasting value.</h3>
-            </div>
-            <p>No mystery. No giant launch. Each step proves the next one is worth taking.</p>
-          </header>
-
+        <div v-else class="process-panel" :key="activeSlide">
+          <header><span>HOW WE GET THERE</span><h3>A clear path from first conversation to lasting value</h3></header>
           <ol class="process-grid">
             <li v-for="(step, index) in process" :key="step.title">
-              <div class="step-topline">
-                <span>STEP {{ String(index + 1).padStart(2, '0') }}</span>
-                <component :is="step.icon" />
-              </div>
-              <h4>{{ step.title }}</h4>
-              <p>{{ step.description }}</p>
+              <span>0{{ index + 1 }}</span><component :is="step.icon" /><h4>{{ step.title }}</h4><p>{{ step.description }}</p>
             </li>
           </ol>
         </div>
+      </div>
+
+      <div class="impact-strip" aria-label="Voxa impact metrics">
+        <div v-for="metric in metrics" :key="metric.label"><component :is="metric.icon" /><strong>{{ metric.value }}</strong><span>{{ metric.label }}</span></div>
       </div>
     </div>
   </section>
@@ -110,66 +76,60 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from "vue"
 import {
-  CheckCircle2,
-  Headphones,
-  Network,
-  Route,
-  Search,
-  ShieldCheck,
-  TrendingUp,
-  Wrench
+  ArrowRightLeft, BrainCircuit, CalendarCheck2, ChartNoAxesCombined,
+  ClipboardList, Clock3, ClockAlert, Copy, Database, Focus, Gauge, Globe2,
+  Headphones, Mail, MessageSquare, MessagesSquare, Moon, Network, Phone,
+  PhoneCall, PhoneOff, RefreshCw, Route, Search, ShieldCheck, TriangleAlert,
+  TrendingUp, UsersRound, Wrench, Zap
 } from "lucide-vue-next"
 
 const activeSlide = ref(0)
-const paused = ref(false)
 let storyTimer
 
 const stories = [
   {
-    tab: "Customer conversations",
-    icon: Headphones,
-    kicker: "CUSTOMER CONVERSATIONS",
-    panelTitle: "Every call answered. Every next step handled.",
-    panelDescription: "Voxa turns the moment a customer reaches out into a clear, completed outcome.",
-    beforeTitle: "Every ring depends on one person.",
+    solution: "AI Receptionist",
+    coreIcon: Headphones,
+    inputLabel: "Customer conversation channels",
+    inputs: [Phone, MessageSquare, MessagesSquare, Mail, Globe2],
+    outputLabel: "AI receptionist outcomes",
+    outputs: [PhoneCall, BrainCircuit, CalendarCheck2, ClipboardList, Clock3],
+    beforeTitle: "Calls wait, customers repeat themselves",
     before: [
-      "Appointments wait for a callback",
-      "After-hours calls go unanswered",
-      "Customers repeat the same details",
-      "Follow-up slips when the day gets busy"
+      { text: "Calls depend on one available person", icon: PhoneOff },
+      { text: "Evening calls go unanswered", icon: Moon },
+      { text: "Details are copied between systems", icon: Copy },
+      { text: "Follow up slips on busy days", icon: ClockAlert }
     ],
-    solution: "Voxa AI Receptionist",
-    bridge: "Listens, answers, books and follows through in the same conversation.",
-    afterTitle: "Every customer leaves with a next step.",
+    afterTitle: "Every conversation moves forward",
     after: [
-      "Calls are answered at any hour",
-      "Appointments are booked instantly",
-      "Staff receive the full context",
-      "Customers get immediate confirmation"
+      { text: "Every call is answered at any hour", icon: PhoneCall },
+      { text: "Intent is understood in real time", icon: BrainCircuit },
+      { text: "Appointments happen instantly", icon: CalendarCheck2 },
+      { text: "Your team receives complete context", icon: ClipboardList }
     ],
-    result: "Available whenever customers call"
+    result: "Every caller leaves with a clear next step"
   },
   {
-    tab: "Business operations",
-    icon: Network,
-    kicker: "BUSINESS OPERATIONS",
-    panelTitle: "Routine work moves without being chased.",
-    panelDescription: "Voxa connects the systems, decisions and updates that keep the business moving.",
-    beforeTitle: "People spend the day moving information.",
-    before: [
-      "Teams copy data between systems",
-      "Routine updates require a handoff",
-      "Reports arrive after decisions are made",
-      "Small errors create hours of rework"
-    ],
     solution: "Connected Automation",
-    bridge: "Moves information, updates tools and keeps every team in sync.",
-    afterTitle: "Work moves without being chased.",
+    coreIcon: Network,
+    inputLabel: "Disconnected business work",
+    inputs: [Database, Copy, ArrowRightLeft, ClockAlert, TriangleAlert],
+    outputLabel: "Connected automation outcomes",
+    outputs: [RefreshCw, Zap, ChartNoAxesCombined, Focus, TrendingUp],
+    beforeTitle: "Work is fragmented, teams are stretched",
+    before: [
+      { text: "Teams copy data between systems", icon: Copy },
+      { text: "Routine updates require a handoff", icon: ArrowRightLeft },
+      { text: "Reports arrive after decisions are made", icon: ClockAlert },
+      { text: "Small errors create hours of rework", icon: TriangleAlert }
+    ],
+    afterTitle: "Work flows, business grows",
     after: [
-      "Applications update each other",
-      "Routine work completes automatically",
-      "Results stay visible in real time",
-      "People focus on exceptions and decisions"
+      { text: "Applications update each other", icon: RefreshCw },
+      { text: "Routine work completes automatically", icon: Zap },
+      { text: "Results stay visible in real time", icon: ChartNoAxesCombined },
+      { text: "People focus on exceptions and decisions", icon: Focus }
     ],
     result: "Hours returned to the team each week"
   }
@@ -182,195 +142,90 @@ const slides = [
 ]
 
 const process = [
-  { title: "Listen", description: "Understand the conversations, friction and outcomes that matter most.", icon: Search },
-  { title: "Design", description: "Shape the experience, actions, integrations and human handoffs.", icon: Network },
-  { title: "Build", description: "Create the voice, agents and automations around your real workflow.", icon: Wrench },
-  { title: "Prove", description: "Test real scenarios with your team before customers ever depend on it.", icon: ShieldCheck },
-  { title: "Grow", description: "Measure results, improve what works and expand with confidence.", icon: TrendingUp }
+  { title: "Listen", description: "Find the conversations and friction that matter most", icon: Search },
+  { title: "Design", description: "Map the experience, actions and human handoffs", icon: Network },
+  { title: "Build", description: "Connect Voxa to your real workflow and tools", icon: Wrench },
+  { title: "Prove", description: "Test real scenarios safely with your team", icon: ShieldCheck },
+  { title: "Grow", description: "Measure outcomes and expand with confidence", icon: TrendingUp }
+]
+
+const metrics = [
+  { value: "70%", label: "Less manual work", icon: Clock3 },
+  { value: "2 to 5x", label: "Faster cycle time", icon: TrendingUp },
+  { value: "99.9%", label: "Data accuracy", icon: Gauge },
+  { value: "Happier teams", label: "Focused on impact", icon: UsersRound }
 ]
 
 const currentStory = computed(() => stories[activeSlide.value] || stories[0])
-
 function selectSlide(index) {
   activeSlide.value = index
+  startAuto()
 }
-
-function stopAuto() {
-  paused.value = true
-  window.clearInterval(storyTimer)
-}
-
 function startAuto() {
   window.clearInterval(storyTimer)
-  paused.value = false
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-  storyTimer = window.setInterval(() => {
-    activeSlide.value = (activeSlide.value + 1) % slides.length
-  }, 5200)
+  storyTimer = window.setInterval(() => { activeSlide.value = (activeSlide.value + 1) % slides.length }, 5600)
 }
-
 onMounted(startAuto)
 onUnmounted(() => window.clearInterval(storyTimer))
 </script>
 
 <style scoped>
-.transformations {
-  position: relative;
-  padding: 150px 0;
-  overflow: hidden;
-  isolation: isolate;
-  background: var(--voxa-blue);
-}
-
-.grid-bg {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, .04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, .04) 1px, transparent 1px);
-  background-size: 46px 46px;
-  opacity: .45;
-  pointer-events: none;
-}
-
-.ambient { display: none; }
-.ambient-left { left: -300px; top: 120px; background: rgba(52, 120, 246, .16); }
-.ambient-right { right: -320px; bottom: 80px; background: rgba(67, 133, 255, .1); }
-
-.container-custom { position: relative; z-index: 2; }
-
-.heading { max-width: 940px; margin: 0 auto 70px; text-align: center; }
-.heading > span { display: inline-block; margin-bottom: 22px; color: #8eb4ff; font-size: 11px; font-weight: 800; letter-spacing: .28em; }
-.heading h2 { margin: 0 0 28px; color: #fff; font-size: clamp(58px, 6vw, 88px); line-height: .96; letter-spacing: -.055em; text-wrap: balance; }
-.heading p { max-width: 700px; margin: auto; color: #aeb9cc; font-size: 18px; line-height: 1.8; text-wrap: pretty; }
-
-.case-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 34px; }
-.case-tabs button { position: relative; overflow: hidden; display: flex; align-items: center; gap: 9px; padding: 12px 18px; border: 1px solid rgba(255, 255, 255, .13); border-radius: 999px; background: rgba(255, 255, 255, .055); color: #aeb9cc; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: color .3s, background .3s, border-color .3s, box-shadow .3s; }
-.case-tabs button svg { width: 17px; height: 17px; }
-.case-tabs button.active { border-color: #4385ff; background: #3478f6; color: white; box-shadow: 0 12px 32px rgba(52, 120, 246, .3); }
-.case-tabs button.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: rgba(255, 255, 255, .82); transform-origin: left; animation: story-progress 5.2s linear both; }
-.transformations.is-paused .case-tabs button.active::after { animation-play-state: paused; }
-.case-tabs button:focus-visible { outline: 2px solid #3478f6; outline-offset: 3px; }
-
-.story-stage { min-height: 760px; }
-
-.transformation-story,
-.process-panel {
-  padding: 58px;
-  border: 1px solid rgba(255, 255, 255, .08);
-  border-radius: 38px;
-  background:
-    linear-gradient(rgba(255, 255, 255, .025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, .025) 1px, transparent 1px),
-    var(--voxa-blue-2);
-  background-size: 44px 44px, 44px 44px, auto;
-  box-shadow: 0 45px 110px rgba(0, 0, 0, .22);
-}
-
-.transformation-story { transition: transform .48s cubic-bezier(.22, 1, .36, 1); }
-.story-conversations { transform: translateX(-6px); }
-.story-operations { transform: translateX(6px); }
-
-.story-heading,
-.process-heading { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr); gap: 60px; align-items: end; margin-bottom: 48px; }
-.story-heading span,
-.process-heading span { display: block; margin-bottom: 14px; color: #8eb4ff; font-size: 10px; font-weight: 850; letter-spacing: .26em; }
-.story-heading h3,
-.process-heading h3 { max-width: 700px; margin: 0; color: white; font-size: clamp(38px, 4vw, 58px); line-height: 1.02; letter-spacing: -.045em; text-wrap: balance; }
-.story-heading > p,
-.process-heading > p { margin: 0; color: #aeb9cc; font-size: 15px; line-height: 1.75; }
-
-.transformation-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 240px minmax(0, 1fr);
-  gap: 34px;
-  align-items: stretch;
-}
-
-.state-card {
-  min-height: 440px;
-  padding: 42px;
-  border: 1px solid rgba(255, 255, 255, .1);
-  border-radius: 30px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .035));
-  box-shadow: 0 26px 70px rgba(0, 0, 0, .2);
-  backdrop-filter: blur(16px);
-}
-.state-label { display: block; margin-bottom: 24px; font-size: 10px; font-weight: 850; letter-spacing: .24em; }
-.before-card .state-label { color: #e56b6f; }
-.after-card .state-label { color: #129b6a; }
-.state-card h3 { max-width: 430px; margin: 0 0 30px; color: white; font-size: 30px; line-height: 1.15; letter-spacing: -.035em; }
-.state-card ul { list-style: none; display: grid; gap: 18px; margin: 0; padding: 0; }
-.state-card li { position: relative; padding-left: 25px; color: #c2cad8; font-size: 15px; line-height: 1.55; }
-.state-card li::before { position: absolute; left: 0; top: 0; font-weight: 850; }
-.before-card li::before { content: "×"; color: #e56b6f; }
-.after-card li::before { content: "✓"; color: #129b6a; }
-
-.transformation-core { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 12px; text-align: center; }
-.transformation-core::before { content: ""; position: absolute; left: 50%; top: 22px; bottom: 22px; width: 1px; background: linear-gradient(180deg, transparent, rgba(52, 120, 246, .5), transparent); }
-.signal-dot { position: absolute; left: 50%; top: 27px; width: 8px; height: 8px; border-radius: 50%; background: #3478f6; box-shadow: 0 0 18px rgba(52, 120, 246, .7); transform: translateX(-50%); }
-.core-icon { position: relative; width: 62px; height: 62px; display: grid; place-items: center; margin-bottom: 18px; border-radius: 18px; background: rgba(67, 133, 255, .13); border: 1px solid rgba(67, 133, 255, .24); color: #8eb4ff; box-shadow: 0 15px 36px rgba(52, 120, 246, .15); }
-.core-icon svg { width: 27px; height: 27px; }
-.transformation-core small { position: relative; margin-bottom: 10px; color: #8eb4ff; font-size: 9px; font-weight: 850; letter-spacing: .22em; }
-.transformation-core strong { position: relative; color: white; font-size: 20px; line-height: 1.25; }
-.transformation-core p { position: relative; margin: 13px 0 0; color: #aeb9cc; font-size: 12px; line-height: 1.55; }
-.signal-arrow { position: relative; width: 42px; height: 42px; display: grid; place-items: center; margin-top: 22px; border-radius: 50%; background: #3478f6; color: white; font-size: 20px; box-shadow: 0 12px 26px rgba(52, 120, 246, .25); }
-
-.after-card { position: relative; padding-bottom: 98px; }
-.result-badge { position: absolute; left: 42px; right: 42px; bottom: 36px; display: flex; align-items: center; gap: 10px; padding: 13px 15px; border: 1px solid rgba(74, 222, 167, .2); border-radius: 14px; background: rgba(74, 222, 167, .08); color: #83f0c6; font-size: 12px; font-weight: 750; }
-.result-badge svg { width: 17px; height: 17px; flex: 0 0 auto; }
-
-.process-grid { position: relative; list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 0; padding: 0; }
-.process-grid::before { content: ""; position: absolute; left: 4%; right: 4%; top: 27px; height: 1px; background: linear-gradient(90deg, transparent, rgba(67, 133, 255, .6), transparent); }
-.process-grid li { position: relative; min-height: 210px; padding: 26px 22px; border: 1px solid rgba(255, 255, 255, .08); border-radius: 22px; background: rgba(255, 255, 255, .035); transition: transform .3s, border-color .3s, background .3s; }
-.process-grid li:hover { transform: translateY(-6px); border-color: rgba(67, 133, 255, .55); background: rgba(67, 133, 255, .08); }
-.step-topline { position: relative; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-.step-topline span { color: #8eb4ff; font-size: 9px; font-weight: 850; letter-spacing: .2em; }
-.step-topline svg { width: 20px; height: 20px; color: #4385ff; }
-.process-grid h4 { margin: 0 0 12px; color: white; font-size: 22px; }
-.process-grid p { margin: 0; color: #a7b2c5; font-size: 13px; line-height: 1.65; }
-
-@keyframes story-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-
-@media (max-width: 1100px) {
-  .transformations { padding: 120px 0; }
-  .transformation-grid { grid-template-columns: 1fr; }
-  .transformation-core { min-height: 220px; }
-  .transformation-core::before { left: 30px; right: 30px; top: 50%; bottom: auto; width: auto; height: 1px; background: linear-gradient(90deg, transparent, rgba(52, 120, 246, .5), transparent); }
-  .signal-dot { left: 34px; top: 50%; transform: translateY(-50%); }
-  .signal-arrow { position: absolute; right: 24px; top: 50%; margin: 0; transform: translateY(-50%); }
-  .process-grid { grid-template-columns: repeat(3, 1fr); }
-  .story-stage { min-height: 0; }
-}
-
-@media (max-width: 768px) {
-  .transformations { padding: 90px 0; }
-  .heading { margin-bottom: 50px; }
-  .heading h2 { font-size: 46px; }
-  .heading p { font-size: 16px; }
-  .case-tabs { flex-direction: column; align-items: stretch; }
-  .case-tabs button { justify-content: center; }
-  .state-card { min-height: auto; padding: 30px 24px; border-radius: 24px; }
-  .state-card h3 { font-size: 26px; }
-  .after-card { padding-bottom: 96px; }
-  .result-badge { left: 24px; right: 24px; bottom: 26px; }
-  .transformation-story,
-  .process-panel { padding: 36px 22px; border-radius: 28px; }
-  .story-heading,
-  .process-heading { grid-template-columns: 1fr; gap: 20px; }
-  .story-heading h3,
-  .process-heading h3 { font-size: 38px; }
-  .process-grid { grid-template-columns: 1fr; }
-  .process-grid::before { display: none; }
-  .process-grid li { min-height: auto; }
-}
-
-@media (max-width: 480px) {
-  .heading h2 { font-size: 38px; }
-  .transformation-core { min-height: 240px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-}
+.transformations { position: relative; padding: 132px 0 118px; overflow: hidden; isolation: isolate; background: #07152d; }
+.grid-bg { position: absolute; inset: 0; background-image: linear-gradient(rgba(116,154,220,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(116,154,220,.06) 1px,transparent 1px); background-size: 48px 48px; mask-image: linear-gradient(180deg,transparent,#000 10%,#000 92%,transparent); }
+.transformations::before { content:""; position:absolute; width:820px; height:820px; left:50%; top:38%; transform:translate(-50%,-50%); border-radius:50%; background:rgba(31,111,255,.1); filter:blur(150px); }
+.container-custom { position:relative; z-index:1; }
+.heading { max-width:900px; margin:0 auto 46px; text-align:center; }
+.heading > span { display:inline-block; margin-bottom:18px; color:#7ba7ff; font-size:10px; font-weight:850; letter-spacing:.28em; }
+.heading h2 { margin:0 0 24px; color:#fff; font-size:clamp(50px,5.5vw,78px); line-height:.98; letter-spacing:-.055em; text-wrap:balance; }
+.heading h2 em { color:#67a5ff; font-style:normal; }
+.heading p { max-width:720px; margin:auto; color:#a7b4c8; font-size:17px; line-height:1.7; }
+.case-tabs { display:flex; justify-content:center; gap:12px; margin-bottom:28px; }
+.case-tabs button { position:relative; display:flex; align-items:center; gap:10px; min-width:210px; justify-content:center; padding:14px 20px; border:1px solid rgba(255,255,255,.13); border-radius:999px; background:rgba(255,255,255,.035); color:#c0c9d8; font:inherit; font-size:13px; font-weight:700; cursor:pointer; transition:.3s ease; }
+.case-tabs svg { width:18px; height:18px; }
+.case-tabs button.active { border-color:#3478f6; background:linear-gradient(135deg,#1747a7,#2467e9); color:#fff; box-shadow:0 12px 34px rgba(27,100,239,.28); }
+.case-tabs button.active::before,.case-tabs button.active::after { content:""; position:absolute; left:10%; right:10%; bottom:-14px; height:4px; border-radius:999px; }
+.case-tabs button.active::before { background:rgba(67,133,255,.2); }
+.case-tabs button.active::after { background:linear-gradient(90deg,#65a2ff,#fff); box-shadow:0 0 12px rgba(67,133,255,.8); transform:scaleX(0); transform-origin:left center; will-change:transform; animation:tab-progress 5.6s linear forwards; }
+.story-stage { min-height:570px; }
+.comparison { display:grid; grid-template-columns:minmax(0,1fr) minmax(310px,.82fr) minmax(0,1fr); gap:24px; align-items:stretch; }
+.state-card { min-height:500px; padding:34px; border:1px solid rgba(255,255,255,.11); border-radius:28px; background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025)); box-shadow:0 28px 70px rgba(0,0,0,.24); }
+.before-card { border-color:rgba(230,148,134,.28); }
+.after-card { border-color:rgba(72,211,153,.28); }
+.state-label { display:inline-flex; padding:7px 12px; border-radius:999px; font-size:9px; font-weight:850; letter-spacing:.18em; }
+.before-card .state-label { color:#ff9d8f; background:rgba(230,112,92,.11); }
+.after-card .state-label { color:#79e7b5; background:rgba(57,197,137,.11); }
+.state-card h3 { min-height:82px; margin:22px 0 28px; color:#fff; font-size:clamp(28px,2.3vw,38px); line-height:1.08; letter-spacing:-.035em; }
+.state-card ul { display:grid; gap:10px; list-style:none; margin:0; padding:0; }
+.state-card li { display:flex; align-items:center; gap:11px; min-height:50px; padding:11px 14px; border:1px solid rgba(255,255,255,.07); border-radius:12px; background:rgba(255,255,255,.035); color:#d0d7e4; font-size:13px; line-height:1.35; }
+.state-card li svg { width:17px; height:17px; flex:0 0 auto; }
+.before-card li svg { color:#ff8372; }
+.after-card li svg { padding:3px; border-radius:50%; background:#57db9a; color:#06221a; }
+.after-card { position:relative; padding-bottom:92px; }
+.result-badge { position:absolute; left:34px; right:34px; bottom:30px; display:flex; align-items:center; gap:10px; padding:14px; border:1px solid rgba(72,211,153,.2); border-radius:13px; background:rgba(72,211,153,.08); color:#74e3b0; font-size:12px; font-weight:750; }
+.result-badge svg { width:18px; height:18px; }
+.voxa-hub { position:relative; min-height:500px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:20px 0 14px; }
+.channels,.tool-row { position:relative; z-index:2; display:flex; justify-content:center; gap:10px; width:100%; }
+.channels span,.tool-row span { width:44px; height:44px; display:grid; place-items:center; border:1px solid rgba(73,137,255,.27); border-radius:14px; background:#0c203f; color:#82adff; box-shadow:0 12px 30px rgba(0,0,0,.2); }
+.channels svg,.tool-row svg { width:19px; height:19px; }
+.connector-lines { position:absolute; inset:76px 20px 73px; background:repeating-conic-gradient(from 0deg at 50% 50%,transparent 0 14deg,rgba(55,126,255,.18) 14.5deg 15deg,transparent 15.5deg 29deg); mask-image:radial-gradient(circle,transparent 0 20%,#000 21% 65%,transparent 66%); }
+.core-orb { position:absolute; z-index:3; left:50%; top:50%; width:164px; height:164px; display:flex; flex-direction:column; align-items:center; justify-content:center; transform:translate(-50%,-50%); border:1px solid #4385ff; border-radius:50%; background:radial-gradient(circle at 50% 35%,#174f9f,#07152d 72%); color:#fff; box-shadow:0 0 0 12px rgba(52,120,246,.05),0 0 52px rgba(35,111,255,.45); }
+.core-orb svg { width:42px; height:42px; margin-bottom:8px; color:#fff; }
+.core-orb strong { font-size:24px; letter-spacing:-.03em; }
+.core-orb small { max-width:120px; margin-top:4px; color:#8eb4ff; font-size:8px; text-align:center; text-transform:uppercase; letter-spacing:.14em; }
+.tool-row span { color:#65d6b4; }
+.process-panel { min-height:520px; padding:54px; border:1px solid rgba(255,255,255,.1); border-radius:30px; background:rgba(255,255,255,.035); }
+.process-panel header { max-width:760px; margin:0 auto 52px; text-align:center; }.process-panel header span { color:#7ba7ff; font-size:10px; font-weight:850; letter-spacing:.22em; }.process-panel h3 { margin:14px 0 0; color:#fff; font-size:42px; line-height:1.05; }
+.process-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin:0; padding:0; list-style:none; }
+.process-grid li { position:relative; min-height:220px; padding:24px; border:1px solid rgba(255,255,255,.09); border-radius:20px; background:#0b1c38; }.process-grid li > span { color:#6284bb; font-size:9px; font-weight:850; }.process-grid svg { display:block; width:24px; height:24px; margin:28px 0 22px; color:#4385ff; }.process-grid h4 { margin:0 0 10px; color:#fff; font-size:20px; }.process-grid p { margin:0; color:#aab5c8; font-size:12px; line-height:1.6; }
+.impact-strip { display:grid; grid-template-columns:repeat(4,1fr); margin-top:34px; padding:22px 8px; border:1px solid rgba(255,255,255,.1); border-radius:24px; background:rgba(255,255,255,.035); }
+.impact-strip > div { display:grid; grid-template-columns:42px auto; grid-template-rows:auto auto; align-items:center; column-gap:13px; padding:4px 26px; }
+.impact-strip > div + div { border-left:1px solid rgba(255,255,255,.11); }
+.impact-strip svg { grid-row:1/3; width:24px; height:24px; padding:9px; box-sizing:content-box; border-radius:13px; background:rgba(52,120,246,.11); color:#4f8cff; }
+.impact-strip strong { color:#4f8cff; font-size:24px; line-height:1; }.impact-strip span { color:#aab5c8; font-size:11px; }
+@keyframes tab-progress { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+@media (max-width:1100px) { .comparison{grid-template-columns:1fr 260px 1fr}.state-card{padding:26px}.state-card h3{font-size:27px}.impact-strip > div{padding:4px 14px}.impact-strip strong{font-size:20px} }
+@media (max-width:900px) { .transformations{padding:100px 0}.comparison{grid-template-columns:1fr}.voxa-hub{min-height:380px}.state-card{min-height:auto}.process-grid{grid-template-columns:repeat(2,1fr)}.impact-strip{grid-template-columns:repeat(2,1fr);gap:20px}.impact-strip > div:nth-child(3){border-left:0}.case-tabs{flex-wrap:wrap}.case-tabs button{min-width:0}.story-stage{min-height:0} }
+@media (max-width:600px) { .heading h2{font-size:42px}.case-tabs{display:grid}.comparison{gap:18px}.state-card{padding:24px}.after-card{padding-bottom:92px}.result-badge{left:24px;right:24px}.process-panel{padding:32px 20px}.process-grid{grid-template-columns:1fr}.impact-strip{grid-template-columns:1fr}.impact-strip > div + div{border-left:0;border-top:1px solid rgba(255,255,255,.1);padding-top:18px}.channels span,.tool-row span{width:39px;height:39px} }
+@media (prefers-reduced-motion:reduce) { *,*::before,*::after{animation:none!important;transition:none!important} }
 </style>

@@ -17,7 +17,7 @@
 
 <p>
 Building voice AI that answers calls, books appointments,
-updates systems and keeps every customer conversation moving.
+updates systems and keeps every customer conversation moving
 </p>
 
 </div>
@@ -72,7 +72,7 @@ updates systems and keeps every customer conversation moving.
 
 <div class="bottom">
 
-<p>© 2026 Voxa. All rights reserved.</p>
+<p>© 2026 Voxa, all rights reserved</p>
 
 <p>Voice AI Platform • Waitlist Access • Customer Automation</p>
 

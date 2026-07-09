@@ -1,46 +1,45 @@
 <template>
   <section id="about" class="manifesto">
-    <div class="grid-bg"></div>
     <div class="glow"></div>
 
     <div class="container-custom">
       <aside class="manifesto-label">
         <span>OUR MANIFESTO</span>
-        <p>Built for the people who answer the calls, and the people waiting on the other end.</p>
+        <p>Built for the people who answer the calls, and the people waiting on the other end</p>
       </aside>
 
       <article class="manifesto-story">
         <span class="section-tag">WHY WE BUILT VOXA</span>
 
-        <h2>No one should have to choose which customer gets heard.</h2>
+        <h2>No one should have to choose which customer gets heard</h2>
 
         <div class="story-copy">
           <p>
-            There was one desk, one phone, and one person trying to be everywhere at once.
+            There was one desk, one phone, and one person trying to be everywhere at once
           </p>
 
           <p>
-            Every ring asked for something. An appointment. An answer. A little
-            reassurance. When the day got busy, someone had to wait. Sometimes that
-            person never called back.
+            Every ring asked for something, an appointment, an answer, a little
+            reassurance, and when the day got busy, someone had to wait, sometimes that
+            person never called back
           </p>
 
           <p>
-            Voxa gives a business room to breathe. It welcomes the customer a
-            thousand kilometers away with the same patience as the person next door.
-            It listens, helps, and follows through, even when the team is already
-            giving everything they have.
+            Voxa gives a business room to breathe and welcomes the customer a
+            thousand kilometers away with the same patience as the person next door,
+            and it listens, helps, and follows through, even when the team is already
+            giving everything they have
           </p>
 
           <p>
-            The people behind the business get something back too. Time to solve the
-            hard problem. Time to sit with a customer who needs more than a quick
-            answer. Time to do the work only they can do.
+            The people behind the business get something back too, time to solve the
+            hard problem, time to sit with a customer who needs more than a quick
+            answer, and time to do the work only they can do
           </p>
 
           <p class="closing-line">
-            Being there for everyone once felt impossible. Now it can simply be how
-            the business runs.
+            Being there for everyone once felt impossible, now it can simply be how
+            the business runs
           </p>
         </div>
       </article>
@@ -62,17 +61,6 @@
     linear-gradient(128deg, #ffffff 0%, #fafbfc 48%, #f0f3f7 100%);
 }
 
-.grid-bg {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(15, 23, 42, .055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15, 23, 42, .055) 1px, transparent 1px);
-  background-size: 66px 66px;
-  mask-image: linear-gradient(90deg, rgba(0, 0, 0, .38), #000 40%, rgba(0, 0, 0, .72));
-  pointer-events: none;
-}
-
 .glow {
   position: absolute;
   width: 780px;
@@ -89,8 +77,8 @@
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  gap: clamp(70px, 9vw, 150px);
+  grid-template-columns: clamp(290px, 24vw, 340px) minmax(0, 1fr);
+  gap: clamp(54px, 6.5vw, 104px);
   align-items: start;
 }
 
@@ -105,23 +93,25 @@
   align-items: center;
   gap: 14px;
   color: #14264d;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .28em;
 }
 
 .manifesto-label span::before {
   content: "";
-  width: 42px;
+  width: 52px;
   height: 2px;
   background: #2563eb;
 }
 
 .manifesto-label p {
-  margin: 28px 0 0 56px;
-  color: #7b879d;
-  font-size: 13px;
-  line-height: 1.7;
+  max-width: 285px;
+  margin: 32px 0 0 66px;
+  color: #6f7d95;
+  font-size: clamp(17px, 1.35vw, 20px);
+  line-height: 1.62;
+  letter-spacing: -.012em;
 }
 
 .manifesto-story {
