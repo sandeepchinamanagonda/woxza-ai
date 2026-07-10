@@ -1,119 +1,109 @@
 <template>
   <section id="integrations" class="integrations">
-    <div class="ambient ambient-left" aria-hidden="true" />
-    <div class="ambient ambient-right" aria-hidden="true" />
-
     <div class="container-custom">
       <header class="section-heading">
         <span class="eyebrow">CONNECTED ECOSYSTEM</span>
-        <h2>Every conversation flows into the tools that run your business</h2>
-        <p>Choose a category to see how Voxa moves live customer data into the systems your team already uses</p>
+        <h2>All the customer work, sorted into the systems your team already trusts</h2>
+        <p>
+          Voxa does not replace your CRM or workspace. It keeps them clean:
+          customer records, tasks, tickets, calendar events and team alerts stay
+          connected after every conversation.
+        </p>
       </header>
 
-      <nav class="flow-tabs" aria-label="Integration categories">
-        <button
-          v-for="(flow, index) in flows"
-          :key="flow.id"
-          type="button"
-          :class="{ active: activeFlow === index }"
-          :aria-pressed="activeFlow === index"
-          @click="selectFlow(index)"
-        >
-          {{ flow.label }}
-        </button>
-      </nav>
+      <div class="integration-layout">
+        <aside class="category-panel" aria-label="Integration categories">
+          <button
+            v-for="(flow, index) in flows"
+            :key="flow.id"
+            type="button"
+            :class="{ active: activeFlow === index }"
+            :aria-pressed="activeFlow === index"
+            @click="selectFlow(index)"
+          >
+            <component :is="flow.icon" />
+            <span>
+              <strong>{{ flow.label }}</strong>
+              <small>{{ flow.short }}</small>
+            </span>
+          </button>
+        </aside>
 
-      <div class="flow-panel">
-        <div class="panel-topline">
-          <div>
-            <span>{{ selectedFlow.kicker }}</span>
-            <strong>{{ selectedFlow.title }}</strong>
+        <main :key="selectedFlow.id" class="system-board">
+          <div class="board-top">
+            <div>
+              <span>{{ selectedFlow.kicker }}</span>
+              <strong>{{ selectedFlow.title }}</strong>
+            </div>
+            <b><RefreshCcw /> Live sync</b>
           </div>
-          <span class="live-status"><i /> Live data flow</span>
-        </div>
 
-        <div :key="selectedFlow.id" class="signal-stage">
-          <div class="tool-column source-column">
-            <span class="column-label">TOUCHPOINTS</span>
-            <article v-for="tool in selectedFlow.left" :key="tool.name" class="flow-tool">
-              <span class="logo-wrap"><img :src="tool.logo" alt=""></span>
+          <div class="board-grid">
+            <section class="primary-system">
+              <span class="system-label">Primary record</span>
+              <div class="system-head">
+                <span class="logo-box"><img :src="selectedFlow.primary.logo" :alt="selectedFlow.primary.name"></span>
+                <div>
+                  <strong>{{ selectedFlow.primary.name }}</strong>
+                  <small>{{ selectedFlow.primary.detail }}</small>
+                </div>
+              </div>
+
+              <div class="record-fields">
+                <div v-for="field in selectedFlow.fields" :key="field.label">
+                  <span>{{ field.label }}</span>
+                  <strong>{{ field.value }}</strong>
+                </div>
+              </div>
+            </section>
+
+            <section class="mapping-panel">
+              <span class="system-label">What gets written</span>
+              <article v-for="item in selectedFlow.mapping" :key="item.title">
+                <component :is="item.icon" />
+                <div>
+                  <strong>{{ item.title }}</strong>
+                  <p>{{ item.detail }}</p>
+                </div>
+              </article>
+            </section>
+
+            <section class="routing-panel">
+              <span class="system-label">Routing rules</span>
+              <ol>
+                <li v-for="(rule, index) in selectedFlow.rules" :key="rule">
+                  <span>{{ index + 1 }}</span>
+                  {{ rule }}
+                </li>
+              </ol>
+            </section>
+          </div>
+        </main>
+
+        <aside :key="`${selectedFlow.id}-apps`" class="app-panel">
+          <header>
+            <span>Connected apps</span>
+            <strong>{{ selectedFlow.appTitle }}</strong>
+          </header>
+
+          <div class="app-grid">
+            <article v-for="tool in selectedFlow.tools" :key="tool.name">
+              <span class="logo-box small"><img :src="tool.logo" :alt="tool.name"></span>
               <strong>{{ tool.name }}</strong>
               <small>{{ tool.detail }}</small>
             </article>
           </div>
+        </aside>
+      </div>
 
-          <svg class="signal-map" viewBox="0 0 1000 420" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="route-in" x1="0" x2="1">
-                <stop offset="0" stop-color="#cbd7ec" stop-opacity=".42" />
-                <stop offset="1" stop-color="#3478f6" stop-opacity=".88" />
-              </linearGradient>
-              <linearGradient id="route-out" x1="0" x2="1">
-                <stop offset="0" stop-color="#3478f6" stop-opacity=".88" />
-                <stop offset="1" stop-color="#cbd7ec" stop-opacity=".42" />
-              </linearGradient>
-              <filter id="signal-glow" x="-100%" y="-100%" width="300%" height="300%">
-                <feGaussianBlur stdDeviation="5" result="blur" />
-                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
-            </defs>
-
-            <g class="routes incoming-routes">
-              <path v-for="(path, index) in leftPaths" :id="`left-route-${index}`" :key="`left-${index}`" :d="path" />
-            </g>
-            <g class="routes outgoing-routes">
-              <path v-for="(path, index) in rightPaths" :id="`right-route-${index}`" :key="`right-${index}`" :d="path" />
-            </g>
-
-            <g v-for="(_, index) in leftPaths" :key="`incoming-signal-${index}`" class="signal signal-in" filter="url(#signal-glow)">
-              <circle r="7">
-                <animateMotion dur="2.4s" repeatCount="indefinite" :begin="`${index * 0.34}s`">
-                  <mpath :href="`#left-route-${index}`" />
-                </animateMotion>
-              </circle>
-              <circle r="2.5" class="signal-core">
-                <animateMotion dur="2.4s" repeatCount="indefinite" :begin="`${index * 0.34}s`">
-                  <mpath :href="`#left-route-${index}`" />
-                </animateMotion>
-              </circle>
-            </g>
-
-            <g v-for="(_, index) in rightPaths" :key="`outgoing-signal-${index}`" class="signal signal-out" filter="url(#signal-glow)">
-              <circle r="7">
-                <animateMotion dur="2.4s" repeatCount="indefinite" :begin="`${1.05 + index * 0.34}s`">
-                  <mpath :href="`#right-route-${index}`" />
-                </animateMotion>
-              </circle>
-              <circle r="2.5" class="signal-core">
-                <animateMotion dur="2.4s" repeatCount="indefinite" :begin="`${1.05 + index * 0.34}s`">
-                  <mpath :href="`#right-route-${index}`" />
-                </animateMotion>
-              </circle>
-            </g>
-          </svg>
-
-          <div class="voxa-core" aria-label="Voxa processes and routes the data">
-            <span class="core-rings" aria-hidden="true"><i /><i /><i /></span>
-            <span class="voxa-mark" aria-hidden="true"><i /><i /><i /><i /><i /></span>
-            <strong>VOXA</strong>
-            <small>Understanding and routing</small>
-          </div>
-
-          <div class="tool-column destination-column">
-            <span class="column-label">BUSINESS SYSTEMS</span>
-            <article v-for="tool in selectedFlow.right" :key="tool.name" class="flow-tool">
-              <span class="logo-wrap"><img :src="tool.logo" alt=""></span>
-              <strong>{{ tool.name }}</strong>
-              <small>{{ tool.detail }}</small>
-            </article>
-          </div>
-        </div>
-
-        <footer class="panel-footer">
-          <span><i class="footer-dot" /> {{ selectedFlow.footer }}</span>
-          <span>Encrypted in transit</span>
-          <span>Real-time sync</span>
-        </footer>
+      <div class="governance-strip" aria-label="Integration assurances">
+        <article v-for="item in governance" :key="item.title">
+          <component :is="item.icon" />
+          <span>
+            <strong>{{ item.title }}</strong>
+            <small>{{ item.detail }}</small>
+          </span>
+        </article>
       </div>
     </div>
   </section>
@@ -121,106 +111,137 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
+import {
+  BellRing,
+  CalendarCheck2,
+  CheckCircle2,
+  ClipboardList,
+  ContactRound,
+  FileText,
+  Layers3,
+  ListChecks,
+  LockKeyhole,
+  Mail,
+  MessagesSquare,
+  RefreshCcw,
+  Route,
+  ShieldCheck,
+  Sparkles,
+  Workflow
+} from "lucide-vue-next"
 
-const asset = (name) => `/brand-logos/${name}.svg`
+const asset = name => `/brand-logos/${name}.svg`
 
 const tools = {
-  salesforce: { name: "Salesforce", logo: asset("salesforce"), detail: "Customer records" },
-  hubspot: { name: "HubSpot", logo: asset("hubspot"), detail: "Sales workflows" },
-  zoho: { name: "Zoho", logo: asset("zoho"), detail: "CRM activity" },
-  whatsapp: { name: "WhatsApp", logo: asset("whatsapp"), detail: "Customer messages" },
-  slack: { name: "Slack", logo: asset("slack"), detail: "Team updates" },
-  teams: { name: "Microsoft Teams", logo: asset("microsoftteams"), detail: "Internal alerts" },
-  google: { name: "Google", logo: asset("google"), detail: "Workspace data" },
-  microsoft: { name: "Microsoft 365", logo: asset("microsoft"), detail: "Business documents" },
-  notion: { name: "Notion", logo: asset("notion"), detail: "Shared knowledge" },
-  calendar: { name: "Google Calendar", logo: asset("googlecalendar"), detail: "Live scheduling" },
-  calendly: { name: "Calendly", logo: asset("calendly"), detail: "Meeting booking" },
-  gmail: { name: "Gmail", logo: asset("gmail"), detail: "Email confirmation" },
-  sendgrid: { name: "SendGrid", logo: asset("sendgrid"), detail: "Automated email" },
-  mailchimp: { name: "Mailchimp", logo: asset("mailchimp"), detail: "Customer journeys" },
-  sap: { name: "SAP", logo: asset("sap"), detail: "Enterprise operations" },
-  oracle: { name: "Oracle", logo: asset("oracle"), detail: "Business data" },
-  odoo: { name: "Odoo", logo: asset("odoo"), detail: "Operational workflows" },
-  aws: { name: "AWS", logo: asset("aws"), detail: "Cloud services" },
-  googleCloud: { name: "Google Cloud", logo: asset("googlecloud"), detail: "Cloud data" },
-  github: { name: "GitHub", logo: asset("github"), detail: "Developer workflows" }
+  salesforce: { name: "Salesforce", logo: asset("salesforce"), detail: "Accounts, leads and notes" },
+  hubspot: { name: "HubSpot", logo: asset("hubspot"), detail: "Deals and lifecycle stages" },
+  zoho: { name: "Zoho", logo: asset("zoho"), detail: "Tickets and service records" },
+  slack: { name: "Slack", logo: asset("slack"), detail: "Team alerts" },
+  teams: { name: "Microsoft Teams", logo: asset("microsoftteams"), detail: "Internal handoffs" },
+  calendar: { name: "Google Calendar", logo: asset("googlecalendar"), detail: "Bookings and callbacks" },
+  gmail: { name: "Gmail", logo: asset("gmail"), detail: "Email confirmations" },
+  whatsapp: { name: "WhatsApp", logo: asset("whatsapp"), detail: "Customer updates" },
+  notion: { name: "Notion", logo: asset("notion"), detail: "Knowledge and SOPs" },
+  odoo: { name: "Odoo", logo: asset("odoo"), detail: "Orders and operations" },
+  sap: { name: "SAP", logo: asset("sap"), detail: "Enterprise data" },
+  oracle: { name: "Oracle", logo: asset("oracle"), detail: "Business records" },
+  sendgrid: { name: "SendGrid", logo: asset("sendgrid"), detail: "Transactional email" },
+  mailchimp: { name: "Mailchimp", logo: asset("mailchimp"), detail: "Customer journeys" }
 }
 
 const flows = [
   {
     id: "crm",
     label: "CRM",
-    kicker: "CUSTOMER CONTEXT",
-    title: "Keep every customer record current",
-    left: [tools.salesforce, tools.hubspot, tools.zoho],
-    right: [tools.gmail, tools.slack, tools.calendar],
-    footer: "Records, notes and follow-ups stay synchronized"
+    short: "Records and follow-up",
+    icon: ContactRound,
+    kicker: "CUSTOMER RECORDS",
+    title: "Turn every call into a useful CRM record",
+    primary: tools.salesforce,
+    appTitle: "Sales and support stay aligned",
+    fields: [
+      { label: "Contact", value: "Avery Morgan" },
+      { label: "Intent", value: "Book appointment" },
+      { label: "Stage", value: "Qualified" },
+      { label: "Next action", value: "Send intake form" }
+    ],
+    mapping: [
+      { title: "Conversation summary", detail: "Short call notes attached to the customer record.", icon: FileText },
+      { title: "Owner and priority", detail: "Urgency and team ownership are set automatically.", icon: ClipboardList },
+      { title: "Follow-up task", detail: "The next step is created before the call disappears.", icon: CheckCircle2 }
+    ],
+    rules: ["If urgent, assign to live owner", "If booked, update calendar", "If unresolved, open follow-up task"],
+    tools: [tools.salesforce, tools.hubspot, tools.zoho, tools.gmail, tools.calendar, tools.slack]
   },
   {
     id: "communication",
     label: "Communication",
-    kicker: "CUSTOMER TOUCHPOINTS",
-    title: "Turn every message into the right business action",
-    left: [tools.whatsapp, tools.slack, tools.teams],
-    right: [tools.salesforce, tools.oracle, tools.gmail],
-    footer: "Messages are understood, routed and completed"
+    short: "Messages and alerts",
+    icon: MessagesSquare,
+    kicker: "TEAM COMMUNICATION",
+    title: "Send the right update to the right place",
+    primary: tools.slack,
+    appTitle: "No more status chasing",
+    fields: [
+      { label: "Channel", value: "Ops urgent" },
+      { label: "Summary", value: "Stock split needed" },
+      { label: "Owner", value: "Dispatch team" },
+      { label: "Customer update", value: "WhatsApp ready" }
+    ],
+    mapping: [
+      { title: "Internal alert", detail: "Teams receive the context, not just a notification.", icon: BellRing },
+      { title: "Customer message", detail: "Confirmations can be sent through email or WhatsApp.", icon: Mail },
+      { title: "Shared thread", detail: "Updates stay visible for everyone responsible.", icon: MessagesSquare }
+    ],
+    rules: ["Urgent requests go to team channel", "Customer confirmations use preferred channel", "Unanswered items stay pinned"],
+    tools: [tools.slack, tools.teams, tools.whatsapp, tools.gmail, tools.sendgrid, tools.mailchimp]
   },
   {
-    id: "productivity",
-    label: "Productivity",
-    kicker: "TEAM PRODUCTIVITY",
-    title: "Move conversations directly into daily work",
-    left: [tools.google, tools.microsoft, tools.notion],
-    right: [tools.salesforce, tools.calendar, tools.slack],
-    footer: "Updates reach the right people without manual handoffs"
-  },
-  {
-    id: "business",
-    label: "Business Systems",
-    kicker: "CORE OPERATIONS",
-    title: "Connect customer intent with enterprise systems",
-    left: [tools.sap, tools.oracle, tools.odoo],
-    right: [tools.salesforce, tools.gmail, tools.teams],
-    footer: "Operational data moves securely between systems"
-  },
-  {
-    id: "developer",
-    label: "Developer Tools",
-    kicker: "DEVELOPER ECOSYSTEM",
-    title: "Give every workflow a reliable technical foundation",
-    left: [tools.aws, tools.googleCloud, tools.github],
-    right: [tools.salesforce, tools.oracle, tools.slack],
-    footer: "Cloud events and business actions stay in sync"
+    id: "operations",
+    label: "Operations",
+    short: "Orders, tickets, systems",
+    icon: Workflow,
+    kicker: "BUSINESS OPERATIONS",
+    title: "Route work into the system that actually completes it",
+    primary: tools.odoo,
+    appTitle: "Operations gets structured requests",
+    fields: [
+      { label: "Request", value: "Split shipment" },
+      { label: "SLA", value: "Urgent" },
+      { label: "System", value: "Odoo order" },
+      { label: "Status", value: "In progress" }
+    ],
+    mapping: [
+      { title: "Ticket or order update", detail: "Structured records are created with required fields.", icon: ListChecks },
+      { title: "System lookup", detail: "Existing records and inventory can be checked first.", icon: Layers3 },
+      { title: "Completion route", detail: "The task is closed only when the outcome is clear.", icon: Route }
+    ],
+    rules: ["Validate required fields before routing", "Escalate exceptions to a human", "Write outcome back to source record"],
+    tools: [tools.odoo, tools.sap, tools.oracle, tools.salesforce, tools.slack, tools.notion]
   }
 ]
 
-const leftPaths = [
-  "M210 92 C338 92 360 210 455 210",
-  "M210 210 L455 210",
-  "M210 328 C338 328 360 210 455 210"
-]
-
-const rightPaths = [
-  "M545 210 C640 210 662 92 790 92",
-  "M545 210 L790 210",
-  "M545 210 C640 210 662 328 790 328"
+const governance = [
+  { title: "Field-level control", detail: "Write only what each workflow needs", icon: LockKeyhole },
+  { title: "Human handoff", detail: "Escalate sensitive requests cleanly", icon: ShieldCheck },
+  { title: "Calendar-safe", detail: "Bookings respect availability and ownership", icon: CalendarCheck2 },
+  { title: "Workflow-ready", detail: "Built around your existing stack", icon: Sparkles }
 ]
 
 const activeFlow = ref(0)
 const selectedFlow = computed(() => flows[activeFlow.value])
 let rotationTimer
 
-const startRotation = () => {
+function selectFlow(index) {
+  activeFlow.value = index
+  startRotation()
+}
+
+function startRotation() {
   window.clearInterval(rotationTimer)
   rotationTimer = window.setInterval(() => {
     activeFlow.value = (activeFlow.value + 1) % flows.length
-  }, 5000)
-}
-
-const selectFlow = (index) => {
-  activeFlow.value = index
-  startRotation()
+  }, 7000)
 }
 
 onMounted(startRotation)
@@ -230,119 +251,542 @@ onBeforeUnmount(() => window.clearInterval(rotationTimer))
 <style scoped>
 .integrations {
   position: relative;
-  padding: 138px 0 130px;
+  padding: 136px 0 124px;
   overflow: hidden;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(37, 99, 235, .08), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%);
   color: #14264d;
-  background: linear-gradient(180deg, #ffffff 0%, #f7f9fd 100%);
   isolation: isolate;
 }
 
-.ambient { position: absolute; width: 540px; height: 540px; border-radius: 50%; filter: blur(110px); pointer-events: none; opacity: .22; }
-.ambient-left { left: -340px; top: 18%; background: #90b7ff; }
-.ambient-right { right: -340px; bottom: 2%; background: #b8c8e7; }
-.container-custom { position: relative; z-index: 2; }
-
-.section-heading { max-width: 900px; margin: 0 auto 34px; text-align: center; }
-.eyebrow { display: inline-block; margin-bottom: 17px; color: #3478f6; font-size: 10px; font-weight: 850; letter-spacing: .28em; }
-.section-heading h2 { margin: 0; color: #14264d; font-size: clamp(44px, 4.35vw, 66px); line-height: 1; letter-spacing: -.055em; text-wrap: balance; }
-.section-heading p { max-width: 720px; margin: 22px auto 0; color: #697894; font-size: 16px; line-height: 1.7; }
-
-.flow-tabs { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; margin: 0 auto 26px; }
-.flow-tabs button { min-height: 42px; padding: 0 18px; border: 1px solid rgba(20,38,77,.11); border-radius: 999px; color: #64728d; background: rgba(255,255,255,.82); font: inherit; font-size: 12px; font-weight: 760; cursor: pointer; box-shadow: 0 8px 24px rgba(20,38,77,.04); transition: color .25s, border-color .25s, background .25s, transform .25s, box-shadow .25s; }
-.flow-tabs button:hover { color: #14264d; border-color: rgba(52,120,246,.32); transform: translateY(-1px); }
-.flow-tabs button.active { color: #fff; border-color: #14264d; background: #14264d; box-shadow: 0 12px 30px rgba(20,38,77,.2); }
-
-.flow-panel { max-width: 1240px; margin: auto; overflow: hidden; border: 1px solid rgba(20,38,77,.1); border-radius: 32px; background: rgba(255,255,255,.86); box-shadow: 0 34px 100px rgba(20,38,77,.1); }
-.panel-topline { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 28px; border-bottom: 1px solid rgba(20,38,77,.08); }
-.panel-topline > div { display: grid; gap: 5px; }
-.panel-topline > div span { color: #7f8da5; font-size: 9px; font-weight: 850; letter-spacing: .2em; }
-.panel-topline strong { color: #14264d; font-size: 17px; }
-.live-status { display: inline-flex; align-items: center; gap: 8px; color: #60708d; font-size: 10px; font-weight: 750; }
-.live-status i { width: 8px; height: 8px; border-radius: 50%; background: #22a35b; box-shadow: 0 0 0 5px rgba(34,163,91,.12); animation: live-pulse 1.8s ease-in-out infinite; }
-
-.signal-stage { position: relative; min-height: 470px; display: grid; grid-template-columns: 245px 1fr 245px; align-items: center; padding: 20px 30px; animation: stage-enter .42s cubic-bezier(.22,1,.36,1) both; }
-.signal-map { position: absolute; z-index: 1; inset: 35px 0 15px; width: 100%; height: calc(100% - 50px); pointer-events: none; }
-.routes path { fill: none; stroke-width: 2.2; vector-effect: non-scaling-stroke; }
-.incoming-routes path { stroke: url(#route-in); }
-.outgoing-routes path { stroke: url(#route-out); }
-.signal > circle:first-child { fill: rgba(52,120,246,.19); }
-.signal-core { fill: #3478f6; }
-
-.tool-column { position: relative; z-index: 3; display: grid; gap: 16px; }
-.column-label { margin: 0 5px 2px; color: #8793a7; font-size: 9px; font-weight: 850; letter-spacing: .2em; }
-.flow-tool { min-height: 84px; display: grid; grid-template-columns: 48px 1fr; grid-template-rows: auto auto; column-gap: 13px; align-items: center; padding: 13px 15px; border: 1px solid rgba(20,38,77,.09); border-radius: 17px; background: rgba(255,255,255,.94); box-shadow: 0 12px 30px rgba(20,38,77,.06); }
-.flow-tool .logo-wrap { grid-row: 1 / 3; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 14px; background: #f5f8fd; }
-.flow-tool img { width: auto; max-width: 34px; height: 31px; object-fit: contain; }
-.flow-tool strong { align-self: end; color: #14264d; font-size: 12px; line-height: 1.2; }
-.flow-tool small { align-self: start; color: #8a96aa; font-size: 9px; line-height: 1.25; }
-
-.voxa-core { position: relative; z-index: 4; width: 172px; height: 172px; display: flex; flex-direction: column; align-items: center; justify-content: center; justify-self: center; border: 1px solid rgba(52,120,246,.34); border-radius: 50%; color: #fff; background: radial-gradient(circle at 35% 28%, #315ea8, #14264d 68%); box-shadow: 0 24px 65px rgba(20,38,77,.28), inset 0 1px 0 rgba(255,255,255,.14); animation: core-process 2.4s ease-in-out infinite; }
-.voxa-core::after { content: ""; position: absolute; inset: 10px; border: 1px solid rgba(255,255,255,.15); border-radius: inherit; }
-.core-rings, .core-rings i { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
-.core-rings i { border: 1px solid rgba(52,120,246,.22); animation: ring-out 2.4s ease-out infinite; }
-.core-rings i:nth-child(2) { animation-delay: .8s; }
-.core-rings i:nth-child(3) { animation-delay: 1.6s; }
-.voxa-mark { height: 25px; display: flex; align-items: center; gap: 3px; margin-bottom: 8px; }
-.voxa-mark i { width: 3px; border-radius: 3px; background: #fff; animation: mark-wave 1s ease-in-out infinite alternate; }
-.voxa-mark i:nth-child(1), .voxa-mark i:nth-child(5) { height: 9px; }
-.voxa-mark i:nth-child(2), .voxa-mark i:nth-child(4) { height: 18px; animation-delay: -.25s; }
-.voxa-mark i:nth-child(3) { height: 25px; animation-delay: -.5s; }
-.voxa-core strong { position: relative; z-index: 2; font-size: 24px; letter-spacing: -.035em; }
-.voxa-core small { position: relative; z-index: 2; margin-top: 5px; color: #bfcef0; font-size: 8px; }
-
-.panel-footer { min-height: 58px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 28px; padding: 12px 24px; border-top: 1px solid rgba(20,38,77,.08); color: #728099; font-size: 9px; font-weight: 700; }
-.panel-footer span { display: inline-flex; align-items: center; gap: 7px; }
-.footer-dot { width: 6px; height: 6px; border-radius: 50%; background: #3478f6; }
-
-@keyframes stage-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@keyframes live-pulse { 50% { opacity: .45; transform: scale(.78); } }
-@keyframes core-process { 0%, 36%, 54%, 100% { filter: brightness(1); transform: scale(1); } 44% { filter: brightness(1.35); transform: scale(1.035); box-shadow: 0 28px 78px rgba(52,120,246,.36), 0 0 0 9px rgba(52,120,246,.08); } }
-@keyframes ring-out { 0% { opacity: 0; transform: scale(.9); } 25% { opacity: .7; } 75%, 100% { opacity: 0; transform: scale(1.42); } }
-@keyframes mark-wave { to { transform: scaleY(.48); opacity: .72; } }
-
-@media (max-width: 1000px) {
-  .signal-stage { grid-template-columns: 210px 1fr 210px; padding-inline: 22px; }
-  .flow-tool { grid-template-columns: 42px 1fr; padding-inline: 11px; }
-  .flow-tool .logo-wrap { width: 40px; height: 40px; }
-  .voxa-core { width: 148px; height: 148px; }
+.container-custom {
+  position: relative;
+  z-index: 1;
 }
 
-@media (max-width: 760px) {
-  .integrations { padding: 104px 0 90px; }
-  .section-heading h2 { font-size: 42px; }
-  .flow-tabs { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 0 2px 8px; scrollbar-width: none; }
-  .flow-tabs::-webkit-scrollbar { display: none; }
-  .flow-tabs button { flex: 0 0 auto; }
-  .panel-topline { align-items: flex-start; }
-  .live-status { margin-top: 4px; }
-  .signal-stage { min-height: auto; grid-template-columns: 1fr 120px 1fr; gap: 12px; padding: 28px 14px; }
-  .signal-map { display: none; }
-  .tool-column { gap: 10px; }
-  .column-label { font-size: 7px; }
-  .flow-tool { min-height: 94px; display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 10px 6px; text-align: center; }
-  .flow-tool .logo-wrap { flex: 0 0 auto; }
-  .flow-tool small { display: none; }
-  .voxa-core { width: 108px; height: 108px; }
-  .voxa-core strong { font-size: 18px; }
-  .voxa-core small { display: none; }
-  .voxa-mark { transform: scale(.8); margin-bottom: 3px; }
+.section-heading {
+  max-width: 980px;
+  margin: 0 auto 40px;
+  text-align: center;
+  animation: section-rise .72s cubic-bezier(.22, 1, .36, 1) both;
 }
 
-@media (max-width: 480px) {
-  .flow-panel { border-radius: 24px; }
-  .panel-topline { padding: 16px 18px; }
-  .panel-topline strong { font-size: 14px; }
-  .live-status { display: none; }
-  .signal-stage { grid-template-columns: 1fr 82px 1fr; gap: 6px; padding-inline: 8px; }
-  .voxa-core { width: 76px; height: 76px; }
-  .voxa-core strong { font-size: 14px; }
-  .voxa-mark { display: none; }
-  .flow-tool strong { font-size: 9px; }
-  .panel-footer { gap: 12px; }
+.eyebrow {
+  display: inline-flex;
+  margin-bottom: 18px;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .28em;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: #11152b;
+  font-size: clamp(44px, 4.8vw, 70px);
+  line-height: 1;
+  letter-spacing: -.055em;
+  text-wrap: balance;
+}
+
+.section-heading p {
+  max-width: 760px;
+  margin: 22px auto 0;
+  color: #68758e;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.integration-layout {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr) 285px;
+  gap: 16px;
+  align-items: stretch;
+  animation: board-in .66s .08s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.category-panel,
+.system-board,
+.app-panel {
+  border: 1px solid rgba(20, 38, 77, .09);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 0 28px 86px rgba(20, 38, 77, .09);
+}
+
+.category-panel {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 14px;
+}
+
+.category-panel button {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  align-items: center;
+  min-height: 78px;
+  padding: 13px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  color: #60708d;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: .26s cubic-bezier(.22, 1, .36, 1);
+}
+
+.category-panel button:hover,
+.category-panel button.active {
+  border-color: rgba(20, 38, 77, .16);
+  color: #14264d;
+  background: #f7faff;
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(20, 38, 77, .08);
+}
+
+.category-panel svg {
+  width: 44px;
+  height: 44px;
+  padding: 11px;
+  border-radius: 15px;
+  color: #2563eb;
+  background: #eaf2ff;
+  box-sizing: border-box;
+}
+
+.category-panel button.active svg {
+  color: #fff;
+  background: #14264d;
+  animation: icon-pop .42s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.category-panel strong,
+.app-panel strong,
+.system-head strong {
+  display: block;
+  color: inherit;
+  font-size: 14px;
+}
+
+.category-panel small,
+.app-panel small,
+.system-head small {
+  display: block;
+  margin-top: 4px;
+  color: #8a95a8;
+  font-size: 11px;
+}
+
+.system-board {
+  overflow: hidden;
+  animation: board-in .5s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.board-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  min-height: 86px;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(20, 38, 77, .08);
+  background: linear-gradient(180deg, #fff, #f9fbff);
+}
+
+.board-top span,
+.system-label,
+.app-panel header span {
+  color: #7b879d;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.board-top strong {
+  display: block;
+  margin-top: 6px;
+  color: #14264d;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.board-top b {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: #15803d;
+  background: #effdf4;
+  font-size: 11px;
+}
+
+.board-top b svg {
+  width: 14px;
+  height: 14px;
+  animation: sync-spin 2.8s linear infinite;
+}
+
+.board-grid {
+  display: grid;
+  grid-template-columns: .92fr 1.08fr;
+  gap: 14px;
+  padding: 18px;
+}
+
+.primary-system,
+.mapping-panel,
+.routing-panel {
+  border: 1px solid rgba(20, 38, 77, .08);
+  border-radius: 22px;
+  background: #fff;
+}
+
+.primary-system {
+  padding: 18px;
+}
+
+.system-head {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(20, 38, 77, .08);
+}
+
+.logo-box {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 1px solid rgba(20, 38, 77, .08);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.logo-box.small {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+}
+
+.logo-box img {
+  width: auto;
+  max-width: 34px;
+  height: 31px;
+  object-fit: contain;
+}
+
+.record-fields {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.record-fields div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px;
+  border-radius: 14px;
+  background: #f7f9fd;
+  animation: item-pop .42s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.record-fields div:nth-child(2) { animation-delay: .06s; }
+.record-fields div:nth-child(3) { animation-delay: .12s; }
+.record-fields div:nth-child(4) { animation-delay: .18s; }
+
+.record-fields span {
+  color: #8793a7;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.record-fields strong {
+  color: #14264d;
+  font-size: 11px;
+  text-align: right;
+}
+
+.mapping-panel {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.mapping-panel article {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 13px;
+  border: 1px solid rgba(20, 38, 77, .07);
+  border-radius: 17px;
+  background: #fbfcff;
+  animation: item-pop .42s cubic-bezier(.22, 1, .36, 1) both;
+  transition: .24s cubic-bezier(.22, 1, .36, 1);
+}
+
+.mapping-panel article:nth-of-type(2) { animation-delay: .08s; }
+.mapping-panel article:nth-of-type(3) { animation-delay: .16s; }
+
+.mapping-panel article:hover,
+.routing-panel li:hover,
+.app-grid article:hover,
+.governance-strip article:hover {
+  border-color: rgba(37, 99, 235, .16);
+  box-shadow: 0 16px 38px rgba(20, 38, 77, .08);
+  transform: translateY(-4px);
+}
+
+.mapping-panel svg {
+  width: 42px;
+  height: 42px;
+  padding: 10px;
+  border-radius: 14px;
+  color: #2563eb;
+  background: #eaf2ff;
+  box-sizing: border-box;
+}
+
+.mapping-panel strong {
+  color: #14264d;
+  font-size: 13px;
+}
+
+.mapping-panel p {
+  margin: 5px 0 0;
+  color: #6f7b91;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.routing-panel {
+  grid-column: 1 / -1;
+  padding: 18px;
+}
+
+.routing-panel ol {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 15px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.routing-panel li {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 9px;
+  align-items: center;
+  min-height: 58px;
+  padding: 12px;
+  border: 1px solid rgba(20, 38, 77, .07);
+  border-radius: 16px;
+  color: #3d4961;
+  background: #fbfcff;
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.35;
+  animation: item-pop .42s cubic-bezier(.22, 1, .36, 1) both;
+  transition: .24s cubic-bezier(.22, 1, .36, 1);
+}
+
+.routing-panel li:nth-child(2) { animation-delay: .08s; }
+.routing-panel li:nth-child(3) { animation-delay: .16s; }
+
+.routing-panel li span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  color: #2563eb;
+  background: #eaf2ff;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.app-panel {
+  padding: 20px;
+}
+
+.app-panel header strong {
+  margin-top: 8px;
+  color: #14264d;
+  font-size: 20px;
+  line-height: 1.18;
+  letter-spacing: -.02em;
+}
+
+.app-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.app-grid article {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  column-gap: 11px;
+  align-items: center;
+  min-height: 74px;
+  padding: 11px;
+  border: 1px solid rgba(20, 38, 77, .07);
+  border-radius: 17px;
+  background: #fff;
+  animation: item-pop .42s cubic-bezier(.22, 1, .36, 1) both;
+  transition: .24s cubic-bezier(.22, 1, .36, 1);
+}
+
+.app-grid article:nth-child(2) { animation-delay: .05s; }
+.app-grid article:nth-child(3) { animation-delay: .1s; }
+.app-grid article:nth-child(4) { animation-delay: .15s; }
+.app-grid article:nth-child(5) { animation-delay: .2s; }
+.app-grid article:nth-child(6) { animation-delay: .25s; }
+
+.app-grid article strong {
+  align-self: end;
+  color: #14264d;
+  font-size: 12px;
+}
+
+.app-grid article small {
+  align-self: start;
+}
+
+.governance-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.governance-strip article {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  align-items: center;
+  min-height: 82px;
+  padding: 15px;
+  border: 1px solid rgba(20, 38, 77, .08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .8);
+  animation: item-pop .45s cubic-bezier(.22, 1, .36, 1) both;
+  transition: .24s cubic-bezier(.22, 1, .36, 1);
+}
+
+.governance-strip article:nth-child(2) { animation-delay: .06s; }
+.governance-strip article:nth-child(3) { animation-delay: .12s; }
+.governance-strip article:nth-child(4) { animation-delay: .18s; }
+
+.governance-strip svg {
+  width: 42px;
+  height: 42px;
+  padding: 10px;
+  border-radius: 14px;
+  color: #2563eb;
+  background: #eaf2ff;
+  box-sizing: border-box;
+}
+
+.governance-strip strong {
+  display: block;
+  color: #14264d;
+  font-size: 13px;
+}
+
+.governance-strip small {
+  display: block;
+  margin-top: 3px;
+  color: #7b879d;
+  font-size: 11px;
+}
+
+@keyframes section-rise {
+  from { transform: translateY(22px); }
+  to { transform: translateY(0); }
+}
+
+@keyframes board-in {
+  from { transform: translateY(16px) scale(.99); }
+  to { transform: translateY(0) scale(1); }
+}
+
+@keyframes item-pop {
+  from { transform: translateY(12px) scale(.97); }
+  to { transform: translateY(0) scale(1); }
+}
+
+@keyframes icon-pop {
+  0% { transform: scale(.88) rotate(-7deg); }
+  58% { transform: scale(1.1) rotate(4deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes sync-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1180px) {
+  .integration-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .category-panel {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .app-grid,
+  .governance-strip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 780px) {
+  .integrations {
+    padding: 98px 0 86px;
+  }
+
+  .section-heading h2 {
+    font-size: 42px;
+  }
+
+  .category-panel,
+  .board-grid,
+  .routing-panel ol,
+  .app-grid,
+  .governance-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .board-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .category-panel,
+  .app-panel,
+  .board-grid {
+    padding: 12px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  animateMotion { display: none; }
-  .voxa-core, .core-rings i, .voxa-mark i, .live-status i { animation: none; }
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 </style>

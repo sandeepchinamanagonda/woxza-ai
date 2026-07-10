@@ -1,73 +1,131 @@
 <template>
-  <section
-    id="approach"
-    class="transformations"
-  >
-    <div class="grid-bg" />
+  <section id="approach" class="transformations">
     <div class="container-custom">
       <header class="heading">
         <span>TRANSFORMATION, DELIVERED</span>
-        <h2>From daily friction to a <em>business that moves</em></h2>
-        <p>See what changes when Voxa joins the workflow, every conversation becomes a visible, measurable result</p>
+        <h2>See the operating system your calls become</h2>
+        <p>
+          Not a vague before-and-after. Pick a workflow and see the exact chain:
+          what breaks today, what Voxa captures, where it goes, and what the team
+          gets back.
+        </p>
       </header>
 
-      <div class="case-tabs" aria-label="Choose a transformation story">
+      <div class="case-selector" aria-label="Choose a transformation workflow">
         <button
-          v-for="(slide, index) in slides"
-          :key="slide.tab"
+          v-for="(story, index) in stories"
+          :key="story.id"
           type="button"
-          :class="{ active: activeSlide === index }"
-          :aria-pressed="activeSlide === index"
-          @click="selectSlide(index)"
+          :class="{ active: activeStory === index }"
+          :aria-pressed="activeStory === index"
+          @click="selectStory(index)"
         >
-          <component :is="slide.icon" />
-          {{ slide.tab }}
+          <component :is="story.icon" />
+          <span>
+            <strong>{{ story.tab }}</strong>
+            <small>{{ story.short }}</small>
+          </span>
         </button>
       </div>
 
-      <div class="story-stage">
-        <article v-if="activeSlide < stories.length" class="comparison" :key="activeSlide">
-          <div class="state-card before-card">
-            <span class="state-label">BEFORE VOXA</span>
-            <h3>{{ currentStory.beforeTitle }}</h3>
-            <ul>
-              <li v-for="item in currentStory.before" :key="item.text"><component :is="item.icon" /><span>{{ item.text }}</span></li>
-            </ul>
-          </div>
+      <div :key="currentStory.id" class="case-board">
+        <aside class="case-brief">
+          <span class="case-label">{{ currentStory.label }}</span>
+          <h3>{{ currentStory.title }}</h3>
+          <p>{{ currentStory.copy }}</p>
 
-          <div class="voxa-hub">
-            <div class="channels" :aria-label="currentStory.inputLabel">
-              <span v-for="(icon, index) in currentStory.inputs" :key="index"><component :is="icon" /></span>
+          <div class="pressure-list">
+            <article v-for="item in currentStory.pressure" :key="item.title">
+              <component :is="item.icon" />
+              <div>
+                <strong>{{ item.title }}</strong>
+                <span>{{ item.detail }}</span>
+              </div>
+            </article>
+          </div>
+        </aside>
+
+        <main class="workflow-panel">
+          <div class="panel-top">
+            <div>
+              <span>LIVE WORKFLOW</span>
+              <strong>{{ currentStory.workflowTitle }}</strong>
             </div>
-            <div class="connector-lines" />
-            <div class="core-orb"><component :is="currentStory.coreIcon" /><strong>VOXA</strong><small>{{ currentStory.solution }}</small></div>
-            <div class="tool-row" :aria-label="currentStory.outputLabel">
-              <span v-for="(icon, index) in currentStory.outputs" :key="index"><component :is="icon" /></span>
-            </div>
+            <b>{{ currentStory.timeSaved }}</b>
           </div>
 
-          <div class="state-card after-card">
-            <span class="state-label">WITH VOXA</span>
-            <h3>{{ currentStory.afterTitle }}</h3>
-            <ul>
-              <li v-for="item in currentStory.after" :key="item.text"><component :is="item.icon" /><span>{{ item.text }}</span></li>
-            </ul>
-            <div class="result-badge"><Clock3 /><span>{{ currentStory.result }}</span></div>
+          <div class="workflow-track">
+            <article
+              v-for="(step, index) in currentStory.steps"
+              :key="step.title"
+              class="workflow-step"
+            >
+              <span class="step-number">{{ String(index + 1).padStart(2, "0") }}</span>
+              <component :is="step.icon" />
+              <div>
+                <strong>{{ step.title }}</strong>
+                <p>{{ step.detail }}</p>
+              </div>
+            </article>
           </div>
-        </article>
 
-        <div v-else class="process-panel" :key="activeSlide">
-          <header><span>HOW WE GET THERE</span><h3>A clear path from first conversation to lasting value</h3></header>
-          <ol class="process-grid">
-            <li v-for="(step, index) in process" :key="step.title">
-              <span>0{{ index + 1 }}</span><component :is="step.icon" /><h4>{{ step.title }}</h4><p>{{ step.description }}</p>
-            </li>
-          </ol>
-        </div>
+          <div class="record-preview">
+            <section class="record-card">
+              <div class="record-header">
+                <span class="record-avatar">{{ currentStory.record.initials }}</span>
+                <div>
+                  <strong>{{ currentStory.record.name }}</strong>
+                  <small>{{ currentStory.record.context }}</small>
+                </div>
+              </div>
+
+              <dl>
+                <div v-for="field in currentStory.record.fields" :key="field.label">
+                  <dt>{{ field.label }}</dt>
+                  <dd>{{ field.value }}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="team-card">
+              <div class="team-card-heading">
+                <ClipboardList />
+                <span>Team handoff</span>
+              </div>
+              <h4>{{ currentStory.handoff.title }}</h4>
+              <p>{{ currentStory.handoff.detail }}</p>
+              <div>
+                <span v-for="chip in currentStory.handoff.chips" :key="chip">
+                  <CheckCheck />
+                  {{ chip }}
+                </span>
+              </div>
+            </section>
+          </div>
+        </main>
+
+        <aside class="outcome-panel">
+          <span class="case-label">After Voxa</span>
+          <h3>{{ currentStory.afterTitle }}</h3>
+
+          <div class="outcome-list">
+            <article v-for="outcome in currentStory.outcomes" :key="outcome.title">
+              <component :is="outcome.icon" />
+              <div>
+                <strong>{{ outcome.title }}</strong>
+                <p>{{ outcome.detail }}</p>
+              </div>
+            </article>
+          </div>
+        </aside>
       </div>
 
-      <div class="impact-strip" aria-label="Voxa impact metrics">
-        <div v-for="metric in metrics" :key="metric.label"><component :is="metric.icon" /><strong>{{ metric.value }}</strong><span>{{ metric.label }}</span></div>
+      <div class="metric-strip" aria-label="Transformation metrics">
+        <article v-for="metric in metrics" :key="metric.label">
+          <component :is="metric.icon" />
+          <strong>{{ metric.value }}</strong>
+          <span>{{ metric.label }}</span>
+        </article>
       </div>
     </div>
   </section>
@@ -76,156 +134,832 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from "vue"
 import {
-  ArrowRightLeft, BrainCircuit, CalendarCheck2, ChartNoAxesCombined,
-  ClipboardList, Clock3, ClockAlert, Copy, Database, Focus, Gauge, Globe2,
-  Headphones, Mail, MessageSquare, MessagesSquare, Moon, Network, Phone,
-  PhoneCall, PhoneOff, RefreshCw, Route, Search, ShieldCheck, TriangleAlert,
-  TrendingUp, UsersRound, Wrench, Zap
+  CalendarCheck2,
+  CheckCheck,
+  ClipboardList,
+  Clock3,
+  Copy,
+  FileText,
+  Focus,
+  Headphones,
+  Inbox,
+  ListChecks,
+  MessageSquareText,
+  Network,
+  PhoneCall,
+  PhoneOff,
+  RefreshCw,
+  Route,
+  SearchCheck,
+  ShieldCheck,
+  Sparkles,
+  TimerReset,
+  TrendingUp,
+  UserRoundCheck,
+  UsersRound,
+  Zap
 } from "lucide-vue-next"
 
-const activeSlide = ref(0)
-let storyTimer
+const activeStory = ref(0)
+let rotationTimer
 
 const stories = [
   {
-    solution: "AI Receptionist",
-    coreIcon: Headphones,
-    inputLabel: "Customer conversation channels",
-    inputs: [Phone, MessageSquare, MessagesSquare, Mail, Globe2],
-    outputLabel: "AI receptionist outcomes",
-    outputs: [PhoneCall, BrainCircuit, CalendarCheck2, ClipboardList, Clock3],
-    beforeTitle: "Calls wait, customers repeat themselves",
-    before: [
-      { text: "Calls depend on one available person", icon: PhoneOff },
-      { text: "Evening calls go unanswered", icon: Moon },
-      { text: "Details are copied between systems", icon: Copy },
-      { text: "Follow up slips on busy days", icon: ClockAlert }
+    id: "front-desk",
+    tab: "Front desk",
+    short: "Calls to appointments",
+    icon: Headphones,
+    label: "Healthcare and services",
+    title: "When the desk gets busy, customers still get handled.",
+    copy: "The call is answered, the request is understood, calendar options are checked, and the team receives a clean handoff instead of a half-written note.",
+    workflowTitle: "Inbound call to booked appointment",
+    timeSaved: "6 min saved per call",
+    afterTitle: "A calmer desk with cleaner follow-through.",
+    pressure: [
+      { title: "Calls stack up", detail: "One person can only handle one caller at a time.", icon: PhoneOff },
+      { title: "Details get repeated", detail: "Customers repeat names, dates and needs.", icon: MessageSquareText },
+      { title: "Follow-up depends on memory", detail: "Busy days make small tasks easy to miss.", icon: TimerReset }
     ],
-    afterTitle: "Every conversation moves forward",
-    after: [
-      { text: "Every call is answered at any hour", icon: PhoneCall },
-      { text: "Intent is understood in real time", icon: BrainCircuit },
-      { text: "Appointments happen instantly", icon: CalendarCheck2 },
-      { text: "Your team receives complete context", icon: ClipboardList }
+    steps: [
+      { title: "Answer", detail: "Voxa picks up and captures the customer need in natural language.", icon: PhoneCall },
+      { title: "Check context", detail: "Availability, customer history and required details are gathered.", icon: SearchCheck },
+      { title: "Book or route", detail: "The appointment, callback or handoff is created in the right place.", icon: CalendarCheck2 },
+      { title: "Brief the team", detail: "A short summary, owner and next action are sent to staff.", icon: ClipboardList }
     ],
-    result: "Every caller leaves with a clear next step"
+    record: {
+      initials: "AM",
+      name: "Avery Morgan",
+      context: "Same-day paediatric visit",
+      fields: [
+        { label: "Priority", value: "Same day" },
+        { label: "Status", value: "Booked" },
+        { label: "Owner", value: "Front desk" },
+        { label: "Channel", value: "Inbound call" }
+      ]
+    },
+    handoff: {
+      title: "Appointment confirmed for 4:15 PM",
+      detail: "The care team sees the reason for visit, patient form status and callback notes before the patient arrives.",
+      chips: ["Calendar updated", "Form sent", "CRM note saved"]
+    },
+    outcomes: [
+      { title: "No caller left hanging", detail: "Routine calls keep moving even during rush hours.", icon: PhoneCall },
+      { title: "Less admin after calls", detail: "The summary and next step are already written.", icon: FileText },
+      { title: "Better customer experience", detail: "People get an answer while intent is still fresh.", icon: Sparkles }
+    ]
   },
   {
-    solution: "Connected Automation",
-    coreIcon: Network,
-    inputLabel: "Disconnected business work",
-    inputs: [Database, Copy, ArrowRightLeft, ClockAlert, TriangleAlert],
-    outputLabel: "Connected automation outcomes",
-    outputs: [RefreshCw, Zap, ChartNoAxesCombined, Focus, TrendingUp],
-    beforeTitle: "Work is fragmented, teams are stretched",
-    before: [
-      { text: "Teams copy data between systems", icon: Copy },
-      { text: "Routine updates require a handoff", icon: ArrowRightLeft },
-      { text: "Reports arrive after decisions are made", icon: ClockAlert },
-      { text: "Small errors create hours of rework", icon: TriangleAlert }
+    id: "operations",
+    tab: "Operations",
+    short: "Requests to resolved tasks",
+    icon: Network,
+    label: "Teams and workflows",
+    title: "Operational requests stop bouncing between people and tools.",
+    copy: "Voxa turns scattered requests into structured work: the right fields, the right owner, and a status trail your team can actually follow.",
+    workflowTitle: "Request intake to assigned resolution",
+    timeSaved: "11 min saved per request",
+    afterTitle: "Less chasing, more visible work.",
+    pressure: [
+      { title: "Copy-paste work", detail: "Teams move the same update through multiple apps.", icon: Copy },
+      { title: "Loose ownership", detail: "Nobody knows who is supposed to finish the task.", icon: UsersRound },
+      { title: "Late visibility", detail: "Managers see the problem after it has already slowed work.", icon: Clock3 }
     ],
-    afterTitle: "Work flows, business grows",
-    after: [
-      { text: "Applications update each other", icon: RefreshCw },
-      { text: "Routine work completes automatically", icon: Zap },
-      { text: "Results stay visible in real time", icon: ChartNoAxesCombined },
-      { text: "People focus on exceptions and decisions", icon: Focus }
+    steps: [
+      { title: "Capture", detail: "The request is collected with the fields needed for action.", icon: Inbox },
+      { title: "Validate", detail: "Missing details are clarified before the work is routed.", icon: ListChecks },
+      { title: "Assign", detail: "The task reaches the right team with priority and context.", icon: Route },
+      { title: "Update", detail: "Systems stay current as the task moves toward completion.", icon: RefreshCw }
     ],
-    result: "Hours returned to the team each week"
+    record: {
+      initials: "JS",
+      name: "Jordan Singh",
+      context: "Split shipment request",
+      fields: [
+        { label: "SLA", value: "Urgent" },
+        { label: "Owner", value: "Ops team" },
+        { label: "System", value: "Odoo" },
+        { label: "Status", value: "In progress" }
+      ]
+    },
+    handoff: {
+      title: "Warehouse split assigned to operations",
+      detail: "The team receives stock notes, delivery requirement, customer priority and the system record link in one place.",
+      chips: ["Ticket opened", "Warehouse tagged", "Slack brief sent"]
+    },
+    outcomes: [
+      { title: "Cleaner ownership", detail: "Tasks have a person, priority and next action.", icon: UserRoundCheck },
+      { title: "Fewer status meetings", detail: "Progress is visible without asking around.", icon: TrendingUp },
+      { title: "Safer execution", detail: "Actions leave a traceable status history.", icon: ShieldCheck }
+    ]
+  },
+  {
+    id: "revenue",
+    tab: "Revenue",
+    short: "Intent to follow-up",
+    icon: TrendingUp,
+    label: "Sales and retention",
+    title: "High-intent conversations stop disappearing into inboxes.",
+    copy: "Every buying signal becomes a prioritized record with the next response already queued, so sales follows up while the lead is still warm.",
+    workflowTitle: "Customer intent to qualified follow-up",
+    timeSaved: "2.4x faster response",
+    afterTitle: "A pipeline with fewer silent leaks.",
+    pressure: [
+      { title: "Slow response", detail: "The best leads wait while teams sort the inbox.", icon: TimerReset },
+      { title: "Weak context", detail: "Sales gets a name, but not the real buying reason.", icon: MessageSquareText },
+      { title: "No next action", detail: "Follow-up depends on someone remembering later.", icon: Clock3 }
+    ],
+    steps: [
+      { title: "Qualify", detail: "Need, timing and urgency are captured during the conversation.", icon: SearchCheck },
+      { title: "Score", detail: "The lead is prioritized based on intent and fit.", icon: Sparkles },
+      { title: "Queue", detail: "The right follow-up task, email or callback is prepared.", icon: Zap },
+      { title: "Advance", detail: "The CRM stage and activity history stay current.", icon: TrendingUp }
+    ],
+    record: {
+      initials: "RK",
+      name: "Riya Kapoor",
+      context: "Pricing and callback request",
+      fields: [
+        { label: "Intent", value: "High" },
+        { label: "Stage", value: "Qualified" },
+        { label: "Next step", value: "Callback" },
+        { label: "Owner", value: "Sales" }
+      ]
+    },
+    handoff: {
+      title: "Callback queued for 10:30 AM",
+      detail: "Sales sees the product interest, objections, buying timeline and suggested next message before reaching out.",
+      chips: ["Deal updated", "Email drafted", "Reminder set"]
+    },
+    outcomes: [
+      { title: "Faster first response", detail: "Interested customers hear back while timing matters.", icon: TimerReset },
+      { title: "Sharper sales context", detail: "Reps understand the reason behind the call.", icon: Focus },
+      { title: "Better pipeline hygiene", detail: "Records move forward with complete activity history.", icon: TrendingUp }
+    ]
   }
 ]
 
-const slides = [
-  { tab: "Customer conversations", icon: Headphones },
-  { tab: "Business operations", icon: Network },
-  { tab: "How we get there", icon: Route }
-]
-
-const process = [
-  { title: "Listen", description: "Find the conversations and friction that matter most", icon: Search },
-  { title: "Design", description: "Map the experience, actions and human handoffs", icon: Network },
-  { title: "Build", description: "Connect Voxa to your real workflow and tools", icon: Wrench },
-  { title: "Prove", description: "Test real scenarios safely with your team", icon: ShieldCheck },
-  { title: "Grow", description: "Measure outcomes and expand with confidence", icon: TrendingUp }
-]
-
 const metrics = [
-  { value: "70%", label: "Less manual work", icon: Clock3 },
-  { value: "2 to 5x", label: "Faster cycle time", icon: TrendingUp },
-  { value: "99.9%", label: "Data accuracy", icon: Gauge },
-  { value: "Happier teams", label: "Focused on impact", icon: UsersRound }
+  { value: "70%", label: "Less manual follow-up", icon: Clock3 },
+  { value: "2-5x", label: "Faster cycle time", icon: TrendingUp },
+  { value: "24/7", label: "Calls keep moving", icon: PhoneCall },
+  { value: "1 view", label: "Shared source of truth", icon: ClipboardList }
 ]
 
-const currentStory = computed(() => stories[activeSlide.value] || stories[0])
-function selectSlide(index) {
-  activeSlide.value = index
-  startAuto()
+const currentStory = computed(() => stories[activeStory.value])
+
+function selectStory(index) {
+  activeStory.value = index
+  startRotation()
 }
-function startAuto() {
-  window.clearInterval(storyTimer)
+
+function startRotation() {
+  window.clearInterval(rotationTimer)
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-  storyTimer = window.setInterval(() => { activeSlide.value = (activeSlide.value + 1) % slides.length }, 5600)
+  rotationTimer = window.setInterval(() => {
+    activeStory.value = (activeStory.value + 1) % stories.length
+  }, 7600)
 }
-onMounted(startAuto)
-onUnmounted(() => window.clearInterval(storyTimer))
+
+onMounted(startRotation)
+onUnmounted(() => window.clearInterval(rotationTimer))
 </script>
 
 <style scoped>
-.transformations { position: relative; padding: 132px 0 118px; overflow: hidden; isolation: isolate; background: #07152d; }
-.grid-bg { position: absolute; inset: 0; background-image: linear-gradient(rgba(116,154,220,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(116,154,220,.06) 1px,transparent 1px); background-size: 48px 48px; mask-image: linear-gradient(180deg,transparent,#000 10%,#000 92%,transparent); }
-.transformations::before { content:""; position:absolute; width:820px; height:820px; left:50%; top:38%; transform:translate(-50%,-50%); border-radius:50%; background:rgba(31,111,255,.1); filter:blur(150px); }
-.container-custom { position:relative; z-index:1; }
-.heading { max-width:900px; margin:0 auto 46px; text-align:center; }
-.heading > span { display:inline-block; margin-bottom:18px; color:#7ba7ff; font-size:10px; font-weight:850; letter-spacing:.28em; }
-.heading h2 { margin:0 0 24px; color:#fff; font-size:clamp(50px,5.5vw,78px); line-height:.98; letter-spacing:-.055em; text-wrap:balance; }
-.heading h2 em { color:#67a5ff; font-style:normal; }
-.heading p { max-width:720px; margin:auto; color:#a7b4c8; font-size:17px; line-height:1.7; }
-.case-tabs { display:flex; justify-content:center; gap:12px; margin-bottom:28px; }
-.case-tabs button { position:relative; display:flex; align-items:center; gap:10px; min-width:210px; justify-content:center; padding:14px 20px; border:1px solid rgba(255,255,255,.13); border-radius:999px; background:rgba(255,255,255,.035); color:#c0c9d8; font:inherit; font-size:13px; font-weight:700; cursor:pointer; transition:.3s ease; }
-.case-tabs svg { width:18px; height:18px; }
-.case-tabs button.active { border-color:#3478f6; background:linear-gradient(135deg,#1747a7,#2467e9); color:#fff; box-shadow:0 12px 34px rgba(27,100,239,.28); }
-.case-tabs button.active::before,.case-tabs button.active::after { content:""; position:absolute; left:10%; right:10%; bottom:-14px; height:4px; border-radius:999px; }
-.case-tabs button.active::before { background:rgba(67,133,255,.2); }
-.case-tabs button.active::after { background:linear-gradient(90deg,#65a2ff,#fff); box-shadow:0 0 12px rgba(67,133,255,.8); transform:scaleX(0); transform-origin:left center; will-change:transform; animation:tab-progress 5.6s linear forwards; }
-.story-stage { min-height:570px; }
-.comparison { display:grid; grid-template-columns:minmax(0,1fr) minmax(310px,.82fr) minmax(0,1fr); gap:24px; align-items:stretch; }
-.state-card { min-height:500px; padding:34px; border:1px solid rgba(255,255,255,.11); border-radius:28px; background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025)); box-shadow:0 28px 70px rgba(0,0,0,.24); }
-.before-card { border-color:rgba(230,148,134,.28); }
-.after-card { border-color:rgba(72,211,153,.28); }
-.state-label { display:inline-flex; padding:7px 12px; border-radius:999px; font-size:9px; font-weight:850; letter-spacing:.18em; }
-.before-card .state-label { color:#ff9d8f; background:rgba(230,112,92,.11); }
-.after-card .state-label { color:#79e7b5; background:rgba(57,197,137,.11); }
-.state-card h3 { min-height:82px; margin:22px 0 28px; color:#fff; font-size:clamp(28px,2.3vw,38px); line-height:1.08; letter-spacing:-.035em; }
-.state-card ul { display:grid; gap:10px; list-style:none; margin:0; padding:0; }
-.state-card li { display:flex; align-items:center; gap:11px; min-height:50px; padding:11px 14px; border:1px solid rgba(255,255,255,.07); border-radius:12px; background:rgba(255,255,255,.035); color:#d0d7e4; font-size:13px; line-height:1.35; }
-.state-card li svg { width:17px; height:17px; flex:0 0 auto; }
-.before-card li svg { color:#ff8372; }
-.after-card li svg { padding:3px; border-radius:50%; background:#57db9a; color:#06221a; }
-.after-card { position:relative; padding-bottom:92px; }
-.result-badge { position:absolute; left:34px; right:34px; bottom:30px; display:flex; align-items:center; gap:10px; padding:14px; border:1px solid rgba(72,211,153,.2); border-radius:13px; background:rgba(72,211,153,.08); color:#74e3b0; font-size:12px; font-weight:750; }
-.result-badge svg { width:18px; height:18px; }
-.voxa-hub { position:relative; min-height:500px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:20px 0 14px; }
-.channels,.tool-row { position:relative; z-index:2; display:flex; justify-content:center; gap:10px; width:100%; }
-.channels span,.tool-row span { width:44px; height:44px; display:grid; place-items:center; border:1px solid rgba(73,137,255,.27); border-radius:14px; background:#0c203f; color:#82adff; box-shadow:0 12px 30px rgba(0,0,0,.2); }
-.channels svg,.tool-row svg { width:19px; height:19px; }
-.connector-lines { position:absolute; inset:76px 20px 73px; background:repeating-conic-gradient(from 0deg at 50% 50%,transparent 0 14deg,rgba(55,126,255,.18) 14.5deg 15deg,transparent 15.5deg 29deg); mask-image:radial-gradient(circle,transparent 0 20%,#000 21% 65%,transparent 66%); }
-.core-orb { position:absolute; z-index:3; left:50%; top:50%; width:164px; height:164px; display:flex; flex-direction:column; align-items:center; justify-content:center; transform:translate(-50%,-50%); border:1px solid #4385ff; border-radius:50%; background:radial-gradient(circle at 50% 35%,#174f9f,#07152d 72%); color:#fff; box-shadow:0 0 0 12px rgba(52,120,246,.05),0 0 52px rgba(35,111,255,.45); }
-.core-orb svg { width:42px; height:42px; margin-bottom:8px; color:#fff; }
-.core-orb strong { font-size:24px; letter-spacing:-.03em; }
-.core-orb small { max-width:120px; margin-top:4px; color:#8eb4ff; font-size:8px; text-align:center; text-transform:uppercase; letter-spacing:.14em; }
-.tool-row span { color:#65d6b4; }
-.process-panel { min-height:520px; padding:54px; border:1px solid rgba(255,255,255,.1); border-radius:30px; background:rgba(255,255,255,.035); }
-.process-panel header { max-width:760px; margin:0 auto 52px; text-align:center; }.process-panel header span { color:#7ba7ff; font-size:10px; font-weight:850; letter-spacing:.22em; }.process-panel h3 { margin:14px 0 0; color:#fff; font-size:42px; line-height:1.05; }
-.process-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin:0; padding:0; list-style:none; }
-.process-grid li { position:relative; min-height:220px; padding:24px; border:1px solid rgba(255,255,255,.09); border-radius:20px; background:#0b1c38; }.process-grid li > span { color:#6284bb; font-size:9px; font-weight:850; }.process-grid svg { display:block; width:24px; height:24px; margin:28px 0 22px; color:#4385ff; }.process-grid h4 { margin:0 0 10px; color:#fff; font-size:20px; }.process-grid p { margin:0; color:#aab5c8; font-size:12px; line-height:1.6; }
-.impact-strip { display:grid; grid-template-columns:repeat(4,1fr); margin-top:34px; padding:22px 8px; border:1px solid rgba(255,255,255,.1); border-radius:24px; background:rgba(255,255,255,.035); }
-.impact-strip > div { display:grid; grid-template-columns:42px auto; grid-template-rows:auto auto; align-items:center; column-gap:13px; padding:4px 26px; }
-.impact-strip > div + div { border-left:1px solid rgba(255,255,255,.11); }
-.impact-strip svg { grid-row:1/3; width:24px; height:24px; padding:9px; box-sizing:content-box; border-radius:13px; background:rgba(52,120,246,.11); color:#4f8cff; }
-.impact-strip strong { color:#4f8cff; font-size:24px; line-height:1; }.impact-strip span { color:#aab5c8; font-size:11px; }
-@keyframes tab-progress { from{transform:scaleX(0)} to{transform:scaleX(1)} }
-@media (max-width:1100px) { .comparison{grid-template-columns:1fr 260px 1fr}.state-card{padding:26px}.state-card h3{font-size:27px}.impact-strip > div{padding:4px 14px}.impact-strip strong{font-size:20px} }
-@media (max-width:900px) { .transformations{padding:100px 0}.comparison{grid-template-columns:1fr}.voxa-hub{min-height:380px}.state-card{min-height:auto}.process-grid{grid-template-columns:repeat(2,1fr)}.impact-strip{grid-template-columns:repeat(2,1fr);gap:20px}.impact-strip > div:nth-child(3){border-left:0}.case-tabs{flex-wrap:wrap}.case-tabs button{min-width:0}.story-stage{min-height:0} }
-@media (max-width:600px) { .heading h2{font-size:42px}.case-tabs{display:grid}.comparison{gap:18px}.state-card{padding:24px}.after-card{padding-bottom:92px}.result-badge{left:24px;right:24px}.process-panel{padding:32px 20px}.process-grid{grid-template-columns:1fr}.impact-strip{grid-template-columns:1fr}.impact-strip > div + div{border-left:0;border-top:1px solid rgba(255,255,255,.1);padding-top:18px}.channels span,.tool-row span{width:39px;height:39px} }
-@media (prefers-reduced-motion:reduce) { *,*::before,*::after{animation:none!important;transition:none!important} }
+.transformations {
+  position: relative;
+  padding: 132px 0 122px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 82% 14%, rgba(37, 99, 235, .11), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%);
+  color: #14264d;
+  isolation: isolate;
+}
+
+.container-custom {
+  position: relative;
+  z-index: 1;
+}
+
+.heading {
+  max-width: 980px;
+  margin: 0 auto 34px;
+  text-align: center;
+  animation: section-rise .72s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.heading > span,
+.case-label {
+  display: inline-flex;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+
+.heading > span {
+  margin-bottom: 18px;
+}
+
+.heading h2 {
+  margin: 0;
+  color: #11152b;
+  font-size: clamp(46px, 5.4vw, 78px);
+  line-height: .98;
+  letter-spacing: -.058em;
+  text-wrap: balance;
+}
+
+.heading p {
+  max-width: 760px;
+  margin: 22px auto 0;
+  color: #68758e;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.case-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+  animation: section-rise .72s .08s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.case-selector button {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  align-items: center;
+  min-height: 76px;
+  padding: 13px;
+  border: 1px solid rgba(20, 38, 77, .09);
+  border-radius: 22px;
+  color: #60708d;
+  background: rgba(255, 255, 255, .82);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: .26s cubic-bezier(.22, 1, .36, 1);
+}
+
+.case-selector button:hover,
+.case-selector button.active {
+  border-color: rgba(20, 38, 77, .2);
+  color: #14264d;
+  background: #fff;
+  transform: translateY(-3px);
+  box-shadow: 0 16px 38px rgba(20, 38, 77, .1);
+}
+
+.case-selector button.active {
+  border-color: #14264d;
+}
+
+.case-selector svg {
+  width: 42px;
+  height: 42px;
+  padding: 11px;
+  border-radius: 15px;
+  color: #2563eb;
+  background: #eaf2ff;
+  box-sizing: border-box;
+}
+
+.case-selector button.active svg {
+  color: #fff;
+  background: #14264d;
+  animation: icon-pop .42s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.case-selector strong {
+  display: block;
+  color: inherit;
+  font-size: 14px;
+}
+
+.case-selector small {
+  display: block;
+  margin-top: 4px;
+  color: #8a95a8;
+  font-size: 11px;
+}
+
+.case-board {
+  display: grid;
+  grid-template-columns: minmax(260px, .82fr) minmax(0, 1.48fr) minmax(260px, .86fr);
+  gap: 16px;
+  animation: board-in .58s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.case-brief,
+.workflow-panel,
+.outcome-panel {
+  border: 1px solid rgba(20, 38, 77, .09);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 0 28px 86px rgba(20, 38, 77, .09);
+}
+
+.case-brief,
+.outcome-panel {
+  padding: 28px;
+}
+
+.case-brief h3,
+.outcome-panel h3 {
+  margin: 18px 0 14px;
+  color: #11152b;
+  font-size: clamp(28px, 2.8vw, 42px);
+  line-height: 1.04;
+  letter-spacing: -.045em;
+}
+
+.case-brief > p {
+  margin: 0 0 24px;
+  color: #68758e;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.pressure-list,
+.outcome-list {
+  display: grid;
+  gap: 12px;
+}
+
+.pressure-list article,
+.outcome-list article {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(20, 38, 77, .07);
+  border-radius: 18px;
+  background: #fbfcff;
+  animation: item-pop .45s cubic-bezier(.22, 1, .36, 1) both;
+  transition: .24s cubic-bezier(.22, 1, .36, 1);
+}
+
+.pressure-list article:nth-child(2),
+.outcome-list article:nth-child(2) {
+  animation-delay: .08s;
+}
+
+.pressure-list article:nth-child(3),
+.outcome-list article:nth-child(3) {
+  animation-delay: .16s;
+}
+
+.pressure-list article:hover,
+.outcome-list article:hover,
+.workflow-step:hover,
+.record-card:hover,
+.team-card:hover,
+.metric-strip article:hover {
+  border-color: rgba(37, 99, 235, .16);
+  box-shadow: 0 18px 42px rgba(20, 38, 77, .09);
+  transform: translateY(-4px);
+}
+
+.pressure-list svg,
+.outcome-list svg {
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+  border-radius: 14px;
+  box-sizing: border-box;
+}
+
+.pressure-list svg {
+  color: #c2410c;
+  background: #fff4ed;
+}
+
+.outcome-list svg {
+  color: #15803d;
+  background: #edfff4;
+}
+
+.pressure-list strong,
+.outcome-list strong {
+  display: block;
+  color: #14264d;
+  font-size: 13px;
+}
+
+.pressure-list span,
+.outcome-list p {
+  display: block;
+  margin: 5px 0 0;
+  color: #738096;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.workflow-panel {
+  overflow: hidden;
+}
+
+.panel-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  min-height: 82px;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(20, 38, 77, .08);
+  background: linear-gradient(180deg, #fff, #f9fbff);
+}
+
+.panel-top span {
+  color: #7b879d;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .18em;
+}
+
+.panel-top strong {
+  display: block;
+  margin-top: 6px;
+  color: #14264d;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.panel-top b {
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: #15803d;
+  background: #effdf4;
+  font-size: 11px;
+}
+
+.workflow-track {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.workflow-step {
+  display: grid;
+  grid-template-columns: 42px 42px 1fr;
+  gap: 12px;
+  align-items: center;
+  min-height: 82px;
+  padding: 14px;
+  border: 1px solid rgba(20, 38, 77, .07);
+  border-radius: 20px;
+  background: #fff;
+  animation: track-in .46s cubic-bezier(.22, 1, .36, 1) both;
+  transition: .24s cubic-bezier(.22, 1, .36, 1);
+}
+
+.workflow-step:nth-child(2) {
+  animation-delay: .08s;
+}
+
+.workflow-step:nth-child(3) {
+  animation-delay: .16s;
+}
+
+.workflow-step:nth-child(4) {
+  animation-delay: .24s;
+}
+
+.step-number {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  color: #2563eb;
+  background: #eaf2ff;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.workflow-step > svg {
+  width: 42px;
+  height: 42px;
+  padding: 10px;
+  border-radius: 14px;
+  color: #fff;
+  background: #14264d;
+  box-sizing: border-box;
+}
+
+.workflow-step strong {
+  color: #14264d;
+  font-size: 14px;
+}
+
+.workflow-step p {
+  margin: 5px 0 0;
+  color: #68758e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.record-preview {
+  display: grid;
+  grid-template-columns: .88fr 1.12fr;
+  gap: 12px;
+  padding: 0 18px 18px;
+}
+
+.record-card,
+.team-card {
+  border: 1px solid rgba(20, 38, 77, .08);
+  border-radius: 22px;
+  background: #fbfcff;
+  transition: .24s cubic-bezier(.22, 1, .36, 1);
+}
+
+.record-card {
+  padding: 16px;
+}
+
+.record-header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(20, 38, 77, .08);
+}
+
+.record-avatar {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 15px;
+  color: #fff;
+  background: #14264d;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.record-header strong {
+  display: block;
+  color: #14264d;
+  font-size: 13px;
+}
+
+.record-header small {
+  color: #8a95a8;
+  font-size: 11px;
+}
+
+dl {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+
+dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(20, 38, 77, .06);
+}
+
+dl div:last-child {
+  border-bottom: 0;
+}
+
+dt {
+  color: #8793a7;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+dd {
+  margin: 0;
+  color: #14264d;
+  font-size: 11px;
+  font-weight: 850;
+  text-align: right;
+}
+
+.team-card {
+  padding: 18px;
+  background: #14264d;
+}
+
+.team-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9fbaff;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.team-card-heading svg {
+  width: 16px;
+  height: 16px;
+}
+
+.team-card h4 {
+  margin: 18px 0 10px;
+  color: #fff;
+  font-size: 24px;
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+
+.team-card p {
+  margin: 0;
+  color: #bfcae0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.team-card div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 18px;
+}
+
+.team-card div:last-child span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border-radius: 999px;
+  color: #eaf2ff;
+  background: rgba(255, 255, 255, .09);
+  font-size: 10px;
+  font-weight: 750;
+  animation: chip-in .42s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.team-card div:last-child span:nth-child(2) {
+  animation-delay: .08s;
+}
+
+.team-card div:last-child span:nth-child(3) {
+  animation-delay: .16s;
+}
+
+.team-card div:last-child svg {
+  width: 13px;
+  height: 13px;
+  color: #86efac;
+}
+
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.metric-strip article {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  min-height: 88px;
+  padding: 16px;
+  border: 1px solid rgba(20, 38, 77, .08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .8);
+  animation: item-pop .45s cubic-bezier(.22, 1, .36, 1) both;
+  transition: .24s cubic-bezier(.22, 1, .36, 1);
+}
+
+.metric-strip article:nth-child(2) {
+  animation-delay: .06s;
+}
+
+.metric-strip article:nth-child(3) {
+  animation-delay: .12s;
+}
+
+.metric-strip article:nth-child(4) {
+  animation-delay: .18s;
+}
+
+.metric-strip svg {
+  grid-row: 1 / 3;
+  width: 44px;
+  height: 44px;
+  padding: 11px;
+  border-radius: 15px;
+  color: #2563eb;
+  background: #eaf2ff;
+  box-sizing: border-box;
+}
+
+.metric-strip strong {
+  color: #11152b;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.metric-strip span {
+  color: #748096;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@keyframes section-rise {
+  from { transform: translateY(22px); }
+  to { transform: translateY(0); }
+}
+
+@keyframes board-in {
+  from { transform: translateY(16px) scale(.99); }
+  to { transform: translateY(0) scale(1); }
+}
+
+@keyframes item-pop {
+  from { transform: translateY(14px) scale(.97); }
+  to { transform: translateY(0) scale(1); }
+}
+
+@keyframes track-in {
+  from { transform: translateX(-12px); }
+  to { transform: translateX(0); }
+}
+
+@keyframes chip-in {
+  from { transform: translateY(8px) scale(.94); }
+  to { transform: translateY(0) scale(1); }
+}
+
+@keyframes icon-pop {
+  0% { transform: scale(.88) rotate(-7deg); }
+  58% { transform: scale(1.1) rotate(4deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@media (max-width: 1220px) {
+  .case-board {
+    grid-template-columns: 1fr;
+  }
+
+  .pressure-list,
+  .outcome-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .transformations {
+    padding: 98px 0 86px;
+  }
+
+  .case-selector,
+  .pressure-list,
+  .outcome-list,
+  .record-preview,
+  .metric-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .heading h2 {
+    font-size: 42px;
+  }
+}
+
+@media (max-width: 560px) {
+  .case-brief,
+  .outcome-panel {
+    padding: 22px;
+  }
+
+  .panel-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .workflow-step {
+    grid-template-columns: 36px 1fr;
+  }
+
+  .workflow-step > svg {
+    grid-column: 1;
+  }
+
+  .workflow-step > div {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
 </style>
