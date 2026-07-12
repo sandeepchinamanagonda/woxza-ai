@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { createExotelClient } from "../src/demo/exotel.js"
 
-test("Exotel adapter sends a 90-second call to the configured voice flow", async () => {
+test("Exotel adapter remains compatible with its configured voice flow", async () => {
   let request
   const client = createExotelClient({
     accountSid:"example-account", apiKey:"key", apiToken:"token", subdomain:"api.exotel.com",

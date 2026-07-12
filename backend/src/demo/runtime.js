@@ -2,7 +2,7 @@ import IORedis from "ioredis"
 import { Queue, Worker } from "bullmq"
 import { DemoRateLimiter, MemoryRateLimitStore, RedisRateLimitStore } from "./rate-limiter.js"
 import { createPlivoClient } from "./plivo.js"
-import { createExotelClient } from "./exotel.js"
+import { createTwilioClient } from "./twilio.js"
 import { createDemoService } from "./service.js"
 
 let redis
@@ -27,20 +27,17 @@ export function createDemoRuntime(db) {
     authId:process.env.PLIVO_AUTH_ID, authToken:process.env.PLIVO_AUTH_TOKEN,
     fromNumber:process.env.PLIVO_FROM_NUMBER, publicUrl
   })
-  const exotel = createExotelClient({
-    accountSid:process.env.EXOTEL_ACCOUNT_SID,
-    apiKey:process.env.EXOTEL_API_KEY,
-    apiToken:process.env.EXOTEL_API_TOKEN,
-    subdomain:process.env.EXOTEL_SUBDOMAIN,
-    exophone:process.env.EXOTEL_EXOPHONE,
-    appId:process.env.EXOTEL_APP_ID,
+  const twilio = createTwilioClient({
+    accountSid:process.env.TWILIO_ACCOUNT_SID,
+    apiKeySid:process.env.TWILIO_API_KEY_SID,
+    apiKeySecret:process.env.TWILIO_API_KEY_SECRET,
+    authToken:process.env.TWILIO_AUTH_TOKEN,
+    fromNumber:process.env.TWILIO_FROM_NUMBER,
     publicUrl
   })
-  const providerName = (process.env.TELEPHONY_PROVIDER || "exotel").toLowerCase()
-  const provider = providerName === "plivo" ? plivo : exotel
-  const unavailableProvider = { call:async () => { throw Object.assign(new Error(`${providerName === "plivo" ? "Plivo" : "Exotel"} is not fully configured`), { status:503 }) } }
+  const unavailableProvider = name => ({ call:async () => { throw Object.assign(new Error(`${name} is not fully configured`), { status:503 }) } })
   const service = createDemoService({
-    db, limiter, plivo:provider || unavailableProvider, followupQueue:queue,
+    db, limiter, plivo:plivo || unavailableProvider("Plivo"), twilio:twilio || unavailableProvider("Twilio"), followupQueue:queue,
     bridgeUrl:process.env.GEMINI_LIVE_BRIDGE_URL || "wss://example.invalid/gemini-live",
     publicUrl, signingSecret:process.env.UNSUBSCRIBE_SIGNING_SECRET || "development-only-change-me"
   })

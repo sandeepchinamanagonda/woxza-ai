@@ -65,7 +65,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
         return sendJson(res, 200, { status: "ok" }, cors);
       }
 
-      if (req.method === "POST" && url.pathname === "/api/demo-call") {
+      if (req.method === "POST" && (url.pathname === "/api/demo-call" || url.pathname === "/api/demo/call")) {
         const input = await readJson(req);
         if (input.website) return sendJson(res, 202, { status: "accepted" }, cors);
         if (!demoService) return sendJson(res, 503, { error: "Live demo is not configured" }, cors);
@@ -76,7 +76,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
         return sendJson(res, result.httpStatus || 201, { status: result.status, callId: result.callId }, cors);
       }
 
-      const demoStatus = url.pathname.match(/^\/api\/demo-call\/([0-9a-f-]+)\/status$/i);
+      const demoStatus = url.pathname.match(/^\/api\/demo(?:-call|\/call)\/([0-9a-f-]+)\/status$/i);
       if (req.method === "GET" && demoStatus) {
         const result = demoService ? await demoService.status(demoStatus[1]) : null;
         return result ? sendJson(res, 200, result, cors) : sendJson(res, 404, { error: "Demo call not found" }, cors);
@@ -84,9 +84,29 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
 
       const demoAnswer = url.pathname.match(/^\/api\/demo-call\/([0-9a-f-]+)\/answer$/i);
       if ((req.method === "GET" || req.method === "POST") && demoAnswer) {
-        const xml = demoService ? await demoService.answer(demoAnswer[1]) : null;
+        const xml = demoService ? await demoService.answer(demoAnswer[1], Object.fromEntries(url.searchParams)) : null;
         if (!xml) return sendJson(res, 404, { error: "Demo call not found" }, cors);
         res.writeHead(200, { "content-type": "application/xml; charset=utf-8" });
+        return res.end(xml);
+      }
+
+      if ((req.method === "GET" || req.method === "POST") && url.pathname === "/telephony/plivo/answer") {
+        const demoCallId = url.searchParams.get("demoCallId");
+        const fields = req.method === "POST" ? ((req.headers["content-type"] || "").includes("application/json") ? await readJson(req) : await readForm(req)) : {};
+        const xml = demoCallId && demoService ? await demoService.answer(demoCallId, fields) : null;
+        if (!xml) return sendJson(res, 404, { error: "Demo call not found" }, cors);
+        res.writeHead(200, { "content-type": "application/xml; charset=utf-8" });
+        return res.end(xml);
+      }
+
+      if (req.method === "POST" && url.pathname === "/webhooks/twilio/voice") {
+        const fields = (req.headers["content-type"] || "").includes("application/json") ? await readJson(req) : await readForm(req);
+        // Outbound US demo calls include demoCallId. A direct call to the US
+        // number gets a short, isolated demo record with the default scenario.
+        const demoCallId = url.searchParams.get("demoCallId") || await demoService?.createInboundTwilioCall(fields);
+        const xml = demoCallId && demoService ? await demoService.twilioAnswer(demoCallId, fields) : null;
+        if (!xml) return sendJson(res, 404, { error: "Demo call not found" }, cors);
+        res.writeHead(200, { "content-type": "text/xml; charset=utf-8" });
         return res.end(xml);
       }
 

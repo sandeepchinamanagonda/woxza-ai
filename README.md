@@ -1,331 +1,98 @@
-# Voxa - Professional Vue.js Website
+# Voxa local voice-demo stack
 
-A production-grade, professional SaaS website built with Vue 3, Vite, and Tailwind CSS. Complete with proper component architecture, routing, and a professional development setup.
+Voxa is a public voice-AI demo site: a Vue frontend requests a demo call, a Node.js API creates the call through Plivo (India) or Twilio (US), and a Gemini Live WebSocket bridge handles the live audio. PostgreSQL stores demo calls and leads, while Redis/BullMQ applies rate limits and processes optional follow-up email jobs.
 
-## 📁 Project Structure
+## Prerequisites
 
-```
-professional/
-├── index.html              # Entry HTML file
-├── package.json            # NPM dependencies
-├── vite.config.js          # Vite configuration
-├── tailwind.config.js      # Tailwind CSS config
-├── postcss.config.js       # PostCSS config
-│
-└── src/
-    ├── main.js             # Vue app entry point with router
-    ├── App.vue             # Root component
-    ├── style.css           # Global styles + Tailwind imports
-    │
-    ├── components/
-    │   ├── Navigation.vue   # Header/navigation
-    │   ├── Footer.vue       # Footer
-    │   ├── DemoModal.vue    # Demo scheduler modal
-    │   ├── FeatureCard.vue  # Reusable feature card
-    │   ├── StatCard.vue     # Stat number card
-    │   ├── IntegrationCard.vue # Integration logo card
-    │   ├── PricingCard.vue  # Pricing tier card
-    │   ├── FAQItem.vue      # FAQ accordion item
-    │   ├── StepCard.vue     # How-it-works step
-    │   ├── DashboardPreview.vue # Hero dashboard mockup
-    │   │
-    │   └── sections/        # Page sections (reusable)
-    │       ├── Hero.vue     # Hero section
-    │       ├── Features.vue # Features grid
-    │       ├── HowItWorks.vue # 4-step process
-    │       ├── Integrations.vue # Partner logos
-    │       ├── Pricing.vue  # Pricing tiers
-    │       ├── FAQ.vue      # FAQ accordion
-    │       └── CTA.vue      # Call-to-action section
-    │
-    └── views/               # Page views (routed)
-        ├── Home.vue         # Homepage (all sections)
-        └── NotFound.vue     # 404 page
-```
+- Docker Desktop with Docker Compose v2 — [install Docker](https://docs.docker.com/get-docker/)
+- `curl`, `bash`, `awk`, and `sed` (included on macOS and most Linux distributions)
+- ngrok CLI — [install ngrok](https://ngrok.com/download), then either configure it once with `ngrok config add-authtoken ...` or set `NGROK_AUTHTOKEN` in `.env`
+- A Google AI Studio Gemini API key — [create one](https://aistudio.google.com/app/apikey)
+- A Plivo account with an India-capable voice number — [Plivo Console](https://console.plivo.com/)
+- Optional for US tests: Twilio account, API credentials, and a voice number — [Twilio Console](https://console.twilio.com/)
 
-## 🚀 Quick Start
+Node.js, PostgreSQL, Redis, frontend dependencies, backend dependencies, and BullMQ do **not** need to be installed on the host: Docker builds and runs them.
 
-### 1. Install Dependencies
+## Quick start
+
 ```bash
-npm install
+git clone <your-repository-url> voxa-ai
+cd voxa-ai
+cp .env.example .env
+# Fill the Gemini and Plivo values in .env. Add Twilio values for US calls.
+./setup.sh
 ```
 
-### 2. Run Development Server
+The comments in [`.env.example`](.env.example) say where every secret comes from. The script refuses to start the voice stack with placeholder Gemini or Plivo values.
+
+When it finishes, open [http://localhost:3456](http://localhost:3456). The API is available at [http://localhost:8787/health](http://localhost:8787/health).
+
+## What `setup.sh` does
+
+1. Checks Docker Compose, curl, and ngrok are available.
+2. Checks that `.env` contains non-placeholder Gemini and Plivo credentials.
+3. Starts PostgreSQL and Redis with Docker Compose.
+4. Reuses an active ngrok tunnel or starts a new tunnel to port `8787`, then writes its HTTPS URL to `PUBLIC_API_URL` in `.env`.
+5. Builds the Node API and Vue/Nginx frontend images. This is also the dependency-install step; both Dockerfiles run `npm install` inside their images.
+6. Starts the API, its in-process BullMQ worker, and the frontend.
+7. The Node API applies [`001_initial.sql`](backend/migrations/001_initial.sql), [`002_demo_calls.sql`](backend/migrations/002_demo_calls.sql), and [`003_demo_call_v2.sql`](backend/migrations/003_demo_call_v2.sql) automatically before it listens.
+8. Waits for API health and prints the frontend, API, and public ngrok URLs.
+
+There is no Alembic, FastAPI, separate BullMQ worker process, or seed script in this repository. The demo has no required org, product-catalog, or agent-scope seed data: the scenario configuration and live FAQ are in [`backend/src/demo/prompt.js`](backend/src/demo/prompt.js) and [`backend/demo_agent/voxa_faq.md`](backend/demo_agent/voxa_faq.md).
+
+## Test a call
+
+### Outbound website demo
+
+Open [http://localhost:3456](http://localhost:3456), choose a scenario, language, and phone number, and select **Try our live demo**. India (`+91`) requests use Plivo; US (`+1`) requests use Twilio when its credentials are configured.
+
+For this outbound flow, there is **no Plivo-console Answer URL step**: Voxa gives Plivo a per-call answer URL such as `https://your-ngrok-url/telephony/plivo/answer?demoCallId=...` when it creates the call. Do not configure a bare `/plivo/answer` URL; this repository has no such route and the per-call ID is required to locate the demo prompt.
+
+### The only manual telephony-console step: direct inbound testing
+
+If you add a separate direct-inbound Plivo flow in the future, a human with Plivo Console access must set its Answer URL to the public ngrok URL printed by `setup.sh` plus that inbound route. This cannot be automated from this repository because it changes an external shared telephony account. The current public demo is outbound, so no console change is required for its standard test path.
+
+For Twilio direct inbound testing, configure the Voice webhook manually as:
+
+```text
+POST https://YOUR_NGROK_HOST/webhooks/twilio/voice
+```
+
+## Troubleshooting
+
+### Stale ngrok URL or a call answers then disconnects
+
+Each new ngrok tunnel may receive a new public URL. Run `./setup.sh` again; it refreshes `PUBLIC_API_URL` and recreates the API container. If you manually configured an external provider webhook, replace the old URL there too. A provider can bill an outbound call once it is answered even if its answer URL later returns a 404, so check the printed URL before placing a real test call.
+
+### PostgreSQL or Redis connection errors
+
+Check the containers:
+
 ```bash
-npm run dev
+docker compose ps
+docker compose logs --tail=100 db redis api
 ```
 
-Browser opens automatically at `http://localhost:3456`
+For a disposable local reset (this deletes local calls/leads):
 
-### 3. Build for Production
 ```bash
-npm run build
+docker compose down -v
+./setup.sh
 ```
 
-Output goes to `dist/` folder.
+### Missing environment variables
 
-## 🛠️ Technology Stack
+`setup.sh` validates Gemini and Plivo credentials. For US calls it also needs `TWILIO_ACCOUNT_SID`, `TWILIO_FROM_NUMBER`, and either `TWILIO_AUTH_TOKEN` or the API-key pair. Keep secrets in `.env` only; never place them in the repository or a browser-exposed `VITE_` variable.
 
-- **Vue 3** - Composition API, modern JavaScript
-- **Vite** - Ultra-fast build tool
-- **Vue Router 4** - Client-side routing
-- **Tailwind CSS** - Utility-first CSS framework
-- **PostCSS** - CSS processing with autoprefixer
+## Stop everything cleanly
 
-## 📦 Key Features
-
-### Architecture
-- ✅ Separated component files (not monolithic)
-- ✅ Proper folder structure (components, views, sections)
-- ✅ Reusable component library
-- ✅ Vue Router with smooth scrolling
-- ✅ Composition API best practices
-
-### Components
-- ✅ Presentational components (FeatureCard, StatCard, etc)
-- ✅ Section components (Hero, Features, Pricing, FAQ)
-- ✅ Page views (Home, NotFound)
-- ✅ Modal components (DemoModal with Teleport)
-- ✅ Props-based communication
-
-### Styling
-- ✅ Tailwind CSS for consistency
-- ✅ Global CSS with custom utilities
-- ✅ Scoped component styles
-- ✅ Dark mode ready
-- ✅ Responsive design
-
-### Performance
-- ✅ Code splitting with Vite
-- ✅ Optimized build output
-- ✅ Smooth scrolling
-- ✅ Fast load times
-- ✅ Mobile optimized
-
-## 🎨 Component Organization
-
-### Components (Reusable UI Elements)
-Located in `src/components/`:
-- Small, single-responsibility components
-- Accept props for data
-- Emit events for interaction
-- Can be used in multiple places
-
-**Example: FeatureCard.vue**
-```vue
-<FeatureCard
-  title="Feature Name"
-  description="Feature description"
-  icon="svg-path"
-/>
-```
-
-### Sections (Page Sections)
-Located in `src/components/sections/`:
-- Larger components made of smaller components
-- Can manage local state
-- Used in page views
-- Reusable across pages
-
-**Example: Features.vue**
-```vue
-<Features />
-```
-
-### Views (Full Pages)
-Located in `src/views/`:
-- Routed pages
-- Compose sections together
-- Handle page-level logic
-- Managed by Vue Router
-
-**Example: Home.vue**
-```vue
-<template>
-  <Hero />
-  <Features />
-  <Pricing />
-</template>
-```
-
-## 🔧 Component Communication
-
-### Props (Parent → Child)
-```vue
-<FeatureCard :title="title" :description="desc" />
-```
-
-### Emits (Child → Parent)
-```vue
-<button @click="$emit('open-demo')">Demo</button>
-```
-
-### Local State
-```vue
-<script setup>
-const showModal = ref(false)
-</script>
-```
-
-## 🎯 Customization
-
-### Change Company Name
-Find and replace "Voxa" across files:
-- `src/components/Navigation.vue`
-- `src/components/Footer.vue`
-- `src/views/Home.vue`
-- `index.html`
-
-### Change Colors
-Edit `tailwind.config.js`:
-```javascript
-colors: {
-  primary: {
-    500: '#YOUR_COLOR',
-  }
-}
-```
-
-### Add New Section
-1. Create `src/components/sections/NewSection.vue`
-2. Import in `src/views/Home.vue`
-3. Add to template
-
-### Add New Page
-1. Create `src/views/NewPage.vue`
-2. Add route to `src/main.js`:
-```javascript
-{
-  path: '/new-page',
-  component: () => import('@/views/NewPage.vue')
-}
-```
-
-## 📱 Responsive Design
-
-All components are fully responsive:
-- Mobile: 1 column, full-width
-- Tablet: 2 columns, optimized spacing
-- Desktop: 3-4 columns, full features
-
-Tested on:
-- iPhone 12/13/14/15
-- Android devices
-- iPad/tablets
-- Desktop screens
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
 ```bash
-npm i -g vercel
-vercel
+docker compose down
 ```
 
-### Netlify
+This stops PostgreSQL, Redis, API, and frontend while retaining local database volumes. Stop the ngrok process shown in `.runtime/ngrok.pid` if `setup.sh` started it:
+
 ```bash
-npm i -g netlify-cli
-netlify deploy --prod
+kill "$(cat .runtime/ngrok.pid)"
+rm -f .runtime/ngrok.pid
 ```
-
-### GitHub Pages
-```bash
-npm run build
-# Push dist/ to gh-pages branch
-```
-
-### Traditional Hosting
-1. Run `npm run build`
-2. Upload `dist/` folder to your server
-3. Configure server for SPA routing
-
-## 🔍 Development Tips
-
-### Hot Module Reload
-Changes automatically refresh in browser during development.
-
-### Component Inspection
-Use Vue DevTools browser extension to inspect components.
-
-### Debug Routing
-Add logging in `src/main.js`:
-```javascript
-router.beforeEach((to, from, next) => {
-  console.log('Navigating to:', to.path)
-  next()
-})
-```
-
-### CSS Debugging
-Use DevTools to inspect Tailwind classes applied.
-
-## 📊 Build Optimization
-
-Current metrics:
-- **Build time:** ~2 seconds
-- **Bundle size:** ~65 KB gzipped
-- **Lighthouse:** 95+
-- **Load time:** <1.5s
-
-## 🧪 Testing (Optional)
-
-To add testing:
-```bash
-npm install -D vitest @vue/test-utils
-npm run test
-```
-
-## 📚 Learning Resources
-
-- [Vue 3 Docs](https://vuejs.org)
-- [Vite Docs](https://vitejs.dev)
-- [Vue Router Docs](https://router.vuejs.org)
-- [Tailwind Docs](https://tailwindcss.com)
-
-## 🎓 Best Practices Used
-
-✅ **Component-based architecture** - Small, reusable components
-✅ **Props down, events up** - Proper data flow
-✅ **Separation of concerns** - Each file has one job
-✅ **DRY principle** - No code duplication
-✅ **Responsive design** - Works on all devices
-✅ **Performance** - Optimized bundle and load time
-✅ **Accessibility** - Semantic HTML, proper ARIA
-✅ **Maintainability** - Clear file structure
-
-## 📞 Quick Reference
-
-| Task | Command |
-|------|---------|
-| **Start dev server** | `npm run dev` |
-| **Build for production** | `npm run build` |
-| **Preview build** | `npm run preview` |
-| **Install deps** | `npm install` |
-
-## ✅ Next Steps
-
-1. Install dependencies: `npm install`
-2. Start dev server: `npm run dev`
-3. View website at `http://localhost:3456`
-4. Customize content in components
-5. Deploy when ready: `npm run build`
-
-## 📝 File Checklist
-
-- ✅ package.json - Dependencies
-- ✅ vite.config.js - Build config
-- ✅ tailwind.config.js - CSS config
-- ✅ postcss.config.js - PostCSS config
-- ✅ index.html - Entry point
-- ✅ src/main.js - Vue app setup
-- ✅ src/App.vue - Root component
-- ✅ src/style.css - Global styles
-- ✅ src/components/ - Reusable components
-- ✅ src/components/sections/ - Page sections
-- ✅ src/views/ - Page views
-
-Everything is set up and ready to go!
-
----
-
-**Version:** 1.0 Professional | **Status:** ✅ Production Ready | **Framework:** Vue 3 + Vite

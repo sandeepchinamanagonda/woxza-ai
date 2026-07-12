@@ -1,4 +1,4 @@
-const WINDOW_SECONDS = { phone: 30 * 60, ip: 24 * 60 * 60 }
+const WINDOW_SECONDS = { phone: 24 * 60 * 60, ip: 60 * 60 }
 
 const utcSecondsUntilMidnight = (now = new Date()) => {
   const midnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)
@@ -15,8 +15,8 @@ export class DemoRateLimiter {
   async consume({ phone, ip }) {
     const day = this.now().toISOString().slice(0, 10)
     const limits = [
-      { key:`demo:phone:${phone}`, maximum:1, ttl:WINDOW_SECONDS.phone, reason:"phone_limit" },
-      { key:`demo:ip:${ip}`, maximum:3, ttl:WINDOW_SECONDS.ip, reason:"ip_limit" },
+      { key:`demo:phone:${phone}`, maximum:3, ttl:WINDOW_SECONDS.phone, reason:"phone_limit" },
+      { key:`demo:ip:${ip}`, maximum:5, ttl:WINDOW_SECONDS.ip, reason:"ip_limit" },
       { key:`demo:global:${day}`, maximum:this.dailyCap, ttl:utcSecondsUntilMidnight(this.now()), reason:"daily_cap" }
     ]
     return this.store.consumeMany(limits)

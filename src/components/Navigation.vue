@@ -114,6 +114,9 @@ Get a Demo
 
 <button
 class="mobile-toggle"
+type="button"
+:aria-expanded="mobile"
+aria-label="Toggle navigation menu"
 @click="mobile=!mobile"
 >
 
@@ -1311,6 +1314,8 @@ padding:0 64px;
 
 }
 
+}
+
 @media(max-width:1180px){
 
 .navbar-inner,
@@ -1332,23 +1337,79 @@ padding:0 24px;
 
 @media(max-width:980px){
 
+.navbar{
+flex-direction:column;
+align-items:center;
+}
+
 .navbar-inner,
 .navbar.scrolled .navbar-inner{
 
 grid-template-columns:1fr auto;
+width:calc(100% - 20px);
+padding:0 20px;
 
 }
 
 .actions .cta{ display:none; }
 
-.actions .mobile-toggle{ display:block; }
-
+.actions .mobile-toggle{
+display:flex;
+align-items:center;
+justify-content:center;
 }
 
 .nav-links{
+display:none;
+width:0;
+padding:0;
+overflow:hidden;
 
-padding:0 90px;
+}
 
+.navbar.scrolled .navbar-inner{
+padding:0 20px;
+}
+
+}
+
+@media(max-width:640px){
+
+.navbar-inner,
+.navbar.scrolled .navbar-inner{
+width:calc(100% - 16px);
+height:64px;
+padding:0 14px;
+border-radius:20px;
+}
+
+.brand{
+min-width:0;
+gap:10px;
+}
+
+.brand-name,
+.navbar.scrolled .brand-name{
+font-size:24px;
+}
+
+.actions{
+min-width:46px;
+}
+
+.mobile-toggle{
+display:flex;
+flex:0 0 46px;
+}
+
+.mobile-menu{
+width:calc(100% - 16px);
+max-height:calc(100vh - 84px);
+overflow-y:auto;
+}
+
+.mobile-menu .mobile-btn{
+display:block;
 }
 
 }

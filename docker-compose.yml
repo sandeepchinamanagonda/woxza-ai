@@ -46,7 +46,15 @@ services:
       PLIVO_AUTH_ID: ${PLIVO_AUTH_ID:-}
       PLIVO_AUTH_TOKEN: ${PLIVO_AUTH_TOKEN:-}
       PLIVO_FROM_NUMBER: ${PLIVO_FROM_NUMBER:-}
-      GEMINI_LIVE_BRIDGE_URL: ${GEMINI_LIVE_BRIDGE_URL:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_API_KEY_SID: ${TWILIO_API_KEY_SID:-}
+      TWILIO_API_KEY_SECRET: ${TWILIO_API_KEY_SECRET:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_LIVE_MODEL: ${GEMINI_LIVE_MODEL:-gemini-3.1-flash-live-preview}
+      GEMINI_DEMO_VOICE: ${GEMINI_DEMO_VOICE:-Kore}
+      DEMO_TEST_PHONE: ${DEMO_TEST_PHONE:-}
       ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       DEMO_EMAIL_FROM: ${DEMO_EMAIL_FROM:-Voxa <demo@example.com>}
@@ -80,6 +88,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_DEMO_ADMIN_MODE: ${VITE_DEMO_ADMIN_MODE:-false}
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-3456}:80"

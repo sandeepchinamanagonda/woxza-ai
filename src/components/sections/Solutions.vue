@@ -323,7 +323,7 @@ onBeforeUnmount(() => window.clearInterval(rotationTimer))
 .solutions {
   position: relative;
   min-height: 100vh;
-  padding: 46px 0 48px;
+  padding: 108px 0 64px;
   overflow: hidden;
   color: #fff;
   background:
@@ -361,9 +361,9 @@ onBeforeUnmount(() => window.clearInterval(rotationTimer))
 .value-item strong { color: #eef4ff; font-size: 12px; }
 .value-item small { color: #77869d; font-size: 10px; }
 
-.carousel { position: relative; height: 450px; outline: none; touch-action: pan-y; user-select: none; }
+.carousel { position: relative; width: 100%; max-width: 100%; height: 450px; overflow: hidden; contain: layout paint; outline: none; touch-action: pan-y; user-select: none; }
 .carousel:focus-visible { border-radius: 32px; box-shadow: 0 0 0 2px rgba(96, 165, 250, .45); }
-.carousel-stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; perspective: 2200px; transform-style: preserve-3d; }
+.carousel-stage { position: absolute; inset: 0; width: 100%; max-width: 100%; overflow: hidden; display: flex; align-items: center; justify-content: center; perspective: 2200px; transform-style: preserve-3d; }
 
 .industry-card {
   position: absolute;
@@ -417,7 +417,7 @@ onBeforeUnmount(() => window.clearInterval(rotationTimer))
 .trust-note :deep(svg) { width: 17px; height: 17px; color: #5f94ff; }
 
 @media (max-height: 840px) and (min-width: 769px) {
-  .solutions { padding: 34px 0 38px; }
+  .solutions { padding: 76px 0 48px; }
   .heading { margin-bottom: 24px; }
   .heading h2 { font-size: clamp(42px, 4.6vw, 60px); }
   .heading p { margin-top: 14px; font-size: 14px; }
@@ -445,12 +445,19 @@ onBeforeUnmount(() => window.clearInterval(rotationTimer))
 
 @media (max-width: 560px) {
   .solutions { padding-top: 88px; }
+  .solutions .ambient { display: none; }
+  .solutions .container-custom { width: calc(100% - 24px); max-width: 100%; }
   .heading { margin-bottom: 28px; }
   .heading h2 { font-size: 39px; }
   .heading p { font-size: 14px; }
   .value-strip { display: none; }
-  .carousel { height: 500px; }
-  .industry-card { min-height: 455px; padding: 22px; }
+  .carousel { width: 100%; max-width: 100%; height: 500px; overflow: hidden; contain: strict; }
+  .carousel-stage { width: 100%; max-width: 100%; overflow: hidden; perspective: none; transform-style: flat; }
+  .industry-card { width: calc(100% - 8px); max-width: 420px; min-width: 0; min-height: 455px; padding: 22px; }
+  .industry-card::after { width: 100px; height: 100px; right: 0; top: -40px; }
+  .industry-card > * { min-width: 0; }
+  .industry-card.active { transform: translate3d(0, 0, 0) scale(1) !important; }
+  .industry-card:not(.active) { display: none; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; transform: none !important; }
   .carousel-controls { width: calc(100% - 10px); }
   .step-button { width: 38px; justify-content: center; padding: 0; }
   .progress { gap: 5px; }

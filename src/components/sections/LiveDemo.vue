@@ -13,39 +13,6 @@
       </div>
 
       <form class="demo-form" @submit.prevent="submitDemo">
-        <div class="form-field">
-          <span>Use case</span>
-          <div class="custom-select" @focusout="closeUseCaseOnBlur" @keydown.esc="openUseCase = false">
-            <button
-              class="select-trigger"
-              type="button"
-              :disabled="busy"
-              aria-haspopup="listbox"
-              aria-controls="use-case-options"
-              :aria-expanded="openUseCase"
-              @click="openUseCase = !openUseCase"
-              @keydown.down.prevent="openUseCase = true"
-            >
-              <span>{{ selectedUseCase.label }}</span>
-              <ChevronDown :class="{ rotated: openUseCase }" />
-            </button>
-
-            <div v-if="openUseCase" id="use-case-options" class="select-menu" role="listbox" aria-label="Use case">
-              <button
-                v-for="useCase in useCases"
-                :key="useCase.value"
-                type="button"
-                role="option"
-                :aria-selected="form.useCase === useCase.value"
-                :class="{ selected: form.useCase === useCase.value }"
-                @click="selectUseCase(useCase.value)"
-              >
-                <span>{{ useCase.label }}</span>
-                <Check v-if="form.useCase === useCase.value" />
-              </button>
-            </div>
-          </div>
-        </div>
         <label>
           <span>Name</span>
           <input v-model.trim="form.name" autocomplete="name" maxlength="160" :disabled="busy" required placeholder="Your name">
@@ -53,9 +20,10 @@
         <label>
           <span>Phone number</span>
           <div class="phone-input">
-            <select v-model="form.countryCode" aria-label="Country code" :disabled="busy">
-              <option v-for="country in countries" :key="country.label" :value="country.code">{{ country.label }} {{ country.code }}</option>
+            <select v-if="isAdmin" v-model="form.countryCode" aria-label="Country code" :disabled="busy">
+              <option v-for="country in countries" :key="country.code" :value="country.code">{{ country.label }} {{ country.code }}</option>
             </select>
+            <div v-else class="country-locked" aria-label="Detected country code">{{ activeCountry.label }} {{ activeCountry.code }}</div>
             <input v-model.trim="form.phone" autocomplete="tel-national" inputmode="tel" :disabled="busy" required placeholder="312 555 0100">
           </div>
         </label>
@@ -63,8 +31,27 @@
           <span>Email <em>optional</em></span>
           <input v-model.trim="form.email" autocomplete="email" type="email" maxlength="254" :disabled="busy" placeholder="you@company.com">
         </label>
+        <div class="form-field">
+          <span>Language</span>
+          <select v-model="form.language" :disabled="busy" aria-label="Language">
+            <option v-for="language in availableLanguages" :key="language.value" :value="language.value">{{ language.label }}</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <span>Use case</span>
+          <div class="custom-select" @focusout="closeUseCaseOnBlur" @keydown.esc="openUseCase = false">
+            <button class="select-trigger" type="button" :disabled="busy" aria-haspopup="listbox" aria-controls="use-case-options" :aria-expanded="openUseCase" @click="openUseCase = !openUseCase" @keydown.down.prevent="openUseCase = true">
+              <span>{{ selectedUseCase.label }}</span><ChevronDown :class="{ rotated: openUseCase }" />
+            </button>
+            <div v-if="openUseCase" id="use-case-options" class="select-menu" role="listbox" aria-label="Use case">
+              <button v-for="useCase in useCases" :key="useCase.value" type="button" role="option" :aria-selected="form.useCase === useCase.value" :class="{ selected: form.useCase === useCase.value }" @click="selectUseCase(useCase.value)">
+                <span>{{ useCase.label }}</span><Check v-if="form.useCase === useCase.value" />
+              </button>
+            </div>
+          </div>
+        </div>
         <label class="consent">
-          <input v-model="form.consentMarketing" type="checkbox" :disabled="busy">
+          <input v-model="form.consent" type="checkbox" :disabled="busy" required>
           <span>I agree to be contacted about Voxa</span>
         </label>
         <label class="honeypot" aria-hidden="true">
@@ -78,30 +65,33 @@
         <button v-if="limitReached" class="waitlist-link" type="button" @click="$emit('join-waitlist')">
           Demo limit reached for now, join the waitlist instead
         </button>
-        <small>Carrier rates may apply, one demo per number every 30 minutes</small>
+        <small>Carrier rates may apply. Up to 3 demo calls per number every 24 hours.</small>
       </form>
     </div>
   </section>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref } from "vue"
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue"
 import { Check, ChevronDown } from "lucide-vue-next"
 import VoiceRibbon from "@/components/VoiceRibbon.vue"
 
 defineEmits(["join-waitlist"])
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "")
-const countries = [
-  { label:"🇺🇸 US", code:"+1" }, { label:"🇨🇦 CA", code:"+1" }, { label:"🇮🇳 IN", code:"+91" },
-  { label:"🇬🇧 UK", code:"+44" }, { label:"🇦🇺 AU", code:"+61" }, { label:"🇸🇬 SG", code:"+65" }
-]
+const countries = [{ id:"US", label:"🇺🇸 US", code:"+1" }, { id:"IN", label:"🇮🇳 IN", code:"+91" }]
 const useCases = [
   { value:"appointment", label:"Appointment booking" },
   { value:"restaurant", label:"Restaurant reservations" },
   { value:"distribution", label:"Medical distribution" },
   { value:"payments", label:"Payments support" }
 ]
-const form = reactive({ useCase:"appointment", name:"", countryCode:"+1", phone:"", email:"", consentMarketing:true, website:"" })
+const regionalLanguages = {
+  US:[{ value:"en", label:"English" }, { value:"es", label:"Spanish" }],
+  IN:[{ value:"as", label:"Assamese" }, { value:"bn", label:"Bengali" }, { value:"en", label:"English" }, { value:"gu", label:"Gujarati" }, { value:"hi", label:"Hindi" }, { value:"kn", label:"Kannada" }, { value:"ml", label:"Malayalam" }, { value:"mr", label:"Marathi" }, { value:"pa", label:"Punjabi" }, { value:"ta", label:"Tamil" }, { value:"te", label:"Telugu" }, { value:"ur", label:"Urdu" }]
+}
+const isAdmin = import.meta.env.VITE_DEMO_ADMIN_MODE === "true"
+const detectedRegion = ref("IN")
+const form = reactive({ useCase:"appointment", language:"en", name:"", countryCode:"+91", phone:"", email:"", consent:false, website:"" })
 const openUseCase = ref(false)
 const status = ref("idle")
 const error = ref("")
@@ -109,6 +99,10 @@ const limitReached = ref(false)
 let pollTimer
 const busy = computed(() => ["pending", "ringing", "connected"].includes(status.value))
 const selectedUseCase = computed(() => useCases.find(useCase => useCase.value === form.useCase) || useCases[0])
+const activeCountry = computed(() => countries.find(country => country.code === form.countryCode) || countries[0])
+const availableLanguages = computed(() => isAdmin
+  ? [...new Map(Object.values(regionalLanguages).flat().map(language => [language.value, language])).values()]
+  : regionalLanguages[detectedRegion.value])
 const ribbonState = computed(() => status.value === "connected" ? "connected" : busy.value ? "calling" : "idle")
 const statusCopy = computed(() => ({
   idle:"Ready when you are", pending:"Starting your call…", ringing:"Your phone is ringing…", connected:"You’re live with Voxa",
@@ -123,6 +117,18 @@ function selectUseCase(value) {
 function closeUseCaseOnBlur(event) {
   if (!event.currentTarget.contains(event.relatedTarget)) openUseCase.value = false
 }
+
+onMounted(async () => {
+  if (isAdmin) return
+  try {
+    const response = await fetch("https://ipapi.co/json/")
+    const location = await response.json()
+    detectedRegion.value = location.country_code === "US" ? "US" : "IN"
+  } catch { detectedRegion.value = Intl.DateTimeFormat().resolvedOptions().timeZone.startsWith("America/") ? "US" : "IN" }
+  const country = countries.find(item => item.id === detectedRegion.value) || countries[1]
+  form.countryCode = country.code
+  form.language = regionalLanguages[country.id][0].value
+})
 
 const poll = async callId => {
   try {
@@ -143,14 +149,18 @@ const submitDemo = async () => {
   limitReached.value = false
   status.value = "pending"
   try {
-    const response = await fetch(`${apiBaseUrl}/api/demo-call`, {
+    const response = await fetch(`${apiBaseUrl}/api/demo/call`, {
       method:"POST", headers:{ "content-type":"application/json" },
-      body:JSON.stringify({ ...form, phone:`${form.countryCode}${form.phone}` })
+      body:JSON.stringify({
+        use_case:({ appointment:"appointment_booking", restaurant:"restaurant_reservations", distribution:"medical_distribution", payments:"payments_support" })[form.useCase],
+        language:form.language, name:form.name, country_code:form.countryCode, phone_number:form.phone,
+        email:form.email || null, consent:form.consent, website:form.website
+      })
     })
     const body = await response.json().catch(() => ({}))
     if (response.status === 429) {
       limitReached.value = true
-      throw new Error("Demo limit reached for now, join the waitlist instead")
+        throw new Error(body.error || "This number has already tried the live demo today. Please try again tomorrow.")
     }
     if (!response.ok) throw new Error(body.error || "We could not start the demo call")
     status.value = "ringing"
@@ -194,6 +204,7 @@ input:focus,select:focus { border-color:var(--voxa-accent); box-shadow:0 0 0 4px
 .select-menu button.selected { background:#eaf2ff; color:#2563eb; }
 .select-menu button svg { width:17px; height:17px; flex:0 0 auto; }
 .phone-input { display:grid; grid-template-columns:120px 1fr; gap:9px; }
+.country-locked { min-height:50px; display:flex; align-items:center; padding:0 13px; border:1px solid #d7e0ec; border-radius:12px; background:#f8fbff; color:#14264d; font:inherit; }
 .consent { grid-template-columns:20px 1fr; align-items:center; }
 .consent input { min-height:0; height:18px; accent-color:var(--voxa-accent); }
 .honeypot { position:absolute!important; left:-10000px!important; top:auto!important; width:1px!important; height:1px!important; overflow:hidden!important; }
