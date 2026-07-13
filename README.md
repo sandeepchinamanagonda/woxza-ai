@@ -1,98 +1,86 @@
-# Voxa local voice-demo stack
+# Run Voxa locally — no engineering setup required
 
-Voxa is a public voice-AI demo site: a Vue frontend requests a demo call, a Node.js API creates the call through Plivo (India) or Twilio (US), and a Gemini Live WebSocket bridge handles the live audio. PostgreSQL stores demo calls and leads, while Redis/BullMQ applies rate limits and processes optional follow-up email jobs.
+Voxa is a local demo website with a Vue frontend, Node.js API, PostgreSQL, and Redis. Once it starts, open **http://localhost:3456**. The API health check is at **http://localhost:8787/health**.
 
-## Prerequisites
+You do not need to install Node, PostgreSQL, Redis, npm packages, or Python to use the app. Docker runs all of those for you. The one-command setup can also install the few host tools it needs.
 
-- Docker Desktop with Docker Compose v2 — [install Docker](https://docs.docker.com/get-docker/)
-- `curl`, `bash`, `awk`, and `sed` (included on macOS and most Linux distributions)
-- ngrok CLI — [install ngrok](https://ngrok.com/download), then either configure it once with `ngrok config add-authtoken ...` or set `NGROK_AUTHTOKEN` in `.env`
-- A Google AI Studio Gemini API key — [create one](https://aistudio.google.com/app/apikey)
-- A Plivo account with an India-capable voice number — [Plivo Console](https://console.plivo.com/)
-- Optional for US tests: Twilio account, API credentials, and a voice number — [Twilio Console](https://console.twilio.com/)
+## The easiest route: give this to Codex or Claude
 
-Node.js, PostgreSQL, Redis, frontend dependencies, backend dependencies, and BullMQ do **not** need to be installed on the host: Docker builds and runs them.
+Open this folder in Codex or Claude Code and paste the following exactly:
 
-## Quick start
+> Read `README.md`, then get this project running locally. You are authorized to install any missing local prerequisites, including Homebrew (if needed), Docker Desktop, Docker Compose, ngrok, and Python 3; approve the required system-permission prompts. Run `./setup.sh --install-dependencies`, wait until Docker is ready, and verify both `http://localhost:3456` and `http://localhost:8787/health`. Do not stop at instructions—start the services and report the local URLs. Use local-preview mode if no voice-provider credentials are available.
+
+That assistant should take care of the installation, permissions, service startup, and verification. On macOS, Docker Desktop may show a one-time system prompt—approve it, then let the assistant continue.
+
+## One command if you are running it yourself
+
+In Terminal, from this project folder:
 
 ```bash
-git clone <your-repository-url> voxa-ai
-cd voxa-ai
-cp .env.example .env
-# Fill the Gemini and Plivo values in .env. Add Twilio values for US calls.
+./setup.sh --install-dependencies
+```
+
+This is safe to re-run. It will:
+
+1. Install missing Docker Desktop/Engine, ngrok, and Python 3 (macOS or Debian/Ubuntu Linux).
+2. Create a local `.env` file if one does not exist.
+3. Build all frontend and backend dependencies inside Docker.
+4. Start the database, Redis, API, and website.
+5. Wait until the backend health check succeeds.
+
+Then open [http://localhost:3456](http://localhost:3456). Leave the Terminal window open only while the setup command is working; after it prints “Voxa is running”, Docker keeps the app running in the background.
+
+### What works without any accounts or keys
+
+The full website, forms, database, Redis, API, and local demo experience run with no external accounts. This is called **local-preview mode**.
+
+### What needs your own credentials
+
+Actual phone calls need a Google Gemini key, Plivo credentials, and an ngrok account/token. This is unavoidable because those providers charge or authenticate calls under an account. Add these values to `.env`, then run:
+
+```bash
 ./setup.sh
 ```
 
-The comments in [`.env.example`](.env.example) say where every secret comes from. The script refuses to start the voice stack with placeholder Gemini or Plivo values.
+The script opens an ngrok tunnel automatically, records its public URL, then starts the voice-ready stack. It does not make any changes in Plivo, Twilio, Google, or ngrok beyond configuring the ngrok token on your own computer.
 
-When it finishes, open [http://localhost:3456](http://localhost:3456). The API is available at [http://localhost:8787/health](http://localhost:8787/health).
-
-## What `setup.sh` does
-
-1. Checks Docker Compose, curl, and ngrok are available.
-2. Checks that `.env` contains non-placeholder Gemini and Plivo credentials.
-3. Starts PostgreSQL and Redis with Docker Compose.
-4. Reuses an active ngrok tunnel or starts a new tunnel to port `8787`, then writes its HTTPS URL to `PUBLIC_API_URL` in `.env`.
-5. Builds the Node API and Vue/Nginx frontend images. This is also the dependency-install step; both Dockerfiles run `npm install` inside their images.
-6. Starts the API, its in-process BullMQ worker, and the frontend.
-7. The Node API applies [`001_initial.sql`](backend/migrations/001_initial.sql), [`002_demo_calls.sql`](backend/migrations/002_demo_calls.sql), and [`003_demo_call_v2.sql`](backend/migrations/003_demo_call_v2.sql) automatically before it listens.
-8. Waits for API health and prints the frontend, API, and public ngrok URLs.
-
-There is no Alembic, FastAPI, separate BullMQ worker process, or seed script in this repository. The demo has no required org, product-catalog, or agent-scope seed data: the scenario configuration and live FAQ are in [`backend/src/demo/prompt.js`](backend/src/demo/prompt.js) and [`backend/demo_agent/voxa_faq.md`](backend/demo_agent/voxa_faq.md).
-
-## Test a call
-
-### Outbound website demo
-
-Open [http://localhost:3456](http://localhost:3456), choose a scenario, language, and phone number, and select **Try our live demo**. India (`+91`) requests use Plivo; US (`+1`) requests use Twilio when its credentials are configured.
-
-For this outbound flow, there is **no Plivo-console Answer URL step**: Voxa gives Plivo a per-call answer URL such as `https://your-ngrok-url/telephony/plivo/answer?demoCallId=...` when it creates the call. Do not configure a bare `/plivo/answer` URL; this repository has no such route and the per-call ID is required to locate the demo prompt.
-
-### The only manual telephony-console step: direct inbound testing
-
-If you add a separate direct-inbound Plivo flow in the future, a human with Plivo Console access must set its Answer URL to the public ngrok URL printed by `setup.sh` plus that inbound route. This cannot be automated from this repository because it changes an external shared telephony account. The current public demo is outbound, so no console change is required for its standard test path.
-
-For Twilio direct inbound testing, configure the Voice webhook manually as:
-
-```text
-POST https://YOUR_NGROK_HOST/webhooks/twilio/voice
-```
-
-## Troubleshooting
-
-### Stale ngrok URL or a call answers then disconnects
-
-Each new ngrok tunnel may receive a new public URL. Run `./setup.sh` again; it refreshes `PUBLIC_API_URL` and recreates the API container. If you manually configured an external provider webhook, replace the old URL there too. A provider can bill an outbound call once it is answered even if its answer URL later returns a 404, so check the printed URL before placing a real test call.
-
-### PostgreSQL or Redis connection errors
-
-Check the containers:
+## Start, check, and stop
 
 ```bash
+# Start the local site and backend without setting up a public voice tunnel
+./setup.sh --local-only
+
+# Check whether every service is healthy
 docker compose ps
-docker compose logs --tail=100 db redis api
-```
+curl http://localhost:8787/health
 
-For a disposable local reset (this deletes local calls/leads):
-
-```bash
-docker compose down -v
-./setup.sh
-```
-
-### Missing environment variables
-
-`setup.sh` validates Gemini and Plivo credentials. For US calls it also needs `TWILIO_ACCOUNT_SID`, `TWILIO_FROM_NUMBER`, and either `TWILIO_AUTH_TOKEN` or the API-key pair. Keep secrets in `.env` only; never place them in the repository or a browser-exposed `VITE_` variable.
-
-## Stop everything cleanly
-
-```bash
+# Stop the website, backend, database, and Redis
 docker compose down
 ```
 
-This stops PostgreSQL, Redis, API, and frontend while retaining local database volumes. Stop the ngrok process shown in `.runtime/ngrok.pid` if `setup.sh` started it:
+Stopping the stack keeps local database data. To completely erase local demo data, run `docker compose down -v`.
+
+## If something gets stuck
+
+First, ask your coding assistant to run this diagnostic and fix the result:
+
+> Inspect the Voxa Docker containers and logs, fix only the local startup problem, restart the stack, and verify `http://localhost:3456` plus `http://localhost:8787/health` before you finish.
+
+For manual diagnosis:
 
 ```bash
-kill "$(cat .runtime/ngrok.pid)"
-rm -f .runtime/ngrok.pid
+docker compose ps
+docker compose logs --tail=100 api web db redis
 ```
+
+The most common first-run issue is Docker Desktop still starting. Wait for its menu-bar icon to show it is running, then run `./setup.sh --local-only` again.
+
+## For engineers: project details
+
+- Frontend: Vue/Vite, served by Nginx on port `3456`.
+- API: Node.js on port `8787`; migrations run automatically during startup.
+- Data: PostgreSQL and Redis, both managed by Docker Compose.
+- Dependencies: installed during the Docker image builds, so no host `npm install` is needed.
+- Real voice calls: India routes through Plivo; US calls can route through Twilio when configured. Voxa sends Plivo a per-call answer URL itself—there is no standard outbound Plivo-console Answer URL to configure.
+
+Use [`.env.example`](.env.example) for the full list of optional configuration values. Keep `.env` private; it contains secrets and is intentionally ignored by Git.

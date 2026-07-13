@@ -3,5 +3,6 @@ dist/
 .vite/
 .env
 .env.local
+.runtime/
 backend/data/
 .DS_Store

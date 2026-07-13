@@ -9,12 +9,35 @@ cd "$ROOT_DIR"
 fail() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 note() { printf '\n==> %s\n' "$*"; }
 
-for command in docker curl ngrok awk sed; do
-  command -v "$command" >/dev/null 2>&1 || fail "Missing '$command'. Install Docker Desktop, curl, or ngrok from https://ngrok.com/download, then run this script again."
+INSTALL_DEPENDENCIES=false
+LOCAL_ONLY=false
+for arg in "$@"; do
+  case "$arg" in
+    --install-dependencies) INSTALL_DEPENDENCIES=true ;;
+    --local-only) LOCAL_ONLY=true ;;
+    --help)
+      printf 'Usage: ./setup.sh [--install-dependencies] [--local-only]\n'
+      printf '  --install-dependencies  Install Docker Desktop/Engine, ngrok, and Python if needed.\n'
+      printf '  --local-only            Start the website and API without configuring an ngrok tunnel.\n'
+      exit 0 ;;
+    *) fail "Unknown option: $arg. Run ./setup.sh --help." ;;
+  esac
+done
+
+if $INSTALL_DEPENDENCIES; then
+  note "Checking/installing host dependencies"
+  "$ROOT_DIR/bootstrap-local.sh" --yes
+fi
+
+for command in docker curl awk sed; do
+  command -v "$command" >/dev/null 2>&1 || fail "Missing '$command'. Ask your coding assistant to run: ./setup.sh --install-dependencies"
 done
 docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is required. Install or update Docker Desktop: https://docs.docker.com/get-docker/"
 
-[[ -f .env ]] || fail "Missing .env. Run: cp .env.example .env, then fill in the required Gemini and Plivo values."
+if [[ ! -f .env ]]; then
+  note "Creating local configuration from .env.example"
+  cp .env.example .env
+fi
 
 env_value() {
   local key="$1" value
@@ -22,12 +45,6 @@ env_value() {
   value="${value#\"}"
   value="${value%\"}"
   printf '%s\n' "$value"
-}
-
-require_secret() {
-  local key="$1" value
-  value="$(env_value "$key")"
-  [[ -n "$value" && "$value" != replace-with-* && "$value" != +910000000000 ]] || fail "$key is required in .env. See .env.example for where to obtain it."
 }
 
 set_env() {
@@ -65,36 +82,37 @@ wait_for_ngrok() {
   return 1
 }
 
-require_secret GEMINI_API_KEY
-require_secret PLIVO_AUTH_ID
-require_secret PLIVO_AUTH_TOKEN
-require_secret PLIVO_FROM_NUMBER
-
 note "Starting PostgreSQL and Redis"
 docker compose up -d db redis
 
-note "Obtaining a public ngrok URL"
-PUBLIC_URL="$(ngrok_url || true)"
-if [[ -z "$PUBLIC_URL" ]]; then
-  AUTHTOKEN="$(env_value NGROK_AUTHTOKEN)"
-  if [[ -n "$AUTHTOKEN" ]]; then
-    ngrok config add-authtoken "$AUTHTOKEN" >/dev/null
-  fi
-  RUNTIME_DIR="$ROOT_DIR/.runtime"
-  mkdir -p "$RUNTIME_DIR"
-  DOMAIN="$(env_value NGROK_DOMAIN)"
-  if [[ -n "$DOMAIN" ]]; then
-    nohup ngrok http --url="$DOMAIN" 8787 > "$RUNTIME_DIR/ngrok.log" 2>&1 &
-  else
-    nohup ngrok http 8787 > "$RUNTIME_DIR/ngrok.log" 2>&1 &
-  fi
-  echo $! > "$RUNTIME_DIR/ngrok.pid"
-  PUBLIC_URL="$(wait_for_ngrok || true)"
-  [[ -n "$PUBLIC_URL" ]] || fail "ngrok did not expose a tunnel. Add NGROK_AUTHTOKEN to .env or run 'ngrok config add-authtoken ...'; inspect .runtime/ngrok.log for details."
-fi
+PUBLIC_URL=""
+VOICE_SECRETS_READY=true
+for key in GEMINI_API_KEY PLIVO_AUTH_ID PLIVO_AUTH_TOKEN PLIVO_FROM_NUMBER; do
+  value="$(env_value "$key")"
+  [[ -n "$value" && "$value" != replace-with-* && "$value" != +910000000000 ]] || VOICE_SECRETS_READY=false
+done
 
-set_env PUBLIC_API_URL "$PUBLIC_URL"
-note "Using public API URL: $PUBLIC_URL"
+if ! $LOCAL_ONLY && $VOICE_SECRETS_READY && command -v ngrok >/dev/null 2>&1; then
+  note "Obtaining a public ngrok URL for voice calls"
+  PUBLIC_URL="$(ngrok_url || true)"
+  if [[ -z "$PUBLIC_URL" ]]; then
+    AUTHTOKEN="$(env_value NGROK_AUTHTOKEN)"
+    if [[ -n "$AUTHTOKEN" ]]; then ngrok config add-authtoken "$AUTHTOKEN" >/dev/null; fi
+    RUNTIME_DIR="$ROOT_DIR/.runtime"
+    mkdir -p "$RUNTIME_DIR"
+    DOMAIN="$(env_value NGROK_DOMAIN)"
+    if [[ -n "$DOMAIN" ]]; then nohup ngrok http --url="$DOMAIN" 8787 > "$RUNTIME_DIR/ngrok.log" 2>&1 &
+    else nohup ngrok http 8787 > "$RUNTIME_DIR/ngrok.log" 2>&1 &
+    fi
+    echo $! > "$RUNTIME_DIR/ngrok.pid"
+    PUBLIC_URL="$(wait_for_ngrok || true)"
+    [[ -n "$PUBLIC_URL" ]] || fail "ngrok did not expose a tunnel. Add NGROK_AUTHTOKEN to .env or inspect .runtime/ngrok.log."
+  fi
+  set_env PUBLIC_API_URL "$PUBLIC_URL"
+  note "Using public API URL: $PUBLIC_URL"
+else
+  note "Starting in local-preview mode (website and API work; real phone calls are disabled until Gemini, Plivo, and ngrok are configured)."
+fi
 
 note "Building dependencies and starting API, BullMQ worker, and frontend"
 docker compose build --quiet api web
@@ -116,6 +134,10 @@ WEB_PORT="${WEB_PORT:-3456}"
 printf '\nVoxa is running.\n'
 printf '  Frontend: http://localhost:%s\n' "$WEB_PORT"
 printf '  API:      http://localhost:%s/health\n' "$API_PORT"
-printf '  ngrok:    %s\n' "$PUBLIC_URL"
-printf '\nOutbound demo calls need no Plivo Console Answer URL change: Voxa sends the per-call answer URL automatically.\n'
-printf 'For optional direct Twilio inbound tests, manually set: %s/webhooks/twilio/voice\n' "$PUBLIC_URL"
+if [[ -n "$PUBLIC_URL" ]]; then
+  printf '  ngrok:    %s\n' "$PUBLIC_URL"
+  printf '\nOutbound demo calls need no Plivo Console Answer URL change: Voxa sends the per-call answer URL automatically.\n'
+  printf 'For optional direct Twilio inbound tests, manually set: %s/webhooks/twilio/voice\n' "$PUBLIC_URL"
+else
+  printf '\nTo enable real phone calls, add Gemini, Plivo, and NGROK_AUTHTOKEN values to .env, then run ./setup.sh again.\n'
+fi
