@@ -20,6 +20,9 @@ async function sendEmail({ to, subject, html }) {
 export function createDemoRuntime(db) {
   const publicUrl = (process.env.PUBLIC_API_URL || `http://localhost:${process.env.PORT || 8787}`).replace(/\/$/, "")
   const redisUrl = process.env.REDIS_URL
+  if (!redisUrl && process.env.NODE_ENV === "production") {
+    console.warn("REDIS_URL is unset in production: rate limiting is per-instance and lead follow-up emails will never send.")
+  }
   redis ||= redisUrl ? new IORedis(redisUrl, { maxRetriesPerRequest:null }) : null
   const limiter = new DemoRateLimiter(redis ? new RedisRateLimitStore(redis) : new MemoryRateLimitStore())
   const queue = redis ? new Queue("voxa-jobs", { connection:redis }) : { add:async () => {} }
