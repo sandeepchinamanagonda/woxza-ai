@@ -33,9 +33,16 @@
         </label>
         <div class="form-field">
           <span>Language</span>
-          <select v-model="form.language" :disabled="busy" aria-label="Language">
-            <option v-for="language in availableLanguages" :key="language.value" :value="language.value">{{ language.label }}</option>
-          </select>
+          <div class="custom-select" @focusout="closeLanguageOnBlur" @keydown.esc="openLanguage = false">
+            <button class="select-trigger" type="button" :disabled="busy" aria-haspopup="listbox" aria-controls="language-options" :aria-expanded="openLanguage" @click="openLanguage = !openLanguage" @keydown.down.prevent="openLanguage = true">
+              <span>{{ selectedLanguage.label }}</span><ChevronDown :class="{ rotated: openLanguage }" />
+            </button>
+            <div v-if="openLanguage" id="language-options" class="select-menu language-menu" role="listbox" aria-label="Language">
+              <button v-for="language in availableLanguages" :key="language.value" type="button" role="option" :aria-selected="form.language === language.value" :class="{ selected: form.language === language.value }" @click="selectLanguage(language.value)">
+                <span>{{ language.label }}</span><Check v-if="form.language === language.value" />
+              </button>
+            </div>
+          </div>
         </div>
         <div class="form-field">
           <span>Use case</span>
@@ -96,12 +103,14 @@ const isAdmin = import.meta.env.VITE_DEMO_ADMIN_MODE === "true"
 const detectedRegion = ref("IN")
 const form = reactive({ useCase:"order_taking", language:"en", name:"", countryCode:"+91", phone:"", email:"", consent:false, website:"" })
 const openUseCase = ref(false)
+const openLanguage = ref(false)
 const status = ref("idle")
 const error = ref("")
 const limitReached = ref(false)
 let pollTimer
 const busy = computed(() => ["pending", "ringing", "connected"].includes(status.value))
 const selectedUseCase = computed(() => useCases.find(useCase => useCase.value === form.useCase) || useCases[0])
+const selectedLanguage = computed(() => availableLanguages.value.find(language => language.value === form.language) || availableLanguages.value[0])
 const activeCountry = computed(() => countries.find(country => country.code === form.countryCode) || countries[0])
 const availableLanguages = computed(() => isAdmin
   ? [...new Map(Object.values(regionalLanguages).flat().map(language => [language.value, language])).values()]
@@ -117,8 +126,17 @@ function selectUseCase(value) {
   openUseCase.value = false
 }
 
+function selectLanguage(value) {
+  form.language = value
+  openLanguage.value = false
+}
+
 function closeUseCaseOnBlur(event) {
   if (!event.currentTarget.contains(event.relatedTarget)) openUseCase.value = false
+}
+
+function closeLanguageOnBlur(event) {
+  if (!event.currentTarget.contains(event.relatedTarget)) openLanguage.value = false
 }
 
 onMounted(async () => {
@@ -202,6 +220,7 @@ input:focus,select:focus { border-color:var(--voxa-accent); box-shadow:0 0 0 4px
 .select-trigger svg { width:18px; height:18px; color:#64748b; transition:transform .25s; }
 .select-trigger svg.rotated { transform:rotate(180deg); }
 .select-menu { position:absolute; z-index:30; left:0; right:0; top:calc(100% + 8px); display:grid; gap:4px; padding:8px; border:1px solid #dce4ef; border-radius:16px; background:rgba(255,255,255,.98); box-shadow:0 22px 55px rgba(15,23,42,.18); backdrop-filter:blur(18px); }
+.language-menu { max-height:280px; overflow-y:auto; }
 .select-menu button { width:100%; min-height:44px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 12px; border:0; border-radius:10px; background:transparent; color:#475569; font:inherit; font-weight:650; text-align:left; cursor:pointer; transition:background .2s,color .2s; }
 .select-menu button:hover,.select-menu button:focus-visible { outline:none; background:#eef4ff; color:#14264d; }
 .select-menu button.selected { background:#eaf2ff; color:#2563eb; }

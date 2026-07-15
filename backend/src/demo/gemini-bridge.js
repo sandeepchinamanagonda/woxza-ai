@@ -74,6 +74,13 @@ function requestEscalation({ demoCallId, text }) {
     .catch(error => console.warn("Escalation webhook failed", { demoCallId, error:error.message }))
 }
 
+function promptLiveAgent(session, text) {
+  session?.sendClientContent({
+    turns:[{ role:"user", parts:[{ text }] }],
+    turnComplete:true
+  })
+}
+
 function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, onInterrupted, onClosed, onCallerActivity }) {
   if (!process.env.GEMINI_API_KEY) throw new Error("Gemini is not configured")
   const messages = getCallMessages({ useCase:call.use_case, language, businessName:process.env.DEMO_BUSINESS_NAME, companyName:process.env.DEMO_COMPANY_NAME })
@@ -227,11 +234,11 @@ export function attachDemoGeminiBridge(server, { db }) {
         silenceCount += 1
         if (silenceCount >= 2) {
           persistTranscript(db, demoCallId, "system", "Call ended after two caller-silence timeouts")
-          session?.sendRealtimeInput({ text:"[The caller has been silent twice. Politely say goodbye now using the configured ending.]" })
+          promptLiveAgent(session, "[The caller has been silent twice. Politely say goodbye now using the configured ending.]")
           setTimeout(() => close("silence_timeout"), 3_000).unref()
           return
         }
-        session?.sendRealtimeInput({ text:"Are you still there?" })
+        promptLiveAgent(session, "The caller has been quiet. Ask: Are you still there?")
         persistTranscript(db, demoCallId, "system", "Silence re-prompt sent")
         resetSilenceTimer()
       }, 4_500)
@@ -241,7 +248,7 @@ export function attachDemoGeminiBridge(server, { db }) {
     // asynchronous connection completion.
     wrapUpTimer = setTimeout(() => {
       try {
-        session?.sendRealtimeInput({ text:"[The call time limit has been reached. Acknowledge the user warmly, summarize the simulated interaction, and say goodbye immediately.]" })
+        promptLiveAgent(session, "[The call time limit has been reached. Acknowledge the user warmly, summarize the simulated interaction, and say goodbye immediately.]")
       } catch (error) { console.warn("Plivo wrap-up injection failed", { demoCallId, error:error.message }) }
     }, 85_000)
     wrapUpTimer.unref()
@@ -284,13 +291,12 @@ export function attachDemoGeminiBridge(server, { db }) {
           }
         } catch (error) { console.warn("Invalid Plivo demo stream event", { demoCallId, error:error.message }) }
       })
-      // A Live session does not speak until it receives a turn. Trigger the
-      // configured opening immediately so callers hear the greeting on pickup.
-      const { greeting } = getCallMessages({ useCase:call.use_case, language, businessName:process.env.DEMO_BUSINESS_NAME, companyName:process.env.DEMO_COMPANY_NAME })
+      // Send an ordered client turn instead of injecting the greeting as
+      // caller realtime input. The latter was interpreted as caller speech and
+      // could leave the call silent without generating any agent audio.
       logTiming("gemini_session_ready")
-      session.sendRealtimeInput({ text:greeting })
-      persistTranscript(db, demoCallId, "agent", greeting)
-      logTiming("greeting_dispatched")
+      promptLiveAgent(session, "Start the demo now. Speak the configured OPENING greeting exactly, then wait for the caller.")
+      logTiming("opening_turn_dispatched")
       resetSilenceTimer()
       console.info("Gemini Live Plivo demo bridge connected", { demoCallId, language })
     } catch (error) { console.error("Gemini Live Plivo bridge setup failed", { demoCallId, error:error.message }); close() }
@@ -341,12 +347,8 @@ export function attachDemoGeminiBridge(server, { db }) {
           onClosed:() => close()
         })
         for (const payload of queuedAudio.splice(0)) forwardAudio(payload)
-        // Gemini Live is reactive. Give Twilio callers the same immediate
-        // opening turn used by the Plivo bridge so the line never starts silent.
-        const { greeting } = getCallMessages({ useCase:call.use_case, language, businessName:process.env.DEMO_BUSINESS_NAME, companyName:process.env.DEMO_COMPANY_NAME })
-        session.sendRealtimeInput({ text:greeting })
-        persistTranscript(db, demoCallId, "agent", greeting)
-        setTimeout(() => session?.sendRealtimeInput({ text:"The 90-second Voxa demo is ending. If the caller is speaking, let them finish their thought, then clearly say this demo is ending now and give a brief warm goodbye." }), 85_000).unref()
+        promptLiveAgent(session, "Start the demo now. Speak the configured OPENING greeting exactly, then wait for the caller.")
+        setTimeout(() => promptLiveAgent(session, "The 90-second Voxa demo is ending. If the caller is speaking, let them finish their thought, then clearly say this demo is ending now and give a brief warm goodbye."), 85_000).unref()
         console.info("Gemini Live Twilio demo bridge connected", { demoCallId, language })
       } catch (error) { console.error("Gemini Live Twilio bridge setup failed", { demoCallId, error:error.message }); close() }
     }
