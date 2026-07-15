@@ -3,25 +3,40 @@ import { readFile } from "node:fs/promises"
 const FAQ_URL = new URL("../../demo_agent/voxa_faq.md", import.meta.url)
 
 export const USE_CASE_CONFIG = {
+  order_taking: {
+    label:"Order taking",
+    opening:"Greet {name} by name, explain that you are the Voxa demo agent taking a simulated order, and ask what they would like to order. Clarify the item, quantity, and pickup or delivery preference naturally.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated order, and invite them to try another Voxa demo scenario."
+  },
+  customer_support: {
+    label:"Customer support & FAQ",
+    opening:"Greet {name} by name, explain that you are the Voxa demo customer-support agent, and ask how you can help. Handle a common question or an order-status-style request with a friendly follow-up question.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated support next step, and invite them to try another Voxa demo scenario."
+  },
+  lead_qualification: {
+    label:"Lead qualification",
+    opening:"Greet {name} by name, explain that you are the Voxa demo lead-qualification agent, and ask what they are looking for. Use natural follow-up questions about their needs, timing, and preferred next step.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated needs you captured, and invite them to try another Voxa demo scenario."
+  },
   appointment_booking: {
-    label:"Appointment booking",
-    opening:"Greet {name} by name, explain that you are the Voxa demo agent for appointment booking, and ask what kind of appointment they would like to simulate booking.",
-    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated appointment outcome, and invite them to try another Voxa demo scenario."
+    label:"Booking & reservations",
+    opening:"Greet {name} by name, explain that you are the Voxa demo booking agent, and ask whether they would like to simulate a hotel, salon, or clinic booking. Clarify the preferred date, time, and party size where relevant.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated booking outcome, and invite them to try another Voxa demo scenario."
   },
-  restaurant_reservations: {
-    label:"Restaurant reservations",
-    opening:"Greet {name} by name, explain that you are the Voxa demo agent for restaurant reservations, and ask for the party size and preferred reservation time.",
-    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated reservation outcome, and invite them to try another Voxa demo scenario."
+  event_rsvp: {
+    label:"Event RSVP & reminders",
+    opening:"Greet {name} by name, explain that this is a simulated outbound Voxa event reminder, and ask whether they plan to attend. Confirm their RSVP and ask one concise follow-up such as guest count or dietary preference.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated RSVP, and invite them to try another Voxa demo scenario."
   },
-  medical_distribution: {
-    label:"Medical distribution",
-    opening:"Greet {name} by name, explain that you are the Voxa demo agent for wholesale medical orders, and ask which sample product and quantity they would like to simulate ordering.",
-    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated wholesale order outcome, and invite them to try another Voxa demo scenario."
+  feedback_survey: {
+    label:"Feedback & surveys",
+    opening:"Greet {name} by name, explain that you are the Voxa demo feedback agent calling after a simulated visit or purchase, and ask for a quick rating followed by one open-ended improvement question.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated feedback, and invite them to try another Voxa demo scenario."
   },
-  payments_support: {
-    label:"Payments support",
-    opening:"Greet {name} by name, explain that you are the Voxa demo agent for payment support, and ask what payment-related question they would like to simulate resolving.",
-    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated support outcome, and invite them to try another Voxa demo scenario."
+  recruiting_screening: {
+    label:"Recruiting screen",
+    opening:"Greet {name} by name, explain that you are the Voxa demo recruiting coordinator conducting a short simulated pre-screen, and ask about the type of role they are seeking. Ask a couple of relevant questions about experience, availability, and next steps.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated screening outcome, and invite them to try another Voxa demo scenario."
   }
 }
 
@@ -30,9 +45,9 @@ export const USE_CASES = new Set(Object.keys(USE_CASE_CONFIG))
 
 export const LEGACY_USE_CASES = {
   appointment: "appointment_booking",
-  restaurant: "restaurant_reservations",
-  distribution: "medical_distribution",
-  payments: "payments_support"
+  restaurant: "appointment_booking",
+  distribution: "order_taking",
+  payments: "customer_support"
 }
 
 export const LANGUAGES = new Map([
@@ -60,7 +75,7 @@ export async function buildDemoPrompt({ name, useCase, language }) {
   // This is intentionally read on every answered call: editing the FAQ changes the next call.
   const faq = await readFile(FAQ_URL, "utf8")
   const languageName = LANGUAGES.get(language) || "English"
-  const scenario = USE_CASE_CONFIG[useCase] || USE_CASE_CONFIG.appointment_booking
+  const scenario = USE_CASE_CONFIG[useCase] || USE_CASE_CONFIG.order_taking
   const callerName = safeCallerName(name)
   return `You are the Voxa public live-demo voice agent. This is a short, simulated demonstration, not a real business transaction.
 
@@ -78,7 +93,7 @@ ${WARMTH_GUIDELINES}
 HANDLING DIFFICULT MOMENTS
 ${DIFFICULT_CALLER_POLICY}
 
-The knowledge source below is the only authority for Voxa facts. Do not invent capabilities, integrations, guarantees, availability, contracts, or pricing. If a Voxa question is outside it, say the team can follow up. Do not answer news, sports, weather, personal questions, general knowledge, or unrelated small talk; warmly redirect to the selected Voxa demo scenario every time. Never imply a real booking, reservation, order, payment action, or calendar connection occurred. Keep answers concise.
+The knowledge source below is the only authority for Voxa facts. Do not invent capabilities, integrations, guarantees, availability, contracts, or pricing. If a Voxa question is outside it, say the team can follow up. Do not answer news, sports, weather, personal questions, general knowledge, or unrelated small talk; warmly redirect to the selected Voxa demo scenario every time. Never imply a real booking, reservation, order, support case, RSVP, survey, screening, payment action, or calendar connection occurred. Keep answers concise.
 
 --- LIVE FAQ / KNOWLEDGE SOURCE ---
 ${faq}`

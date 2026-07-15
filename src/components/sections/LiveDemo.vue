@@ -80,10 +80,13 @@ defineEmits(["join-waitlist"])
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "")
 const countries = [{ id:"US", label:"🇺🇸 US", code:"+1" }, { id:"IN", label:"🇮🇳 IN", code:"+91" }]
 const useCases = [
-  { value:"appointment", label:"Appointment booking" },
-  { value:"restaurant", label:"Restaurant reservations" },
-  { value:"distribution", label:"Medical distribution" },
-  { value:"payments", label:"Payments support" }
+  { value:"order_taking", label:"Order taking" },
+  { value:"customer_support", label:"Customer support & FAQ" },
+  { value:"lead_qualification", label:"Lead qualification" },
+  { value:"appointment_booking", label:"Booking & reservations" },
+  { value:"event_rsvp", label:"Event RSVP & reminders" },
+  { value:"feedback_survey", label:"Feedback & surveys" },
+  { value:"recruiting_screening", label:"Recruiting screen" }
 ]
 const regionalLanguages = {
   US:[{ value:"en", label:"English" }, { value:"es", label:"Spanish" }],
@@ -91,7 +94,7 @@ const regionalLanguages = {
 }
 const isAdmin = import.meta.env.VITE_DEMO_ADMIN_MODE === "true"
 const detectedRegion = ref("IN")
-const form = reactive({ useCase:"appointment", language:"en", name:"", countryCode:"+91", phone:"", email:"", consent:false, website:"" })
+const form = reactive({ useCase:"order_taking", language:"en", name:"", countryCode:"+91", phone:"", email:"", consent:false, website:"" })
 const openUseCase = ref(false)
 const status = ref("idle")
 const error = ref("")
@@ -152,7 +155,7 @@ const submitDemo = async () => {
     const response = await fetch(`${apiBaseUrl}/api/demo/call`, {
       method:"POST", headers:{ "content-type":"application/json" },
       body:JSON.stringify({
-        use_case:({ appointment:"appointment_booking", restaurant:"restaurant_reservations", distribution:"medical_distribution", payments:"payments_support" })[form.useCase],
+        use_case:form.useCase,
         language:form.language, name:form.name, country_code:form.countryCode, phone_number:form.phone,
         email:form.email || null, consent:form.consent, website:form.website
       })
