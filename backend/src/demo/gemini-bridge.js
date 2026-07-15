@@ -125,8 +125,9 @@ export function attachDemoGeminiBridge(server, { db }) {
   twilioWss.on("connection", async (socket, url) => {
     // Twilio sends custom TwiML <Parameter> values in the `start` event, not
     // in the WebSocket URL. The query fallback supports local diagnostics.
-    let demoCallId = url.searchParams.get("demoCallId")
-    let language = url.searchParams.get("lang") || "en"
+    const allowQueryFallback = process.env.NODE_ENV !== "production"
+    let demoCallId = allowQueryFallback ? url.searchParams.get("demoCallId") : null
+    let language = allowQueryFallback ? url.searchParams.get("lang") || "en" : "en"
     let call
     let closed = false
     let streamSid = null
