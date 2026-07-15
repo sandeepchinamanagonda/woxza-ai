@@ -1,0 +1,63 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Build frontend
+        run: npm run build
+      - name: Install API dependencies
+        working-directory: backend
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Run API tests
+        working-directory: backend
+        run: npm test
+
+  deploy:
+    name: Deploy to OCI
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    steps:
+      - name: Configure SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.OCI_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.OCI_DEPLOY_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.OCI_DEPLOY_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.OCI_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes "$DEPLOY_USER@$DEPLOY_HOST" 'true'
+      - name: Deploy release and verify health
+        env:
+          DEPLOY_HOST: ${{ secrets.OCI_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.OCI_DEPLOY_USER }}
+          DEPLOY_PATH: ${{ vars.OCI_DEPLOY_PATH }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd '$DEPLOY_PATH' && ./scripts/deploy-production.sh '${{ github.sha }}'"
