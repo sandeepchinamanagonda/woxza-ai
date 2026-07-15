@@ -17,10 +17,9 @@
 
 <WhyVoxa/>
 
-<Integrations/>
-
-
 <Transformations/>
+
+<IntegrationMarquee/>
 
 <FAQ/>
 
@@ -52,7 +51,7 @@ import Solutions from "@/components/sections/Solutions.vue"
 import Transformations from "@/components/sections/Transformations.vue"
 import FAQ from "@/components/sections/FAQ.vue"
 import CTA from "@/components/sections/CTA.vue"
-import Integrations from "@/components/sections/Integrations.vue"
+import IntegrationMarquee from "@/components/sections/IntegrationMarquee.vue"
 
 import DemoModal from "@/components/DemoModal.vue"
 
