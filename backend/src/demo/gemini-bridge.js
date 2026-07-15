@@ -75,10 +75,9 @@ function requestEscalation({ demoCallId, text }) {
 }
 
 function promptLiveAgent(session, text) {
-  session?.sendClientContent({
-    turns:[{ role:"user", parts:[{ text }] }],
-    turnComplete:true
-  })
+  // Live API realtime text starts model generation immediately. Client-content
+  // messages caused this audio session to close on the configured Live model.
+  session?.sendRealtimeInput({ text })
 }
 
 function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, onInterrupted, onClosed, onCallerActivity }) {
@@ -116,12 +115,6 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
             caller_question:{ type:"STRING", description:"The caller's feature or capability question." }
           }, required:["intent"] }
         }] }],
-        safetySettings:[
-          { category:"HARM_CATEGORY_HARASSMENT", threshold:"BLOCK_LOW_AND_ABOVE" },
-          { category:"HARM_CATEGORY_HATE_SPEECH", threshold:"BLOCK_LOW_AND_ABOVE" },
-          { category:"HARM_CATEGORY_DANGEROUS_CONTENT", threshold:"BLOCK_LOW_AND_ABOVE" },
-          { category:"HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold:"BLOCK_LOW_AND_ABOVE" }
-        ],
         systemInstruction:{ parts:[{ text:buildScopeLockedInstruction({
           prompt,
           selectedScenario:call.use_case,
@@ -154,7 +147,10 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
           // remote close callback, which is not guaranteed after a fault.
           onClosed?.()
         },
-        onclose() { onClosed?.() }
+        onclose(event) {
+          console.warn("Gemini Live demo bridge closed", { demoCallId, code:event?.code, reason:event?.reason || "no reason supplied" })
+          onClosed?.()
+        }
       }
     })
     return liveSession
@@ -184,7 +180,7 @@ export function attachDemoGeminiBridge(server, { db }) {
     let terminationTimer
     let silenceTimer
     let silenceCount = 0
-    let assistantSpeaking = false
+    let firstAudioSent = false
     const timing = { streamConnectedAt:Date.now(), answeredAt:call.answered_at ? new Date(call.answered_at).getTime() : null }
     const logTiming = (event, extra = {}) => console.info("voice-call-timing", { demoCallId, event, elapsedFromAnswerMs:timing.answeredAt ? Date.now() - timing.answeredAt : null, elapsedFromStreamMs:Date.now() - timing.streamConnectedAt, ...extra })
     // Keep provider operations in one small adapter. This makes interruption
@@ -262,7 +258,7 @@ export function attachDemoGeminiBridge(server, { db }) {
           // Gemini emits signed 16-bit, 24 kHz little-endian PCM. Resample
           // before swapping it to Plivo's 16 kHz big-endian audio/x-l16.
           const pcm16kBigEndian = swapBytes16(resamplePcm(pcm24, 24000, 16000))
-          if (!assistantSpeaking) { assistantSpeaking = true; logTiming("first_ai_audio_sent") }
+          if (!firstAudioSent) { firstAudioSent = true; logTiming("first_ai_audio_sent") }
           plivoStream.playAudio(pcm16kBigEndian)
         },
         onInterrupted:() => plivoStream.clearAudio(),
@@ -278,22 +274,20 @@ export function attachDemoGeminiBridge(server, { db }) {
           const event = JSON.parse(raw.toString())
           if (event.event === "stop") return close()
           if (event.event === "media" && event.media?.payload) {
-            if (assistantSpeaking) {
-              assistantSpeaking = false
-              plivoStream.clearAudio()
-              logTiming("barge_in_detected")
-            }
-            silenceCount = 0
-            resetSilenceTimer()
+            // Plivo delivers media frames continuously, including silence. Do
+            // not treat every frame as a caller interruption: Gemini's VAD
+            // emits `interrupted` only when it detects real caller speech.
+            // Likewise, caller activity is recorded from transcription rather
+            // than from carrier silence frames.
             // Plivo's audio/x-l16 is big-endian. Swap in place before Gemini.
             const swappedBuffer = swapBytes16(Buffer.from(event.media.payload, "base64"))
             session.sendRealtimeInput({ audio:{ data:swappedBuffer.toString("base64"), mimeType:"audio/pcm;rate=16000" } })
           }
         } catch (error) { console.warn("Invalid Plivo demo stream event", { demoCallId, error:error.message }) }
       })
-      // Send an ordered client turn instead of injecting the greeting as
-      // caller realtime input. The latter was interpreted as caller speech and
-      // could leave the call silent without generating any agent audio.
+      // Send an instruction rather than the greeting itself. A greeting sent as
+      // caller input is interpreted as caller speech and can leave the line
+      // silent; this instruction makes Gemini produce the configured opening.
       logTiming("gemini_session_ready")
       promptLiveAgent(session, "Start the demo now. Speak the configured OPENING greeting exactly, then wait for the caller.")
       logTiming("opening_turn_dispatched")

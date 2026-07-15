@@ -8,7 +8,8 @@ const schemaUrls = [
   new URL("../migrations/002_demo_calls.sql", import.meta.url),
   new URL("../migrations/003_demo_call_v2.sql", import.meta.url),
   new URL("../migrations/004_call_transcripts.sql", import.meta.url),
-  new URL("../migrations/005_features.sql", import.meta.url)
+  new URL("../migrations/005_features.sql", import.meta.url),
+  new URL("../migrations/006_demo_call_use_cases.sql", import.meta.url)
 ];
 
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
