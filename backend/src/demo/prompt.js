@@ -3,25 +3,40 @@ import { readFile } from "node:fs/promises"
 const FAQ_URL = new URL("../../demo_agent/voxa_faq.md", import.meta.url)
 
 export const USE_CASE_CONFIG = {
+  order_taking: {
+    label:"Order taking",
+    opening:"Greet {name} by name, explain that you are the Voxa demo agent for order taking, and ask what they would like to order.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated order outcome, and invite them to try another Voxa demo scenario."
+  },
+  customer_support: {
+    label:"Customer support",
+    opening:"Greet {name} by name, explain that you are the Voxa demo agent for customer support, and ask what they need help with.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated support outcome, and invite them to try another Voxa demo scenario."
+  },
+  lead_qualification: {
+    label:"Lead qualification",
+    opening:"Greet {name} by name, explain that you are the Voxa demo agent for lead qualification, and ask a brief question about their needs.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated qualification outcome, and invite them to try another Voxa demo scenario."
+  },
   appointment_booking: {
     label:"Appointment booking",
     opening:"Greet {name} by name, explain that you are the Voxa demo agent for appointment booking, and ask what kind of appointment they would like to simulate booking.",
     closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated appointment outcome, and invite them to try another Voxa demo scenario."
   },
-  restaurant_reservations: {
-    label:"Restaurant reservations",
-    opening:"Greet {name} by name, explain that you are the Voxa demo agent for restaurant reservations, and ask for the party size and preferred reservation time.",
-    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated reservation outcome, and invite them to try another Voxa demo scenario."
+  event_rsvp: {
+    label:"Event RSVP",
+    opening:"Greet {name} by name, explain that you are the Voxa demo agent for event RSVPs, and ask whether they would like to attend the simulated event.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated RSVP outcome, and invite them to try another Voxa demo scenario."
   },
-  medical_distribution: {
-    label:"Medical distribution",
-    opening:"Greet {name} by name, explain that you are the Voxa demo agent for wholesale medical orders, and ask which sample product and quantity they would like to simulate ordering.",
-    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated wholesale order outcome, and invite them to try another Voxa demo scenario."
+  feedback_survey: {
+    label:"Feedback survey",
+    opening:"Greet {name} by name, explain that you are the Voxa demo agent for feedback surveys, and ask for their feedback on the simulated experience.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated feedback outcome, and invite them to try another Voxa demo scenario."
   },
-  payments_support: {
-    label:"Payments support",
-    opening:"Greet {name} by name, explain that you are the Voxa demo agent for payment support, and ask what payment-related question they would like to simulate resolving.",
-    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated support outcome, and invite them to try another Voxa demo scenario."
+  recruiting_screening: {
+    label:"Recruiting screening",
+    opening:"Greet {name} by name, explain that you are the Voxa demo agent for recruiting screening, and ask a brief question about their experience.",
+    closing:"When the end-of-call warning arrives, thank {name} by name, briefly recap the simulated screening outcome, and invite them to try another Voxa demo scenario."
   }
 }
 
@@ -30,9 +45,9 @@ export const USE_CASES = new Set(Object.keys(USE_CASE_CONFIG))
 
 export const LEGACY_USE_CASES = {
   appointment: "appointment_booking",
-  restaurant: "restaurant_reservations",
-  distribution: "medical_distribution",
-  payments: "payments_support"
+  restaurant: "appointment_booking",
+  distribution: "order_taking",
+  payments: "customer_support"
 }
 
 export const LANGUAGES = new Map([

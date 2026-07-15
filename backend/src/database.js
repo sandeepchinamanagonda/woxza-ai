@@ -5,7 +5,8 @@ const { Pool } = pg;
 const schemaUrls = [
   new URL("../migrations/001_initial.sql", import.meta.url),
   new URL("../migrations/002_demo_calls.sql", import.meta.url),
-  new URL("../migrations/003_demo_call_v2.sql", import.meta.url)
+  new URL("../migrations/003_demo_call_v2.sql", import.meta.url),
+  new URL("../migrations/006_use_case_realign.sql", import.meta.url)
 ];
 
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
