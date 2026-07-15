@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
+import twilio from "twilio";
 import { validatePreferences, validateRegistration, validateSalesInquiry } from "./validation.js";
+import { validatePlivoSignature } from "./demo/plivo-signature.js";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
@@ -49,7 +51,32 @@ async function readForm(req) {
 
 const csvCell = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
 
-export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_TOKEN, allowedOrigins = ["http://localhost:3456"] }) {
+function signedUrl(req) {
+  const protocol = req.headers["x-forwarded-proto"] || "https";
+  return `${protocol}://${req.headers.host}${req.url}`;
+}
+
+function validTwilioRequest(req, fields, authToken) {
+  if (!authToken) return true;
+  return twilio.validateRequest(authToken, req.headers["x-twilio-signature"] || "", signedUrl(req), fields);
+}
+
+function validPlivoRequest(req, fields, authToken) {
+  if (!authToken) return true;
+  return validatePlivoSignature({
+    url:signedUrl(req), params:fields, nonce:req.headers["x-plivo-signature-v3-nonce"],
+    signature:req.headers["x-plivo-signature-v3"], authToken
+  });
+}
+
+function rejectInvalidSignature(req, res, provider) {
+  console.warn("Rejected invalid telephony webhook signature", { provider, url:req.url });
+  return sendJson(res, 403, { error:"Invalid signature" });
+}
+
+export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_TOKEN, allowedOrigins = ["http://localhost:3456"], twilioAuthToken = process.env.TWILIO_AUTH_TOKEN, plivoAuthToken = process.env.PLIVO_AUTH_TOKEN }) {
+  if (!twilioAuthToken) console.warn("TWILIO_AUTH_TOKEN is unset; Twilio webhook signature validation is disabled for local development only.");
+  if (!plivoAuthToken) console.warn("PLIVO_AUTH_TOKEN is unset; Plivo webhook signature validation is disabled for local development only.");
   return async function app(req, res) {
     const cors = corsHeaders(req, allowedOrigins);
     if (req.method === "OPTIONS") {
@@ -93,6 +120,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
       if ((req.method === "GET" || req.method === "POST") && url.pathname === "/telephony/plivo/answer") {
         const demoCallId = url.searchParams.get("demoCallId");
         const fields = req.method === "POST" ? ((req.headers["content-type"] || "").includes("application/json") ? await readJson(req) : await readForm(req)) : {};
+        if (!validPlivoRequest(req, fields, plivoAuthToken)) return rejectInvalidSignature(req, res, "plivo");
         const xml = demoCallId && demoService ? await demoService.answer(demoCallId, fields) : null;
         if (!xml) return sendJson(res, 404, { error: "Demo call not found" }, cors);
         res.writeHead(200, { "content-type": "application/xml; charset=utf-8" });
@@ -101,6 +129,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
 
       if (req.method === "POST" && url.pathname === "/webhooks/twilio/voice") {
         const fields = (req.headers["content-type"] || "").includes("application/json") ? await readJson(req) : await readForm(req);
+        if (!validTwilioRequest(req, fields, twilioAuthToken)) return rejectInvalidSignature(req, res, "twilio");
         // Outbound US demo calls include demoCallId. A direct call to the US
         // number gets a short, isolated demo record with the default scenario.
         const demoCallId = url.searchParams.get("demoCallId") || await demoService?.createInboundTwilioCall(fields);
@@ -113,6 +142,11 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
       const demoCallback = url.pathname.match(/^\/api\/demo-call\/([0-9a-f-]+)\/status-callback$/i);
       if (req.method === "POST" && demoCallback) {
         const fields = (req.headers["content-type"] || "").includes("application/json") ? await readJson(req) : await readForm(req);
+        const hasTwilioSignature = Boolean(req.headers["x-twilio-signature"]);
+        const hasPlivoSignature = Boolean(req.headers["x-plivo-signature-v3"]);
+        const valid = (hasTwilioSignature && validTwilioRequest(req, fields, twilioAuthToken)) ||
+          (hasPlivoSignature && validPlivoRequest(req, fields, plivoAuthToken));
+        if (!valid) return rejectInvalidSignature(req, res, hasTwilioSignature ? "twilio" : hasPlivoSignature ? "plivo" : "unknown");
         if (demoService) await demoService.callback(demoCallback[1], fields);
         return sendJson(res, 200, { status: "ok" }, cors);
       }
