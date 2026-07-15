@@ -7,6 +7,8 @@ import './style.css'
 // Import routes
 import Home from './views/Home.vue'
 import NotFound from './views/NotFound.vue'
+import AdminFeatures from './views/AdminFeatures.vue'
+import AdminPrompts from './views/AdminPrompts.vue'
 
 const routes = [
   {
@@ -17,6 +19,8 @@ const routes = [
       title: 'Voxa | Enterprise AI Voice Platform'
     }
   },
+  { path:'/admin/features', name:'AdminFeatures', component:AdminFeatures, meta:{ title:'Woxza | Feature Management' } },
+  { path:'/admin/prompts', name:'AdminPrompts', component:AdminPrompts, meta:{ title:'Woxza | Prompt Templates' } },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',

@@ -1,11 +1,15 @@
 import { readFile } from "node:fs/promises";
 import pg from "pg";
+import { seedFeatures } from "./features.js";
 
 const { Pool } = pg;
 const schemaUrls = [
   new URL("../migrations/001_initial.sql", import.meta.url),
   new URL("../migrations/002_demo_calls.sql", import.meta.url),
-  new URL("../migrations/003_demo_call_v2.sql", import.meta.url)
+  new URL("../migrations/003_demo_call_v2.sql", import.meta.url),
+  new URL("../migrations/004_call_transcripts.sql", import.meta.url),
+  new URL("../migrations/005_features.sql", import.meta.url),
+  new URL("../migrations/006_demo_call_use_cases.sql", import.meta.url)
 ];
 
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -43,6 +47,7 @@ export async function createDatabase({
         const schema = await readFile(schemaUrl, "utf8");
         await pool.query(schema);
       }
+      await seedFeatures(pool);
       return pool;
     } catch (error) {
       lastError = error;
