@@ -7,15 +7,13 @@
 @open-demo="openDemoModal"
 />
 
-
-
 <Solutions/>
 
 <Manifesto/>
 
 <LiveDemo @join-waitlist="openDemoModal('waitlist')" />
 
-<WhyVoxa/>
+<WhyVoxa @join-waitlist="openDemoModal('waitlist')" />
 
 <Transformations/>
 
@@ -44,6 +42,7 @@ import { onMounted, onUnmounted, ref } from "vue"
 import { useMotion } from "@/composables/useMotion"
 
 import Hero from "@/components/sections/Hero.vue"
+import IntegrationMarquee from "@/components/sections/IntegrationMarquee.vue"
 import LiveDemo from "@/components/sections/LiveDemo.vue"
 import Manifesto from "@/components/sections/Manifesto.vue"
 import WhyVoxa from "@/components/sections/WhyVoxa.vue"
@@ -51,7 +50,6 @@ import Solutions from "@/components/sections/Solutions.vue"
 import Transformations from "@/components/sections/Transformations.vue"
 import FAQ from "@/components/sections/FAQ.vue"
 import CTA from "@/components/sections/CTA.vue"
-import IntegrationMarquee from "@/components/sections/IntegrationMarquee.vue"
 
 import DemoModal from "@/components/DemoModal.vue"
 
