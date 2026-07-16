@@ -36,7 +36,7 @@
             </h3>
 
             <p class="mt-12 max-w-[290px] text-[13px] font-light leading-relaxed text-white/70 sm:mt-20 sm:text-[14px]">
-              Voxa answers, understands the request, checks live availability and leaves the team with a complete next stepÃ¢â‚¬â€not another note to decode.
+              Voxa answers, understands the request, checks live availability and leaves the team with a complete next stepâ€”not another note to decode.
             </p>
 
             <div class="mt-auto flex items-end justify-between border-t border-white/10 pt-5">
@@ -104,7 +104,7 @@
 
             <div class="mt-auto flex items-end justify-between border-t border-white/10 pt-5">
               <div>
-                <strong class="block text-2xl font-light text-white">2.4Ãƒâ€”</strong>
+                <strong class="block text-2xl font-light text-white">2.4Ã—</strong>
                 <span class="mt-1 block text-[10px] uppercase tracking-[0.12em] text-white/45">faster response</span>
               </div>
               <div class="text-right">
@@ -114,6 +114,54 @@
             </div>
           </div>
         </article>
+      </div>
+
+      <div class="mt-8 sm:mt-10">
+        <p class="mb-4 text-[10px] font-medium uppercase tracking-[0.2em] text-blue-300/80">
+          Operational impact
+        </p>
+
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-3">
+          <article class="impact-card">
+            <span class="impact-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+              </svg>
+            </span>
+            <strong>70%</strong>
+            <p>Less manual follow-up</p>
+          </article>
+
+          <article class="impact-card">
+            <span class="impact-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z"/>
+              </svg>
+            </span>
+            <strong>24/7</strong>
+            <p>Calls keep moving</p>
+          </article>
+
+          <article class="impact-card">
+            <span class="impact-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m3 17 5-5 4 3 7-8"/><path d="M14 7h5v5"/>
+              </svg>
+            </span>
+            <strong>2â€“5Ã—</strong>
+            <p>Faster request resolution</p>
+          </article>
+
+          <article class="impact-card impact-card-featured">
+            <span class="impact-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="4" y="4" width="5" height="5" rx="1"/><rect x="4" y="15" width="5" height="5" rx="1"/><path d="M13 6h7M13 9h4M13 17h7M13 20h4"/>
+              </svg>
+            </span>
+            <strong>0</strong>
+            <p>Dropped requests</p>
+          </article>
+        </div>
       </div>
 
       <p class="mt-5 text-center text-[9px] font-light tracking-wide text-white/30">
@@ -137,6 +185,74 @@
     radial-gradient(circle at 10% 18%,rgba(37,99,235,.17),transparent 31%),
     radial-gradient(circle at 90% 82%,rgba(59,130,246,.11),transparent 30%);
   background-size:64px 64px,64px 64px,auto,auto;
+}
+
+.impact-card {
+  min-height: 138px;
+  padding: 18px 20px;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: none;
+  transition: transform .3s ease,border-color .3s ease;
+}
+
+.impact-card:hover {
+  border-color: rgba(96,165,250,.55);
+  transform: translateY(-4px);
+}
+
+.impact-card-featured {
+  border-color: #5b8cff;
+  box-shadow: 0 0 0 1px rgba(91,140,255,.12);
+}
+
+.impact-icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 16px;
+  color: #10213d;
+}
+
+.impact-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.impact-card strong {
+  display: block;
+  color: #0f2343;
+  font-size: clamp(25px,2vw,31px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+
+.impact-card p {
+  max-width: 180px;
+  margin: 8px 0 0;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+@media(max-width:640px) {
+  .impact-card {
+    min-height: 132px;
+    padding: 16px;
+  }
+
+  .impact-icon {
+    margin-bottom: 14px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .impact-card {
+    transition: none;
+  }
 }
 
 </style>

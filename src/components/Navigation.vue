@@ -57,6 +57,16 @@ About
 </a>
 
 <a
+href="#why-voxa"
+@click.prevent="scrollTo('why-voxa')"
+:class="{active:activeSection==='why-voxa'}"
+>
+
+Why Voxa
+
+</a>
+
+<a
 href="#demo"
 @click.prevent="scrollTo('demo')"
 :class="{active:activeSection==='demo'}"
@@ -120,7 +130,7 @@ aria-label="Toggle navigation menu"
 @click="mobile=!mobile"
 >
 
-☰
+â˜°
 
 </button>
 
@@ -148,6 +158,12 @@ Solutions
 <a @click="scrollTo('about')">
 
 About
+
+</a>
+
+<a @click="scrollTo('why-voxa')">
+
+Why Voxa
 
 </a>
 
@@ -223,6 +239,8 @@ const sections = [
   "solutions",
 
   "about",
+
+  "why-voxa",
 
   "approach",
 
@@ -1225,26 +1243,30 @@ font-size:36px;
 /* Spread navigation across the whole center */
 .nav-links{
 
-width:100%;
+width:max-content;
 
 display:grid;
 
-grid-template-columns:repeat(5,1fr);
+grid-template-columns:repeat(6,max-content);
 
 align-items:center;
 
 justify-items:center;
 
-padding:0 40px;
+justify-self:center;
 
-column-gap:0;
+padding:0;
+
+column-gap:clamp(28px,2.5vw,44px);
 
 }
 
 /* Every item gets equal space */
 .nav-links a{
 
-width:100%;
+width:auto;
+
+padding:0;
 
 height:86px;
 
@@ -1331,7 +1353,7 @@ padding:0 24px;
 
 .cta{ padding:13px 20px; font-size:13px; }
 
-.nav-links{ padding:0 12px; }
+.nav-links{ padding:0; column-gap:24px; }
 
 }
 
