@@ -15,35 +15,9 @@
 <script setup>
 import { nextTick, onMounted, onUnmounted } from "vue"
 import { RouterView } from "vue-router"
-import Lenis from "@studio-freight/lenis"
 import Navigation from "@/components/Navigation.vue"
 import Footer from "@/components/Footer.vue"
 import { scrollSectionIntoView } from "@/utils/sectionScroll"
-
-let lenis
-let smoothScrollFrame = 0
-
-const startSmoothScroll = () => {
-  if (
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-    window.matchMedia("(max-width: 980px)").matches ||
-    window.matchMedia("(pointer: coarse)").matches
-  ) return
-
-  lenis = new Lenis({
-    duration: 1.05,
-    smoothWheel: true,
-    smoothTouch: false,
-    wheelMultiplier: 0.9
-  })
-
-  const update = (time) => {
-    lenis?.raf(time)
-    smoothScrollFrame = window.requestAnimationFrame(update)
-  }
-
-  smoothScrollFrame = window.requestAnimationFrame(update)
-}
 
 const alignHashTarget = async () => {
   if (!window.location.hash) return
@@ -57,7 +31,6 @@ const alignHashTarget = async () => {
 }
 
 onMounted(() => {
-  startSmoothScroll()
   window.addEventListener("hashchange", alignHashTarget)
   window.requestAnimationFrame(() => window.requestAnimationFrame(alignHashTarget))
   document.fonts?.ready.then(alignHashTarget)
@@ -65,8 +38,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("hashchange", alignHashTarget)
-  if (smoothScrollFrame) window.cancelAnimationFrame(smoothScrollFrame)
-  lenis?.destroy()
 })
 </script>
 
@@ -113,23 +84,6 @@ text-rendering:optimizeLegibility;
 min-height:100vh;
 overflow-x:hidden;
 background:#ffffff;
-}
-
-html.lenis,
-html.lenis body{
-height:auto;
-}
-
-.lenis.lenis-smooth{
-scroll-behavior:auto !important;
-}
-
-.lenis.lenis-stopped{
-overflow:hidden;
-}
-
-.lenis.lenis-scrolling iframe{
-pointer-events:none;
 }
 
 .site-content{
