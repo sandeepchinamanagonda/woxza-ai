@@ -126,11 +126,13 @@ Get a Demo
 class="mobile-toggle"
 type="button"
 :aria-expanded="mobile"
-aria-label="Toggle navigation menu"
+ :aria-label="mobile ? 'Close navigation menu' : 'Open navigation menu'"
+ :class="{ 'is-open': mobile }"
 @click="mobile=!mobile"
 >
 
-â˜°
+<X v-if="mobile" aria-hidden="true" />
+<Menu v-else aria-hidden="true" />
 
 </button>
 
@@ -213,7 +215,8 @@ Get a Demo
 
 <script setup>
 
-import { ref, onMounted, onUnmounted } from "vue"
+import { ref, onMounted, onUnmounted, watch } from "vue"
+import { Menu, X } from "lucide-vue-next"
 import { RouterLink } from "vue-router"
 import { scrollSectionIntoView } from "@/utils/sectionScroll"
 
@@ -222,6 +225,12 @@ const emit = defineEmits([
 ])
 
 const mobile = ref(false)
+
+const syncMobileMenuScrollLock = (isOpen) => {
+  document.body.classList.toggle("mobile-nav-open", isOpen)
+}
+
+watch(mobile, syncMobileMenuScrollLock)
 
 const isScrolled = ref(false)
 
@@ -357,6 +366,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+
+  syncMobileMenuScrollLock(false)
+
 
   window.removeEventListener(
 
@@ -760,6 +772,14 @@ transform:rotate(90deg);
 
 }
 
+.mobile-toggle svg{
+
+width:24px;
+height:24px;
+stroke-width:2.25;
+
+}
+
 /* ==========================================================
 MOBILE MENU
 ========================================================== */
@@ -852,9 +872,15 @@ gap:18px;
 
 width:min(94%,700px);
 
+max-height:calc(100dvh - 88px);
+
 margin:14px auto 0;
 
 padding:26px;
+
+overflow-y:auto;
+
+overscroll-behavior:contain;
 
 background:rgba(255,255,255,.90);
 
@@ -901,6 +927,12 @@ padding-left:12px;
 margin-top:8px;
 
 width:100%;
+
+}
+
+:global(body.mobile-nav-open){
+
+overflow:hidden;
 
 }
 
