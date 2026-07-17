@@ -230,6 +230,11 @@ const syncMobileMenuScrollLock = (isOpen) => {
   document.body.classList.toggle("mobile-nav-open", isOpen)
 }
 
+const resetMobileNavigation = () => {
+  mobile.value = false
+  syncMobileMenuScrollLock(false)
+}
+
 watch(mobile, syncMobileMenuScrollLock)
 
 const isScrolled = ref(false)
@@ -347,7 +352,11 @@ const handleWindowScroll = () => {
 
 onMounted(() => {
 
+  resetMobileNavigation()
+
   updateNavbar()
+
+  window.addEventListener("pageshow", resetMobileNavigation)
 
   window.addEventListener(
 
@@ -366,6 +375,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+
+  window.removeEventListener("pageshow", resetMobileNavigation)
 
   syncMobileMenuScrollLock(false)
 

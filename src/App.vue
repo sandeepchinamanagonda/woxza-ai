@@ -24,7 +24,10 @@ let lenis
 let smoothScrollFrame = 0
 
 const startSmoothScroll = () => {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+  if (
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    window.matchMedia("(pointer: coarse)").matches
+  ) return
 
   lenis = new Lenis({
     duration: 1.05,
