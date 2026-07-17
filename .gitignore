@@ -11,3 +11,5 @@ terraform.tfvars
 .runtime/
 backend/data/
 .DS_Store
+.idea/
+.pnpm-store/
