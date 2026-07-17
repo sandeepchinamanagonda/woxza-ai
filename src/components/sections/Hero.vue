@@ -241,6 +241,12 @@ onUnmounted(() => window.clearInterval(headlineTimer))
 }
 
 @media (max-width: 860px) {
+  .hero,
+  .hero-container,
+  .hero-content,
+  .headline-stage {
+    touch-action: pan-y;
+  }
   .hero { padding-top: 112px; }
   .hero-container { width: calc(100% - 32px); grid-template-columns: 1fr; }
   .hero-content { max-width: 720px; padding: 58px 12px 0; }
