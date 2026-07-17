@@ -6,6 +6,7 @@ import { createApp } from "../src/app.js";
 function createTestDatabase() {
   const registrations = new Map();
   const preferences = new Map();
+  const completedSubmissions = new Map();
   const inquiries = new Map();
 
   return {
@@ -16,6 +17,7 @@ function createTestDatabase() {
           throw Object.assign(new Error("duplicate key"), { code: "23505" });
         }
         registrations.set(values[0], { id: values[0], email: values[3], businessName: values[6] });
+        if (sql.includes("help_with")) completedSubmissions.set(values[0], values);
         return { rowCount: 1 };
       }
       if (sql.includes("INSERT INTO waitlist_preferences")) {
@@ -29,7 +31,7 @@ function createTestDatabase() {
       }
       throw new Error(`Unexpected test query: ${sql}`);
     },
-    state: { registrations, preferences, inquiries }
+    state: { registrations, preferences, completedSubmissions, inquiries }
   };
 }
 
@@ -91,6 +93,60 @@ test("creates a registration with optional company and completes preferences", a
   });
   assert.equal(completed.response.status, 200);
   assert.equal(completed.body.status, "completed");
+});
+
+test("accepts the final questionnaire industries, capabilities, timeline, and value ranges", async () => {
+  const created = await request("/api/waitlist/registrations", {
+    ...registration,
+    email: "questionnaire@example.com",
+    businessName: "Woxza Test Customer",
+    businessType: "recruitment-staffing",
+    metadata: { role:"Founder", software:["HubSpot", "Slack"], dailyCalls:"50-100" }
+  });
+  assert.equal(created.response.status, 201);
+
+  const completed = await request(`/api/waitlist/registrations/${created.body.registrationId}/preferences`, {
+    priceRange: "1500-3000",
+    desiredFeatures: ["human-like-conversations", "24-7-availability", "call-recording-transcripts", "whatsapp-integration"],
+    primaryChallenge: "Answer every incoming call and follow up automatically.",
+    adoptionTimeline: "within-30-days",
+    teamSize: "251-500"
+  });
+  assert.equal(completed.response.status, 200);
+});
+
+test("saves every waitlist answer in one atomic submission", async () => {
+  const completed = await request("/api/waitlist/registrations/complete", {
+    ...registration,
+    email: "complete@example.com",
+    businessName: "Woxza Test Customer",
+    businessType: "insurance",
+    role: "co-founder",
+    priceRange: "700-1500",
+    desiredFeatures: ["human-like-conversations", "24-7-availability"],
+    primaryChallenge: "Answer every incoming call and follow up automatically.",
+    adoptionTimeline: "within-30-days",
+    teamSize: "2-10",
+    helpWith: ["answer-incoming-calls", "qualify-leads"],
+    biggestChallenges: ["high-hiring-and-staffing-costs", "slow-response-times"],
+    callHandlings: ["customer-support-team", "ivr-interactive-voice-response"],
+    software: ["hubspot", "slack"],
+    dailyCalls: ["50-100", "100-300"],
+    referralSource: "linkedin"
+  });
+
+  assert.equal(completed.response.status, 201);
+  assert.equal(completed.body.status, "completed");
+  assert.ok(completed.body.registrationId);
+  const values = db.state.completedSubmissions.get(completed.body.registrationId);
+  assert.equal(values[8], "co-founder");
+  assert.equal(values[10], "700-1500");
+  assert.deepEqual(JSON.parse(values[15]), ["answer-incoming-calls", "qualify-leads"]);
+  assert.deepEqual(JSON.parse(values[17]), ["high-hiring-and-staffing-costs", "slow-response-times"]);
+  assert.deepEqual(JSON.parse(values[19]), ["customer-support-team", "ivr-interactive-voice-response"]);
+  assert.deepEqual(JSON.parse(values[20]), ["hubspot", "slack"]);
+  assert.deepEqual(JSON.parse(values[22]), ["50-100", "100-300"]);
+  assert.equal(values[23], "linkedin");
 });
 
 test("rejects duplicate emails", async () => {

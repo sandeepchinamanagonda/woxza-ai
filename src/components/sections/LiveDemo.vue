@@ -2,9 +2,9 @@
   <section id="demo" class="demo-section">
     <div class="demo-shell">
       <div class="demo-visual">
-        <span class="eyebrow">LIVE VOXA DEMO</span>
+        <span class="eyebrow">LIVE WOXZA DEMO</span>
         <h2>Hear what your next caller could hear</h2>
-        <p>Pick a workflow and Voxa will call you for a focused, 90-second live demonstration</p>
+        <p>Pick a workflow and Woxza will call you for a focused, two-minute live demonstration</p>
         <VoiceRibbon :state="ribbonState" />
         <div class="call-state" aria-live="polite">
           <i :class="ribbonState"></i>
@@ -59,7 +59,7 @@
         </div>
         <label class="consent">
           <input v-model="form.consent" type="checkbox" :disabled="busy" required>
-          <span>I agree to be contacted about Voxa</span>
+          <span>I agree to be contacted about Woxza</span>
         </label>
         <label class="honeypot" aria-hidden="true">
           <span>Website</span>
@@ -117,7 +117,7 @@ const availableLanguages = computed(() => isAdmin
   : regionalLanguages[detectedRegion.value])
 const ribbonState = computed(() => status.value === "connected" ? "connected" : busy.value ? "calling" : "idle")
 const statusCopy = computed(() => ({
-  idle:"Ready when you are", pending:"Starting your call…", ringing:"Your phone is ringing…", connected:"You’re live with Voxa",
+  idle:"Ready when you are", pending:"Starting your call…", ringing:"Your phone is ringing…", connected:"You’re live with Woxza",
   completed:"Demo complete, thanks for calling", no_answer:"We couldn’t reach you", failed:"The call could not connect"
 }[status.value] || "Ready when you are"))
 
@@ -196,9 +196,9 @@ onBeforeUnmount(() => window.clearTimeout(pollTimer))
 </script>
 
 <style scoped>
-.demo-section { position:relative; padding:120px 24px; overflow:hidden; background:var(--voxa-blue); }
+.demo-section { position:relative; padding:120px 24px; overflow:hidden; background:var(--woxza-blue); }
 .demo-section::before { content:""; position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px); background-size:46px 46px; opacity:.45; pointer-events:none; }
-.demo-shell { position:relative; z-index:1; width:min(1180px,100%); margin:auto; display:grid; grid-template-columns:1.08fr .92fr; gap:70px; align-items:center; padding:64px; border:1px solid rgba(255,255,255,.1); border-radius:36px; background:var(--voxa-blue-2); box-shadow:0 35px 100px rgba(0,0,0,.24); }
+.demo-shell { position:relative; z-index:1; width:min(1180px,100%); margin:auto; display:grid; grid-template-columns:1.08fr .92fr; gap:70px; align-items:center; padding:64px; border:1px solid rgba(255,255,255,.1); border-radius:36px; background:var(--woxza-blue-2); box-shadow:0 35px 100px rgba(0,0,0,.24); }
 .eyebrow { color:#8eb4ff; font-size:12px; font-weight:800; letter-spacing:.22em; }
 h2 { max-width:650px; margin:16px 0 20px; color:#fff; font-size:clamp(42px,5vw,68px); line-height:.98; letter-spacing:-.045em; }
 .demo-visual>p { max-width:570px; color:#aeb9cc; font-size:18px; line-height:1.7; }
@@ -211,11 +211,11 @@ h2 { max-width:650px; margin:16px 0 20px; color:#fff; font-size:clamp(42px,5vw,6
 label,.form-field { display:grid; gap:7px; color:#475569; font-size:13px; font-weight:750; }
 label em { color:#94a3b8; font-style:normal; font-weight:600; }
 input,select { width:100%; min-height:50px; padding:0 13px; border:1px solid #d7e0ec; border-radius:12px; background:#f8fbff; color:#14264d; font:inherit; outline:none; }
-input:focus,select:focus { border-color:var(--voxa-accent); box-shadow:0 0 0 4px rgba(var(--voxa-accent-rgb),.1); }
+input:focus,select:focus { border-color:var(--woxza-accent); box-shadow:0 0 0 4px rgba(var(--woxza-accent-rgb),.1); }
 .custom-select { position:relative; }
 .select-trigger { width:100%; min-height:50px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 14px; border:1px solid #d7e0ec; border-radius:12px; background:#f8fbff; color:#14264d; font:inherit; font-weight:700; text-align:left; cursor:pointer; transition:border-color .25s,box-shadow .25s,background .25s; }
 .select-trigger:hover { background:#fff; border-color:#b9c8dd; }
-.select-trigger:focus-visible,.custom-select:focus-within .select-trigger { outline:none; border-color:var(--voxa-accent); box-shadow:0 0 0 4px rgba(var(--voxa-accent-rgb),.1); }
+.select-trigger:focus-visible,.custom-select:focus-within .select-trigger { outline:none; border-color:var(--woxza-accent); box-shadow:0 0 0 4px rgba(var(--woxza-accent-rgb),.1); }
 .select-trigger:disabled { cursor:wait; opacity:.65; }
 .select-trigger svg { width:18px; height:18px; color:#64748b; transition:transform .25s; }
 .select-trigger svg.rotated { transform:rotate(180deg); }
@@ -228,11 +228,11 @@ input:focus,select:focus { border-color:var(--voxa-accent); box-shadow:0 0 0 4px
 .phone-input { display:grid; grid-template-columns:120px 1fr; gap:9px; }
 .country-locked { min-height:50px; display:flex; align-items:center; padding:0 13px; border:1px solid #d7e0ec; border-radius:12px; background:#f8fbff; color:#14264d; font:inherit; }
 .consent { grid-template-columns:20px 1fr; align-items:center; }
-.consent input { min-height:0; height:18px; accent-color:var(--voxa-accent); }
+.consent input { min-height:0; height:18px; accent-color:var(--woxza-accent); }
 .honeypot { position:absolute!important; left:-10000px!important; top:auto!important; width:1px!important; height:1px!important; overflow:hidden!important; }
-.submit-demo { min-height:54px; border:0; border-radius:999px; color:#fff; background:var(--voxa-accent); font:inherit; font-weight:800; cursor:pointer; }
+.submit-demo { min-height:54px; border:0; border-radius:999px; color:#fff; background:var(--woxza-accent); font:inherit; font-weight:800; cursor:pointer; }
 .submit-demo:disabled { cursor:wait; opacity:.65; }
-.waitlist-link { padding:0; border:0; color:var(--voxa-accent); background:none; font:inherit; font-weight:750; cursor:pointer; }
+.waitlist-link { padding:0; border:0; color:var(--woxza-accent); background:none; font:inherit; font-weight:750; cursor:pointer; }
 .form-error { margin:0; color:#b91c1c; font-size:13px; line-height:1.5; }
 .demo-form small { color:#94a3b8; text-align:center; }
 @keyframes pulse { 50% { box-shadow:0 0 0 9px #dcfce7; } }

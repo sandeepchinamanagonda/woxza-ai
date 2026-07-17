@@ -9,7 +9,7 @@
       </aside>
 
       <article class="manifesto-story">
-        <span class="section-tag">WHY WE BUILT VOXA</span>
+        <span class="section-tag">WHY WE BUILT WOXZA</span>
 
         <h2>No one should have to choose which customer gets heard</h2>
 
@@ -25,7 +25,7 @@
           </p>
 
           <p>
-            Voxa gives a business room to breathe and welcomes the customer a
+            Woxza gives a business room to breathe and welcomes the customer a
             thousand kilometers away with the same patience as the person next door,
             and it listens, helps, and follows through, even when the team is already
             giving everything they have

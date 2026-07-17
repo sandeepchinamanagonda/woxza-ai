@@ -1,0 +1,14 @@
+# This file is used only by scripts/deploy-production.sh.
+# It removes the host-level PostgreSQL mapping; the API reaches it only on the
+# internal Docker network. Redis has no host mapping in the base Compose file.
+services:
+  db:
+    ports: !reset []
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a long random POSTGRES_PASSWORD in .env.production}
+
+  api:
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set a long random POSTGRES_PASSWORD in .env.production}
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:?Set ADMIN_API_TOKEN in .env.production}
+      UNSUBSCRIBE_SIGNING_SECRET: ${UNSUBSCRIBE_SIGNING_SECRET:?Set a 32+ character UNSUBSCRIBE_SIGNING_SECRET in .env.production}

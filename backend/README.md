@@ -1,4 +1,4 @@
-# Voxa lead API
+# Woxza lead API
 
 Node.js and PostgreSQL service for the website's waitlist and sales lead flows. Node.js 22 or newer and PostgreSQL 16 are recommended.
 
@@ -24,11 +24,11 @@ The API automatically applies the waitlist and demo-call migrations when it star
 
 ## Live demo configuration
 
-The live demo routes Indian outbound calls through Plivo and US (`+1`) outbound calls through Twilio. Set `PUBLIC_API_URL` to an HTTPS, publicly reachable address. For Plivo set `PLIVO_AUTH_ID`, `PLIVO_AUTH_TOKEN`, and `PLIVO_FROM_NUMBER`; for Twilio set `TWILIO_ACCOUNT_SID`, `TWILIO_FROM_NUMBER`, and either `TWILIO_AUTH_TOKEN` or `TWILIO_API_KEY_SID` plus `TWILIO_API_KEY_SECRET`. Gemini uses `GEMINI_API_KEY`, `GEMINI_LIVE_MODEL`, and `GEMINI_DEMO_VOICE`.
+The live demo uses Plivo for outbound calls. Set `PUBLIC_API_URL` to an HTTPS, publicly reachable address and configure `PLIVO_AUTH_ID`, `PLIVO_AUTH_TOKEN`, and `PLIVO_FROM_NUMBER`. Gemini uses `GEMINI_API_KEY`, `GEMINI_LIVE_MODEL`, and `GEMINI_DEMO_VOICE`.
 
 For an incoming Twilio demo call, configure the Voice webhook as `POST https://your-public-host/webhooks/twilio/voice`. It returns TwiML and opens the bidirectional Media Stream at `wss://your-public-host/ws/twilio`. The bridge receives the selected language for outbound calls, reads the FAQ at call time, gives Gemini an 85-second wrap-up instruction, and applies a 95-second hard limit. Without complete credentials, demo submissions fail safely while waitlist and sales endpoints continue normally.
 
-The public endpoint is `POST /api/demo/call`. It accepts `use_case`, `language`, `name`, `country_code`, `phone_number`, optional `email`, and `consent: true`; the legacy `/api/demo-call` route remains available for the existing site flow. `backend/demo_agent/voxa_faq.md` is read again for each answered call, so content updates do not require redeployment. Phone attempts are stored in PostgreSQL and capped at three in rolling 24 hours; a secondary five-per-hour IP limit and the form honeypot deter automated abuse.
+The public endpoint is `POST /api/demo/call`. It accepts `use_case`, `language`, `name`, `country_code`, `phone_number`, optional `email`, and `consent: true`; the legacy `/api/demo-call` route remains available for the existing site flow. `backend/demo_agent/woxza_faq.md` is read again for each answered call, so content updates do not require redeployment. Phone attempts are stored in PostgreSQL and capped at three in rolling 24 hours; a secondary five-per-hour IP limit and the form honeypot deter automated abuse.
 
 Demo lead review is available at `GET /api/leads` with `Authorization: Bearer $ADMIN_API_TOKEN`. It accepts `page`, `pageSize`, `use_case`, `contact_status`, `from`, `to`, and `format=csv`.
 
@@ -45,7 +45,7 @@ The public admin screens are `/admin/features` and `/admin/prompts`. The token i
 
 ### View local data in IntelliJ IDEA
 
-The Docker database is published only on the host loopback interface. This repository includes an IntelliJ data source named **Voxa PostgreSQL** with these settings:
+The Docker database is published only on the host loopback interface. This repository includes an IntelliJ data source named **Woxza PostgreSQL** with these settings:
 
 - Host: `localhost`
 - Port: `5432`
@@ -53,7 +53,7 @@ The Docker database is published only on the host loopback interface. This repos
 - User: `voxa`
 - Local development password: `voxa_local_password`
 
-Open the Database tool window, select **Voxa PostgreSQL**, enter the password when prompted, and expand `voxa > public > tables`.
+Open the Database tool window, select **Woxza PostgreSQL**, enter the password when prompted, and expand `voxa > public > tables`.
 
 Useful local queries:
 

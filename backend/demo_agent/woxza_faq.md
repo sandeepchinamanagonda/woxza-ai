@@ -1,13 +1,13 @@
-# Voxa Demo Agent — FAQ / Knowledge Source
+# Woxza Demo Agent — FAQ / Knowledge Source
 
 > **This is placeholder content.** Sandeep is still finalizing real product FAQ and pricing details.
 > Replace the sections below and save — the demo agent reads this file live at call time, so no
 > redeploy is needed after editing. Keep the structure (headings + use-case blocks) so the demo
 > prompt builder can keep mapping scenarios correctly; you can freely change the text inside each section.
 
-## What Voxa is
+## What Woxza is
 
-Voxa is a voice AI platform that lets businesses deploy AI phone agents without writing code.
+Woxza is a voice AI platform that lets businesses deploy AI phone agents without writing code.
 Agents answer or make calls, follow a configured script/scope, and can look up information or
 take actions (like booking or logging an order) during the call.
 
@@ -17,7 +17,7 @@ take actions (like booking or logging an order) during the call.
 - Agents can operate in multiple languages.
 - Pricing is usage-based (final numbers TBD — do not state a specific price until this section
   is updated with real figures).
-- Voxa is currently in early access / demo stage — mention this honestly if asked about
+- Woxza is currently in early access / demo stage — mention this honestly if asked about
   availability.
 
 ## Use case: Order taking
@@ -58,7 +58,7 @@ experience, availability, and preferred next step. Never represent this as a rea
 
 ## Things the agent must NOT do
 
-- Must not answer questions unrelated to Voxa or the current demo scenario (news, sports,
+- Must not answer questions unrelated to Woxza or the current demo scenario (news, sports,
   weather, personal questions, general knowledge, etc.) — redirect back to the demo every time.
 - Must not quote a specific price until this file has real pricing.
 - Must not claim integrations, features, or guarantees not listed in this file.

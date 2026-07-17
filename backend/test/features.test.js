@@ -20,3 +20,16 @@ test("falls back to general features when a classified tag has no active feature
   assert.equal(context.features[0].id, "general-1");
   assert.ok(calls.some(call => call.sql.includes("ARRAY['general']")));
 });
+
+test("excludes features already mentioned when resolving a follow-up", async () => {
+  const calls = [];
+  const db = { query:async (sql, values) => {
+    calls.push({ sql, values });
+    if (sql.includes("ARRAY[$1]::text[]")) return { rows:[{ id:"new-feature", title:"New feature", description:"New value", business_tags:["retail"], priority:2, status:"live" }] };
+    return { rows:[] };
+  } };
+  const context = await resolveFeatureContext(db, { businessTagCandidate:"retail", excludeFeatureIds:["old-feature"], limit:3 });
+  assert.equal(context.features[0].id, "new-feature");
+  assert.deepEqual(calls[0].values, ["retail", ["old-feature"], 3]);
+  assert.match(calls[0].sql, /NOT \(id = ANY\(\$2::uuid\[\]\)\)/);
+});

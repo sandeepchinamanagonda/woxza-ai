@@ -1,0 +1,9 @@
+# Non-secret inputs. Supply OCI credentials via TF_VAR_* environment variables in CI.
+region              = "ap-hyderabad-1"
+domain_name         = "woxza.io"
+compartment_ocid    = "ocid1.compartment.oc1..replace-me"
+ssh_public_key      = "ssh-ed25519 AAAA... deploy@github-actions"
+ssh_ingress_cidr    = "203.0.113.10/32"
+
+# Choose a shape actually available in the selected availability domain.
+instance_shape = "VM.Standard.E2.1.Micro"

@@ -16,7 +16,7 @@ const server = createServer(createApp({ db, demoService: demoRuntime.service, al
 attachDemoGeminiBridge(server, { db });
 
 server.listen(port, () => {
-  console.log(`Voxa lead API listening on http://localhost:${port}`);
+  console.log(`Woxza lead API listening on http://localhost:${port}`);
 });
 
 function shutdown() {

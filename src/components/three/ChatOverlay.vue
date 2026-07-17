@@ -1,6 +1,6 @@
 <template>
   <div class="voice-demo" :class="`scenario-${scenario.id}`" :style="{ '--scenario': scenario.color, '--scenario-soft': scenario.soft }">
-    <div class="voice-field" :class="{ speaking: isVoxaSpeaking }" aria-hidden="true">
+    <div class="voice-field" :class="{ speaking: isWoxzaSpeaking }" aria-hidden="true">
       <div class="halo halo-one" />
       <div class="halo halo-two" />
       <div class="voice-orb">
@@ -21,8 +21,8 @@
           <div><small>{{ scenario.eyebrow }}</small><h2>{{ scenario.title }}</h2><span class="scenario-tag">{{ scenario.tag }}</span></div>
         </div>
         <div class="call-presence">
-          <span class="call-status" :class="{ active: isVoxaSpeaking }"><i />{{ isVoxaSpeaking ? 'Voxa is speaking' : 'Listening' }}</span>
-          <span class="status-wave" :class="{ active: isVoxaSpeaking }" aria-hidden="true">
+          <span class="call-status" :class="{ active: isWoxzaSpeaking }"><i />{{ isWoxzaSpeaking ? 'Woxza is speaking' : 'Listening' }}</span>
+          <span class="status-wave" :class="{ active: isWoxzaSpeaking }" aria-hidden="true">
             <i v-for="(height, index) in statusWaveHeights" :key="index" :style="{ height: `${height}px`, animationDelay: `${index * -75}ms` }" />
           </span>
         </div>
@@ -35,7 +35,7 @@
           class="message"
           :class="[message.speaker.toLowerCase(), { current: index === visibleMessages.length - 1 }]"
         >
-          <span><b v-if="message.speaker === 'Voxa'" class="mini-bars"><i /><i /><i /></b>{{ message.speaker }}</span>
+          <span><b v-if="message.speaker === 'Woxza'" class="mini-bars"><i /><i /><i /></b>{{ message.speaker }}</span>
           <p>{{ message.text }}</p>
         </div>
       </div>
@@ -74,55 +74,55 @@ const scenarioSets = {
   india: [
     { ...sharedStyle, id: "clinic", icon: "▣", short: "Appointment", eyebrow: "Hyderabad care desk", title: "Doctor appointment", tag: "Live calendar", messages: [
       { speaker: "Caller", text: "Namaste, my daughter has had a fever since morning, is a paediatrician available in Hyderabad today?" },
-      { speaker: "Voxa", text: "Doctor Ananya Rao can see her at the Jubilee Hills clinic at 4:15 PM, shall I book it?" },
+      { speaker: "Woxza", text: "Doctor Ananya Rao can see her at the Jubilee Hills clinic at 4:15 PM, shall I book it?" },
       { speaker: "Caller", text: "Yes, please send the patient form to me on WhatsApp too" },
-      { speaker: "Voxa", text: "Done, the appointment is confirmed and the form is on your WhatsApp" }
+      { speaker: "Woxza", text: "Done, the appointment is confirmed and the form is on your WhatsApp" }
     ], outcomes: ["Appointment confirmed", "Patient form sent"] },
     { ...sharedStyle, id: "restaurant", icon: "♨", short: "Restaurant", eyebrow: "Delhi guest services", title: "Restaurant reservation", tag: "Menu and tables", messages: [
       { speaker: "Caller", text: "Do you have paneer tikka and a rooftop table at Connaught Place tonight?" },
-      { speaker: "Voxa", text: "Yes, paneer tikka is available and I found a rooftop table at 7:30 PM" },
+      { speaker: "Woxza", text: "Yes, paneer tikka is available and I found a rooftop table at 7:30 PM" },
       { speaker: "Caller", text: "Please book it for four, we are celebrating my mother’s birthday" },
-      { speaker: "Voxa", text: "Your table is booked, and I also asked the restaurant to arrange a small birthday cake" }
+      { speaker: "Woxza", text: "Your table is booked, and I also asked the restaurant to arrange a small birthday cake" }
     ], outcomes: ["Table booked", "Birthday request added"] },
     { ...sharedStyle, id: "distribution", icon: "◇", short: "Distribution", eyebrow: "North India operations", title: "Medical distribution", tag: "Inventory linked", messages: [
       { speaker: "Caller", text: "Our Delhi hospital needs 60 infusion sets by Monday morning, can you check nearby stock?" },
-      { speaker: "Voxa", text: "Yes, Gurugram has 42 sets and Noida has 18, both can reach the hospital by 9 AM Monday" },
+      { speaker: "Woxza", text: "Yes, Gurugram has 42 sets and Noida has 18, both can reach the hospital by 9 AM Monday" },
       { speaker: "Caller", text: "Please combine them and use our priority contract" },
-      { speaker: "Voxa", text: "Done, transfer order VOX 2841 is confirmed, and I will WhatsApp the tracking details after pickup" }
+      { speaker: "Woxza", text: "Done, transfer order VOX 2841 is confirmed, and I will WhatsApp the tracking details after pickup" }
     ], outcomes: ["Transfer order confirmed", "Tracking scheduled"] },
     { ...sharedStyle, id: "payment", icon: "↗", short: "Payments", eyebrow: "Accounts receivable", title: "Payment reminder", tag: "Invoice workflow", messages: [
-      { speaker: "Voxa", text: "Hi Priya, invoice 1048 for ₹1,52,000 is due today, would you like help arranging payment?" },
+      { speaker: "Woxza", text: "Hi Priya, invoice 1048 for ₹1,52,000 is due today, would you like help arranging payment?" },
       { speaker: "Caller", text: "We can pay ₹1,00,000 on Friday and the balance next Tuesday" },
-      { speaker: "Voxa", text: "Certainly, I can record both dates and create two secure payment links" },
+      { speaker: "Woxza", text: "Certainly, I can record both dates and create two secure payment links" },
       { speaker: "Caller", text: "Please do, and send the confirmation to our finance team on WhatsApp" },
-      { speaker: "Voxa", text: "Done, both payment dates are recorded and the secure links are with your finance team" }
+      { speaker: "Woxza", text: "Done, both payment dates are recorded and the secure links are with your finance team" }
     ], outcomes: ["Payment plan recorded", "Finance team notified"] }
   ],
   us: [
     { ...sharedStyle, id: "clinic", icon: "▣", short: "Appointment", eyebrow: "New York care desk", title: "Doctor appointment", tag: "Live calendar", messages: [
       { speaker: "Caller", text: "My daughter has had a fever since this morning, is a pediatrician available in New York today?" },
-      { speaker: "Voxa", text: "Doctor Patel can see her at the Midtown clinic at 4:15 PM, would you like me to book it?" },
+      { speaker: "Woxza", text: "Doctor Patel can see her at the Midtown clinic at 4:15 PM, would you like me to book it?" },
       { speaker: "Caller", text: "Yes, please send the patient form to my phone too" },
-      { speaker: "Voxa", text: "Done, the appointment is confirmed and the form has been sent to your phone" }
+      { speaker: "Woxza", text: "Done, the appointment is confirmed and the form has been sent to your phone" }
     ], outcomes: ["Appointment confirmed", "Patient form sent"] },
     { ...sharedStyle, id: "restaurant", icon: "♨", short: "Restaurant", eyebrow: "Dallas guest services", title: "Restaurant reservation", tag: "Menu and tables", messages: [
       { speaker: "Caller", text: "Do you have a vegan main and a patio table in Dallas tonight?" },
-      { speaker: "Voxa", text: "Yes, the roasted cauliflower steak is available and I found a patio table at 7:30 PM" },
+      { speaker: "Woxza", text: "Yes, the roasted cauliflower steak is available and I found a patio table at 7:30 PM" },
       { speaker: "Caller", text: "Please reserve it for three, we are celebrating a birthday" },
-      { speaker: "Voxa", text: "Your table is reserved, and I also added a birthday note for the host" }
+      { speaker: "Woxza", text: "Your table is reserved, and I also added a birthday note for the host" }
     ], outcomes: ["Table reserved", "Birthday note added"] },
     { ...sharedStyle, id: "distribution", icon: "◇", short: "Distribution", eyebrow: "Texas order operations", title: "Medical distribution", tag: "Inventory linked", messages: [
       { speaker: "Caller", text: "Our Dallas hospital needs 60 infusion sets by Monday morning, can you check nearby stock?" },
-      { speaker: "Voxa", text: "Yes, Fort Worth has 42 sets and Plano has 18, both can reach Dallas by 9 AM Monday" },
+      { speaker: "Woxza", text: "Yes, Fort Worth has 42 sets and Plano has 18, both can reach Dallas by 9 AM Monday" },
       { speaker: "Caller", text: "Please combine them and use our priority contract" },
-      { speaker: "Voxa", text: "Done, transfer order VOX 2841 is confirmed, and I will send tracking details after pickup" }
+      { speaker: "Woxza", text: "Done, transfer order VOX 2841 is confirmed, and I will send tracking details after pickup" }
     ], outcomes: ["Transfer order confirmed", "Tracking scheduled"] },
     { ...sharedStyle, id: "payment", icon: "↗", short: "Payments", eyebrow: "Accounts receivable", title: "Payment reminder", tag: "Invoice workflow", messages: [
-      { speaker: "Voxa", text: "Hi Maya, invoice 1048 for $1,840 is due today, would you like help arranging payment?" },
+      { speaker: "Woxza", text: "Hi Maya, invoice 1048 for $1,840 is due today, would you like help arranging payment?" },
       { speaker: "Caller", text: "We can pay $1,000 on Friday and the balance next Tuesday" },
-      { speaker: "Voxa", text: "Certainly, I can record both dates and create two secure payment links" },
+      { speaker: "Woxza", text: "Certainly, I can record both dates and create two secure payment links" },
       { speaker: "Caller", text: "Please do, and send the confirmation to our finance team" },
-      { speaker: "Voxa", text: "Done, both payment dates are recorded and the secure links have been sent to your finance team" }
+      { speaker: "Woxza", text: "Done, both payment dates are recorded and the secure links have been sent to your finance team" }
     ], outcomes: ["Payment plan recorded", "Finance team notified"] }
   ]
 }
@@ -135,7 +135,7 @@ const messageCount = ref(1)
 const scenario = computed(() => scenarios.value[scenarioIndex.value])
 const visibleMessages = computed(() => scenario.value.messages.slice(0, messageCount.value))
 const currentMessage = computed(() => visibleMessages.value[visibleMessages.value.length - 1])
-const isVoxaSpeaking = computed(() => currentMessage.value?.speaker === "Voxa")
+const isWoxzaSpeaking = computed(() => currentMessage.value?.speaker === "Woxza")
 const isComplete = computed(() => messageCount.value === scenario.value.messages.length)
 const completionLabel = computed(() => scenario.value.outcomes[0])
 const transcriptElement = ref(null)
@@ -208,8 +208,8 @@ onUnmounted(() => { window.clearInterval(messageTimer); window.clearTimeout(scen
 .transcript { height: clamp(255px, 31vh, 294px); padding: 14px 3px 12px 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; scroll-behavior: smooth; }
 .transcript::-webkit-scrollbar { display: none; }
 .message { max-width: 88%; padding: 12px 14px; border-radius: 15px; animation: arrive .35s cubic-bezier(.2,.8,.2,1) both; }.message > span { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; color: #818aa2; font-size: 9px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }.message p { margin: 0; color: #3d4660; font-size: 13px; line-height: 1.45; }
-.message.caller { align-self: flex-end; border: 1px solid #e5e8f2; border-bottom-right-radius: 5px; background: rgba(251,252,255,.96); }.message.voxa { align-self: flex-start; border-bottom-left-radius: 5px; background: color-mix(in srgb, var(--scenario) 10%, white); }.message.voxa > span { color: var(--scenario); }.message.current { box-shadow: 0 7px 18px rgba(49,57,116,.07); }
-.mini-bars { display: inline-flex; align-items: center; gap: 2px; height: 10px; }.mini-bars i { width: 2px; height: 5px; border-radius: 2px; background: currentColor; }.mini-bars i:nth-child(2) { height: 9px; }.message.current.voxa .mini-bars i { animation: mini .55s ease-in-out infinite alternate; }
+.message.caller { align-self: flex-end; border: 1px solid #e5e8f2; border-bottom-right-radius: 5px; background: rgba(251,252,255,.96); }.message.woxza { align-self: flex-start; border-bottom-left-radius: 5px; background: color-mix(in srgb, var(--scenario) 10%, white); }.message.woxza > span { color: var(--scenario); }.message.current { box-shadow: 0 7px 18px rgba(49,57,116,.07); }
+.mini-bars { display: inline-flex; align-items: center; gap: 2px; height: 10px; }.mini-bars i { width: 2px; height: 5px; border-radius: 2px; background: currentColor; }.mini-bars i:nth-child(2) { height: 9px; }.message.current.woxza .mini-bars i { animation: mini .55s ease-in-out infinite alternate; }
 .scenario-body { height: clamp(282px, 34vh, 325px); padding: 14px 0 12px; }
 .scenario-body > div { height: 100%; }
 .scenario-body [class*="line"], .scenario-body [class*="board"], .scenario-body [class*="card"], .scenario-body [class*="ticket"], .scenario-body [class*="result"], .scenario-body [class*="route"], .scenario-body [class*="confirm"], .scenario-body [class*="sheet"], .scenario-body [class*="timeline"], .scenario-body [class*="link"], .stock-query { opacity: .12; transform: translateY(8px); transition: opacity .35s ease, transform .35s ease; }
@@ -260,7 +260,7 @@ onUnmounted(() => { window.clearInterval(messageTimer); window.clearTimeout(scen
 
 .scenario-payment .call-card { border-radius: 24px 24px 8px 8px; border-top: 4px solid var(--scenario); }
 .scenario-payment .call-card::before { background: linear-gradient(90deg, transparent 0 73%, color-mix(in srgb, var(--scenario) 7%, transparent) 73% 100%); }
-.scenario-payment .message.voxa { border-left: 3px solid var(--scenario); border-radius: 5px 16px 16px 5px; }.scenario-payment .message.caller { border-radius: 16px 5px 5px 16px; }.scenario-payment .scenario-detail > span { border-radius: 50%; }
+.scenario-payment .message.woxza { border-left: 3px solid var(--scenario); border-radius: 5px 16px 16px 5px; }.scenario-payment .message.caller { border-radius: 16px 5px 5px 16px; }.scenario-payment .scenario-detail > span { border-radius: 50%; }
 
 @keyframes orb { 0%,100% { transform: translate(-50%,-50%) scale(1); border-radius: 49% 51% 45% 55%; } 50% { transform: translate(-50%,-50%) scale(1.035); border-radius: 54% 46% 55% 45%; } }
 @keyframes halo { 0% { transform: translate(-50%,-50%) scale(.9); opacity: .85; } 100% { transform: translate(-50%,-50%) scale(1.13); opacity: 0; } }

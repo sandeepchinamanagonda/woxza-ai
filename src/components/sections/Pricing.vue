@@ -19,7 +19,7 @@ that fits your business.
 
 <p>
 Whether you're exploring AI or deploying enterprise-wide
-automation, Voxa provides a structured path from strategy to scale.
+automation, Woxza provides a structured path from strategy to scale.
 </p>
 
 </div>

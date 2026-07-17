@@ -1,8 +1,8 @@
 {
-  "name": "voxa-website",
+  "name": "woxza-website",
   "version": "1.0.0",
   "type": "module",
-  "description": "Voxa - Enterprise AI Voice Platform",
+  "description": "Woxza - Enterprise AI Voice Platform",
   "scripts": {
     "dev": "vite",
     "api:dev": "node --watch backend/src/server.js",

@@ -5,7 +5,7 @@
         <span class="eyebrow">CONNECTED ECOSYSTEM</span>
         <h2>All the customer work, sorted into the systems your team already trusts</h2>
         <p>
-          Voxa does not replace your CRM or workspace. It keeps them clean:
+          Woxza does not replace your CRM or workspace. It keeps them clean:
           customer records, tasks, tickets, calendar events and team alerts stay
           connected after every conversation.
         </p>

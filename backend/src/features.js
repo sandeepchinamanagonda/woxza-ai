@@ -66,17 +66,20 @@ export async function getFeaturePrompts(db) {
   return prompts;
 }
 
-export async function resolveFeatureContext(db, { businessTagCandidate, callerQuestion, limit = 4 } = {}) {
+export async function resolveFeatureContext(db, { businessTagCandidate, callerQuestion, limit = 4, excludeFeatureIds = [] } = {}) {
   const candidate = String(businessTagCandidate || "").trim().toLowerCase();
   const requested = String(callerQuestion || "").trim();
+  const excluded = [...new Set((excludeFeatureIds || []).map(String).filter(Boolean))];
   let features = candidate ? (await db.query(`SELECT id,title,description,business_tags,priority,status FROM features
-    WHERE active=TRUE AND business_tags @> ARRAY[$1]::text[] ORDER BY priority,created_at LIMIT $2`, [candidate, limit])).rows : [];
+    WHERE active=TRUE AND business_tags @> ARRAY[$1]::text[] AND NOT (id = ANY($2::uuid[]))
+    ORDER BY priority,created_at LIMIT $3`, [candidate, excluded, limit])).rows : [];
   const usedGeneralFallback = !features.length;
   if (usedGeneralFallback) features = (await db.query(`SELECT id,title,description,business_tags,priority,status FROM features
-    WHERE active=TRUE AND business_tags @> ARRAY['general']::text[] ORDER BY priority,created_at LIMIT $1`, [limit])).rows;
+    WHERE active=TRUE AND business_tags @> ARRAY['general']::text[] AND NOT (id = ANY($1::uuid[]))
+    ORDER BY priority,created_at LIMIT $2`, [excluded, limit])).rows;
   const requestedMatch = requested ? (await db.query(`SELECT id,title,description,business_tags,priority,status FROM features
-    WHERE active=TRUE AND search_document @@ websearch_to_tsquery('simple',$1)
-    ORDER BY ts_rank(search_document, websearch_to_tsquery('simple',$1)) DESC LIMIT 1`, [requested])).rows[0] || null : null;
+    WHERE active=TRUE AND search_document @@ websearch_to_tsquery('simple',$1) AND NOT (id = ANY($2::uuid[]))
+    ORDER BY ts_rank(search_document, websearch_to_tsquery('simple',$1)) DESC LIMIT 1`, [requested, excluded])).rows[0] || null : null;
   return { businessTag: features.some(feature => feature.business_tags.includes(candidate)) ? candidate : "general", usedGeneralFallback, features, requestedMatch };
 }
 

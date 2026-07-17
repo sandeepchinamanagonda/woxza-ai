@@ -1,0 +1,33 @@
+#cloud-config
+package_update: true
+packages:
+  - caddy
+  - ca-certificates
+  - curl
+  - git
+
+users:
+  - name: deploy
+    gecos: Application deploy user
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+runcmd:
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list'
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - usermod -aG docker deploy
+  - git clone --branch ${repository_branch} --single-branch ${repository_url} /srv/woxza-ai
+  - chown -R deploy:deploy /srv/woxza-ai
+  - echo '${caddyfile_base64}' | base64 -d > /etc/caddy/Caddyfile
+  - systemctl enable --now caddy
+  - systemctl reload caddy
+
+# Secrets are deliberately not written by cloud-init. Set /srv/woxza-ai/.env.production
+# from the GitHub production environment before the first application deployment.

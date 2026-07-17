@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { validatePreferences, validateRegistration, validateSalesInquiry } from "./validation.js";
+import { validatePreferences, validateRegistration, validateSalesInquiry, validateWaitlistSubmission } from "./validation.js";
 import { listFeatures, listTags, normalizeTags } from "./features.js";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
@@ -135,7 +135,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
         if (!demoService?.verifyUnsubscribe(leadId, token)) return sendJson(res, 400, { error: "Invalid unsubscribe link" }, cors);
         await db.query(`UPDATE leads SET consent_marketing=FALSE,contact_status='unsubscribed' WHERE id=$1`, [leadId]);
         res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-        return res.end("<!doctype html><title>Unsubscribed</title><main style='font:18px system-ui;max-width:620px;margin:15vh auto;padding:24px'><h1>You’re unsubscribed.</h1><p>Voxa will not send you further marketing follow-ups.</p></main>");
+        return res.end("<!doctype html><title>Unsubscribed</title><main style='font:18px system-ui;max-width:620px;margin:15vh auto;padding:24px'><h1>You’re unsubscribed.</h1><p>Woxza will not send you further marketing follow-ups.</p></main>");
       }
 
       if (req.method === "GET" && url.pathname === "/api/leads") {
@@ -151,7 +151,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
         if (url.searchParams.get("format") === "csv") {
           const columns = ["id","name","phone","email","use_case","call_outcome","call_duration_seconds","contact_status","created_at"];
           const csv = [columns.join(","), ...result.rows.map(row => columns.map(column => csvCell(row[column])).join(","))].join("\n");
-          res.writeHead(200, { "content-type":"text/csv; charset=utf-8", "content-disposition":"attachment; filename=voxa-demo-leads.csv", ...cors });
+          res.writeHead(200, { "content-type":"text/csv; charset=utf-8", "content-disposition":"attachment; filename=woxza-demo-leads.csv", ...cors });
           return res.end(csv);
         }
         return sendJson(res, 200, { items:result.rows.map(({ total_count, ...row }) => row), page, pageSize, total:result.rows[0]?.total_count || 0 }, cors);
@@ -206,6 +206,40 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
         if (typeof input.body !== "string" || !input.body.trim() || input.body.length > 6000) return sendJson(res, 422, { error:"body is required and must be 6000 characters or fewer" }, cors);
         const result = await db.query("UPDATE agent_prompt_templates SET body=$2,active=$3,updated_at=NOW() WHERE key=$1 RETURNING key,title,body,active,created_at,updated_at", [promptPath[1], input.body.trim(), input.active !== false]);
         return result.rowCount ? sendJson(res, 200, result.rows[0], cors) : sendJson(res, 404, { error:"Prompt not found" }, cors);
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/waitlist/registrations/complete") {
+        const input = await readJson(req);
+        const errors = validateWaitlistSubmission(input);
+        if (errors.length) return sendJson(res, 422, { error: "Validation failed", details: errors }, cors);
+
+        const id = randomUUID();
+        try {
+          await db.query(
+            `WITH registration AS (
+              INSERT INTO waitlist_registrations
+                (id, first_name, last_name, email, country_code, phone_number, business_name, business_type, role, metadata)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+              RETURNING id
+            )
+            INSERT INTO waitlist_preferences
+              (registration_id, price_range, desired_features, primary_challenge, adoption_timeline, team_size, help_with, biggest_challenge, biggest_challenges, call_handling, call_handlings, software, daily_calls, daily_call_volumes, referral_source)
+            SELECT id, $11, $12::jsonb, $13, $14, $15, $16::jsonb, $17, $18::jsonb, $19, $20::jsonb, $21::jsonb, $22, $23::jsonb, $24
+            FROM registration`,
+            [id, input.firstName.trim(), input.lastName.trim(), input.email.trim().toLowerCase(),
+              input.countryCode.trim(), input.phoneNumber.trim(), input.businessName?.trim() || null,
+              input.businessType, input.role, JSON.stringify(input.metadata ?? {}), input.priceRange,
+              JSON.stringify([...new Set(input.desiredFeatures)]), input.primaryChallenge.trim(), input.adoptionTimeline,
+              input.teamSize, JSON.stringify([...new Set(input.helpWith)]), input.biggestChallenges[0],
+              JSON.stringify([...new Set(input.biggestChallenges)]), input.callHandlings[0],
+              JSON.stringify([...new Set(input.callHandlings)]), JSON.stringify([...new Set(input.software)]),
+              input.dailyCalls[0], JSON.stringify([...new Set(input.dailyCalls)]), input.referralSource]
+          );
+        } catch (error) {
+          if (error.code === "23505") return sendJson(res, 409, { error: "This email is already on the waitlist" }, cors);
+          throw error;
+        }
+        return sendJson(res, 201, { registrationId: id, status: "completed" }, cors);
       }
 
       if (req.method === "POST" && url.pathname === "/api/waitlist/registrations") {

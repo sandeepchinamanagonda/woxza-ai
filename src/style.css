@@ -30,23 +30,23 @@ DESIGN SYSTEM
   --bg:#08090B;
   --surface:#111318;
   --surface-2:#171A21;
-  --voxa-blue:#0f172a;
-  --voxa-blue-2:#162238;
-  --voxa-blue-rgb:15,23,42;
-  --voxa-white:#ffffff;
-  --voxa-soft:#f8f9fb;
-  --voxa-pale:#edf0f5;
-  --voxa-heading:#11152b;
-  --voxa-accent:#2563eb;
-  --voxa-accent-2:#3b82f6;
-  --voxa-accent-rgb:37,99,235;
-  --voxa-accent-soft:#dbeafe;
+  --woxza-blue:#0f172a;
+  --woxza-blue-2:#162238;
+  --woxza-blue-rgb:15,23,42;
+  --woxza-white:#ffffff;
+  --woxza-soft:#f8f9fb;
+  --woxza-pale:#edf0f5;
+  --woxza-heading:#11152b;
+  --woxza-accent:#2563eb;
+  --woxza-accent-2:#3b82f6;
+  --woxza-accent-rgb:37,99,235;
+  --woxza-accent-soft:#dbeafe;
 
   --text:#F5F7FA;
   --muted:#A8B2C1;
 
-  --accent:var(--voxa-accent);
-  --accent-soft:var(--voxa-accent-soft);
+  --accent:var(--woxza-accent);
+  --accent-soft:var(--woxza-accent-soft);
 
   --border:#242833;
 
@@ -95,11 +95,11 @@ pointer-events:none;
 background:
 
 radial-gradient(circle at top left,
-rgba(var(--voxa-accent-rgb),.08),
+rgba(var(--woxza-accent-rgb),.08),
 transparent 35%),
 
 radial-gradient(circle at bottom right,
-rgba(var(--voxa-accent-rgb),.05),
+rgba(var(--woxza-accent-rgb),.05),
 transparent 40%);
 
 z-index:-2;
@@ -259,7 +259,7 @@ padding:16px 34px;
 
 border-radius:999px;
 
-background:var(--voxa-accent);
+background:var(--woxza-accent);
 
 color:white;
 
@@ -279,7 +279,7 @@ transform:translateY(-3px);
 
 box-shadow:
 
-0 20px 40px rgba(var(--voxa-accent-rgb),.30);
+0 20px 40px rgba(var(--woxza-accent-rgb),.30);
 
 }
 
@@ -311,9 +311,9 @@ transition:.35s;
 
 .btn-secondary:hover{
 
-border-color:var(--voxa-accent);
+border-color:var(--woxza-accent);
 
-background:rgba(var(--voxa-accent-rgb),.08);
+background:rgba(var(--woxza-accent-rgb),.08);
 
 }
 
@@ -345,7 +345,7 @@ transition:.18s;
 
 transform:translateY(-3px);
 
-border-color:var(--voxa-accent);
+border-color:var(--woxza-accent);
 
 }
 
@@ -386,11 +386,11 @@ textarea:focus{
 
 outline:none;
 
-border-color:var(--voxa-accent);
+border-color:var(--woxza-accent);
 
 box-shadow:
 
-0 0 0 4px rgba(var(--voxa-accent-rgb),.10);
+0 0 0 4px rgba(var(--woxza-accent-rgb),.10);
 
 }
 
@@ -432,7 +432,7 @@ border-radius:999px;
 
 ::-webkit-scrollbar-thumb:hover{
 
-background:var(--voxa-accent);
+background:var(--woxza-accent);
 
 }
 
@@ -442,7 +442,7 @@ SELECTION
 
 ::selection{
 
-background:rgba(var(--voxa-accent-rgb),.28);
+background:rgba(var(--woxza-accent-rgb),.28);
 
 color:white;
 

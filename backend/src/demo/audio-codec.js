@@ -13,6 +13,59 @@ export function resamplePcm(input, sourceRate, targetRate) {
   return output
 }
 
+export function createStreamingPcmResampler(sourceRate, targetRate) {
+  if (!(sourceRate > 0) || !(targetRate > 0)) throw new Error("Positive sample rates are required")
+  const step = sourceRate / targetRate
+  let samples = []
+  let position = 0
+  return {
+    push(input) {
+      const incoming = new Int16Array(input.buffer, input.byteOffset, Math.floor(input.length / 2))
+      if (sourceRate === targetRate) return Buffer.from(input)
+      for (const sample of incoming) samples.push(sample)
+      const output = []
+      while (position + 1 < samples.length) {
+        const leftIndex = Math.floor(position)
+        const fraction = position - leftIndex
+        const left = samples[leftIndex]
+        const right = samples[leftIndex + 1]
+        output.push(Math.round(left + (right - left) * fraction))
+        position += step
+      }
+      // Retain the final source sample and any fractional/whole-sample phase
+      // needed to interpolate correctly when the next carrier chunk arrives.
+      const consumed = Math.min(Math.floor(position), Math.max(0, samples.length - 1))
+      if (consumed > 0) {
+        samples = samples.slice(consumed)
+        position -= consumed
+      }
+      const result = Buffer.alloc(output.length * 2)
+      output.forEach((sample, index) => result.writeInt16LE(sample, index * 2))
+      return result
+    },
+    reset() {
+      samples = []
+      position = 0
+    }
+  }
+}
+
+export function createPcmSpeechDetector({ threshold=650, consecutiveFrames=2 } = {}) {
+  let consecutive = 0
+  return {
+    push(input) {
+      const samples = new Int16Array(input.buffer, input.byteOffset, Math.floor(input.length / 2))
+      if (!samples.length) return false
+      let energy = 0
+      for (const sample of samples) energy += sample * sample
+      const rms = Math.sqrt(energy / samples.length)
+      consecutive = rms >= threshold ? consecutive + 1 : 0
+      return consecutive >= consecutiveFrames
+    },
+    reset() { consecutive = 0 }
+  }
+}
+
 export function swapPcm16Endianness(input) {
   const output = Buffer.from(input)
   return swapBytes16(output)

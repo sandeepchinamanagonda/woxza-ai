@@ -1,6 +1,6 @@
-# Run Voxa locally — no engineering setup required
+# Run Woxza locally — no engineering setup required
 
-Voxa is a local demo website with a Vue frontend, Node.js API, PostgreSQL, and Redis. Once it starts, open **http://localhost:3456**. The API health check is at **http://localhost:8787/health**.
+Woxza is a local demo website with a Vue frontend, Node.js API, PostgreSQL, and Redis. Once it starts, open **http://localhost:3456**. The API health check is at **http://localhost:8787/health**.
 
 You do not need to install Node, PostgreSQL, Redis, npm packages, or Python to use the app. Docker runs all of those for you. The one-command setup can also install the few host tools it needs.
 
@@ -28,7 +28,7 @@ This is safe to re-run. It will:
 4. Start the database, Redis, API, and website.
 5. Wait until the backend health check succeeds.
 
-Then open [http://localhost:3456](http://localhost:3456). Leave the Terminal window open only while the setup command is working; after it prints “Voxa is running”, Docker keeps the app running in the background.
+Then open [http://localhost:3456](http://localhost:3456). Leave the Terminal window open only while the setup command is working; after it prints “Woxza is running”, Docker keeps the app running in the background.
 
 ### What works without any accounts or keys
 
@@ -64,7 +64,7 @@ Stopping the stack keeps local database data. To completely erase local demo dat
 
 First, ask your coding assistant to run this diagnostic and fix the result:
 
-> Inspect the Voxa Docker containers and logs, fix only the local startup problem, restart the stack, and verify `http://localhost:3456` plus `http://localhost:8787/health` before you finish.
+> Inspect the Woxza Docker containers and logs, fix only the local startup problem, restart the stack, and verify `http://localhost:3456` plus `http://localhost:8787/health` before you finish.
 
 For manual diagnosis:
 
@@ -81,6 +81,6 @@ The most common first-run issue is Docker Desktop still starting. Wait for its m
 - API: Node.js on port `8787`; migrations run automatically during startup.
 - Data: PostgreSQL and Redis, both managed by Docker Compose.
 - Dependencies: installed during the Docker image builds, so no host `npm install` is needed.
-- Real voice calls: India routes through Plivo; US calls can route through Twilio when configured. Voxa sends Plivo a per-call answer URL itself—there is no standard outbound Plivo-console Answer URL to configure.
+- Real voice calls: India routes through Plivo; US calls can route through Twilio when configured. Woxza sends Plivo a per-call answer URL itself—there is no standard outbound Plivo-console Answer URL to configure.
 
 Use [`.env.example`](.env.example) for the full list of optional configuration values. Keep `.env` private; it contains secrets and is intentionally ignored by Git.

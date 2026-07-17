@@ -1,4 +1,4 @@
-# Voxa Professional Vue.js Project - Complete Overview
+# Woxza Professional Vue.js Project - Complete Overview
 
 ## 📦 What You're Getting
 

@@ -1,0 +1,9 @@
+# OCI Object Storage's S3-compatible endpoint. Keep real credentials in GitHub secrets.
+bucket                      = "woxza-terraform-state"
+key                         = "production/terraform.tfstate"
+region                      = "ap-hyderabad-1"
+endpoint                    = "https://<namespace>.compat.objectstorage.<region>.oraclecloud.com"
+skip_credentials_validation = true
+skip_region_validation      = true
+skip_requesting_account_id  = true
+use_path_style              = true

@@ -72,21 +72,21 @@ onUnmounted(() => {
 
 --bg:#ffffff;
 --dark:#0f172a;
---voxa-blue:#0f172a;
---voxa-blue-2:#162238;
---voxa-blue-rgb:15,23,42;
---voxa-white:#ffffff;
---voxa-soft:#f8f9fb;
---voxa-pale:#edf0f5;
---voxa-heading:#11152b;
---voxa-accent:#2563eb;
---voxa-accent-2:#3b82f6;
---voxa-accent-rgb:37,99,235;
---voxa-accent-soft:#dbeafe;
+--woxza-blue:#0f172a;
+--woxza-blue-2:#162238;
+--woxza-blue-rgb:15,23,42;
+--woxza-white:#ffffff;
+--woxza-soft:#f8f9fb;
+--woxza-pale:#edf0f5;
+--woxza-heading:#11152b;
+--woxza-accent:#2563eb;
+--woxza-accent-2:#3b82f6;
+--woxza-accent-rgb:37,99,235;
+--woxza-accent-soft:#dbeafe;
 --text:#0f172a;
 --muted:#64748b;
 --border:rgba(15,23,42,.08);
---primary:var(--voxa-accent);
+--primary:var(--woxza-accent);
 
 }
 
@@ -148,7 +148,7 @@ font-family:inherit;
 }
 
 ::selection{
-background:var(--voxa-accent);
+background:var(--woxza-accent);
 color:#fff;
 }
 

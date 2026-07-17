@@ -24,7 +24,7 @@ class="brand"
 
 <span class="brand-name">
 
-VOXA
+WOXZA
 
 </span>
 
@@ -258,7 +258,7 @@ scrollTo("demo")
 
 const openLeadModal = (intent) => {
   mobile.value = false
-  window.dispatchEvent(new CustomEvent("voxa:open-demo", {
+  window.dispatchEvent(new CustomEvent("woxza:open-demo", {
     detail: { intent }
   }))
 }

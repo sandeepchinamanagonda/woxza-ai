@@ -9,7 +9,7 @@ if [[ $# -ne 1 ]]; then
 fi
 
 target_sha="$1"
-compose=(docker compose --env-file .env.production)
+compose=(docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.production.yml)
 
 [[ -f .env.production ]] || { echo '.env.production is missing' >&2; exit 1; }
 git diff --quiet || { echo 'Deployment directory has uncommitted changes' >&2; exit 1; }

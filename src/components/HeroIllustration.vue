@@ -127,7 +127,7 @@
 
       <div class="core-inner">
 
-        <small>Voxa</small>
+        <small>Woxza</small>
 
         <h2>
           AI

@@ -4,6 +4,10 @@ dist/
 .env
 .env.local
 .env.production
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
 .runtime/
 backend/data/
 .DS_Store

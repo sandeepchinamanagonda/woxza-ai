@@ -14,14 +14,14 @@ EARLY ACCESS
 </span>
 
 <h2>
-Ready to put Voxa
+Ready to put Woxza
 <br>
 on your phones?
 </h2>
 
 <p>
 Join the waitlist for early access, or talk with sales if you
-already know which calls and workflows you want Voxa to handle
+already know which calls and workflows you want Woxza to handle
 </p>
 
 <div class="actions">
@@ -63,7 +63,7 @@ defineEmits([
 .cta-section{
 position:relative;
 padding:180px 0;
-background:var(--voxa-blue);
+background:var(--woxza-blue);
 overflow:hidden;
 }
 
@@ -87,7 +87,7 @@ width:560px;
 height:560px;
 left:-220px;
 top:-180px;
-background:rgba(var(--voxa-accent-rgb),.18);
+background:rgba(var(--woxza-accent-rgb),.18);
 }
 
 .glow-right{
@@ -95,7 +95,7 @@ width:620px;
 height:620px;
 right:-260px;
 bottom:-220px;
-background:rgba(var(--voxa-accent-rgb),.08);
+background:rgba(var(--woxza-accent-rgb),.08);
 }
 
 .cta{
@@ -103,7 +103,7 @@ position:relative;
 z-index:2;
 padding:100px 70px;
 border-radius:36px;
-background:var(--voxa-blue-2);
+background:var(--woxza-blue-2);
 border:1px solid rgba(255,255,255,.08);
 text-align:center;
 overflow:hidden;
@@ -175,7 +175,7 @@ cursor:pointer;
 }
 
 .btn-primary{
-background:var(--voxa-accent);
+background:var(--woxza-accent);
 border:none;
 color:white;
 }

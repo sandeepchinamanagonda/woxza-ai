@@ -11,7 +11,7 @@ async function sendEmail({ to, subject, html }) {
   if (!process.env.RESEND_API_KEY || !to) return false
   const response = await fetch("https://api.resend.com/emails", {
     method:"POST", headers:{ authorization:`Bearer ${process.env.RESEND_API_KEY}`, "content-type":"application/json" },
-    body:JSON.stringify({ from:process.env.DEMO_EMAIL_FROM || "Voxa <demo@voxa.ai>", to:[to], subject, html })
+    body:JSON.stringify({ from:process.env.DEMO_EMAIL_FROM || "Woxza <demo@woxza.ai>", to:[to], subject, html })
   })
   if (!response.ok) throw new Error(`Resend request failed (${response.status})`)
   return true
@@ -48,11 +48,11 @@ export function createDemoRuntime(db) {
     const lead = result.rows[0]
     if (!lead?.consent_marketing || !lead.email || lead.contact_status === "unsubscribed") return
     const completed = lead.call_outcome === "connected"
-    const subject = completed ? "Thanks for trying Voxa" : "We tried to reach you"
-    const heading = completed ? "Thanks for trying Voxa — here’s what you just experienced" : "We tried to reach you — want to try again?"
-    const cta = completed ? `${process.env.WEBSITE_URL || "https://voxa.ai"}/#contact` : `${process.env.WEBSITE_URL || "https://voxa.ai"}/#live-demo`
+    const subject = completed ? "Thanks for trying Woxza" : "We tried to reach you"
+    const heading = completed ? "Thanks for trying Woxza — here’s what you just experienced" : "We tried to reach you — want to try again?"
+    const cta = completed ? `${process.env.WEBSITE_URL || "https://woxza.ai"}/#contact` : `${process.env.WEBSITE_URL || "https://woxza.ai"}/#live-demo`
     const unsubscribe = service.signUnsubscribe(lead.id)
-    const sent = await sendEmail({ to:lead.email, subject, html:`<h1>${heading}</h1><p>Voxa handled a real voice workflow in seconds.</p><p><a href="${cta}">${completed ? "Join the waitlist" : "Retry the demo"}</a></p><p><small><a href="${unsubscribe}">Unsubscribe</a></small></p>` })
+    const sent = await sendEmail({ to:lead.email, subject, html:`<h1>${heading}</h1><p>Woxza handled a real voice workflow in seconds.</p><p><a href="${cta}">${completed ? "Join the waitlist" : "Retry the demo"}</a></p><p><small><a href="${unsubscribe}">Unsubscribe</a></small></p>` })
     if (sent) await db.query(`UPDATE leads SET contact_status='emailed',last_contacted_at=NOW() WHERE id=$1 AND contact_status<>'unsubscribed'`, [lead.id])
   }, { connection:redis }) : null
 

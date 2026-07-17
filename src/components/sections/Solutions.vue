@@ -8,7 +8,7 @@
       <header class="heading">
         <h2>AI built for <em>every</em> industry</h2>
         <p>
-          Voxa adapts to the way your industry works and automates workflows,
+          Woxza adapts to the way your industry works and automates workflows,
           enhancing customer experiences and driving real business impact
         </p>
       </header>
@@ -81,7 +81,7 @@
 
       <p class="trust-note"><Building2 /> Trusted by businesses across 20+ industries worldwide</p>
 
-      <div class="value-strip" aria-label="Voxa platform benefits">
+      <div class="value-strip" aria-label="Woxza platform benefits">
         <div v-for="benefit in benefits" :key="benefit.title" class="value-item">
           <span class="value-icon"><component :is="benefit.icon" /></span>
           <span><strong>{{ benefit.title }}</strong><small>{{ benefit.detail }}</small></span>

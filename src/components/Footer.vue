@@ -13,7 +13,7 @@
 
 <div class="brand">
 
-<h2>Voxa</h2>
+<h2>Woxza</h2>
 
 <p>
 Building voice AI that answers calls, books appointments,
@@ -72,7 +72,7 @@ updates systems and keeps every customer conversation moving
 
 <div class="bottom">
 
-<p>© 2026 Voxa, all rights reserved</p>
+<p>© 2026 Woxza, all rights reserved</p>
 
 <p>Voice AI Platform • Waitlist Access • Customer Automation</p>
 
@@ -93,7 +93,7 @@ updates systems and keeps every customer conversation moving
 .footer{
 position:relative;
 padding:140px 0 50px;
-background:var(--voxa-blue);
+background:var(--woxza-blue);
 overflow:hidden;
 }
 
@@ -118,7 +118,7 @@ width:520px;
 height:520px;
 left:-180px;
 top:-180px;
-background:rgba(var(--voxa-accent-rgb),.16);
+background:rgba(var(--woxza-accent-rgb),.16);
 }
 
 .glow-right{
@@ -126,7 +126,7 @@ width:620px;
 height:620px;
 right:-260px;
 bottom:-220px;
-background:rgba(var(--voxa-accent-rgb),.08);
+background:rgba(var(--woxza-accent-rgb),.08);
 }
 
 .footer-card{
@@ -134,7 +134,7 @@ position:relative;
 z-index:2;
 padding:70px;
 border-radius:34px;
-background:var(--voxa-blue-2);
+background:var(--woxza-blue-2);
 border:1px solid rgba(255,255,255,.08);
 }
 

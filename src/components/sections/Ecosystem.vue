@@ -21,7 +21,7 @@ Heading
 
 <div class="eyebrow">
 
-VOXA ECOSYSTEM
+WOXZA ECOSYSTEM
 
 </div>
 
@@ -82,7 +82,7 @@ AI CORE
 
 <h3>
 
-VOXA
+WOXZA
 
 </h3>
 

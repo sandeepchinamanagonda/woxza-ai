@@ -16,7 +16,7 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: {
-      title: 'Voxa | Enterprise AI Voice Platform'
+      title: 'Woxza | Enterprise AI Voice Platform'
     }
   },
   { path:'/admin/features', name:'AdminFeatures', component:AdminFeatures, meta:{ title:'Woxza | Feature Management' } },
@@ -53,7 +53,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title || 'Voxa'
+  document.title = to.meta.title || 'Woxza'
   next()
 })
 

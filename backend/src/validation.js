@@ -1,28 +1,66 @@
 const BUSINESS_TYPES = [
   "agency",
+  "accounting-tax",
+  "automotive",
+  "beauty-wellness",
+  "construction",
+  "education",
   "ecommerce",
   "financial-services",
+  "government",
   "healthcare",
+  "home-services",
   "hospitality",
+  "insurance",
+  "it-services",
+  "legal",
   "local-services",
+  "logistics",
+  "manufacturing",
+  "marketing-agency",
+  "non-profit",
   "real-estate",
+  "recruitment-staffing",
+  "restaurants",
+  "retail",
   "saas",
+  "telecommunications",
+  "travel-tourism",
   "other"
 ];
 
-const PRICE_RANGES = ["under-100", "100-299", "300-999", "1000-plus", "not-sure"];
+const PRICE_RANGES = ["under-100", "100-299", "100-300", "300-700", "300-999", "700-1500", "1000-plus", "1500-3000", "3000-plus", "not-sure"];
 const FEATURE_OPTIONS = [
   "ai-phone-agent",
+  "human-like-conversations",
   "appointment-booking",
   "customer-support",
-  "lead-qualification",
-  "multilingual-support",
-  "analytics",
   "crm-integrations",
-  "custom-workflows"
+  "multilingual-support",
+  "24-7-availability",
+  "human-handoff",
+  "lead-qualification",
+  "call-recording-transcripts",
+  "analytics-reporting",
+  "analytics",
+  "knowledge-base-integration",
+  "custom-workflows",
+  "outbound-calling",
+  "whatsapp-integration",
+  "email-automation",
+  "existing-phone-number-support",
+  "fast-response-times",
+  "other"
 ];
-const ADOPTION_TIMELINES = ["immediately", "1-3-months", "3-6-months", "exploring"];
-const TEAM_SIZES = ["just-me", "2-10", "11-50", "51-200", "200-plus"];
+const ADOPTION_TIMELINES = ["immediately", "within-30-days", "1-3-months", "3-6-months", "6-plus-months", "exploring"];
+const TEAM_SIZES = ["just-me", "2-10", "11-25", "11-50", "26-50", "51-100", "51-200", "101-250", "200-plus", "251-500", "501-1000", "1000-plus"];
+const ROLES = ["founder", "co-founder", "ceo", "coo", "operations-manager", "sales-manager", "customer-success-manager", "customer-support-manager", "marketing-manager", "it-engineering", "other"];
+const CHALLENGES = ["missing-customer-calls", "spending-too-much-time-answering-repetitive-questions", "high-hiring-and-staffing-costs", "overloaded-support-team", "inconsistent-lead-follow-ups", "slow-response-times", "lack-of-after-hours-support", "too-many-manual-processes", "improving-customer-experience", "automating-business-operations", "exploring-voice-ai-for-the-business", "other"];
+const CALL_HANDLING = ["receptionist", "customer-support-team", "call-center", "ivr-interactive-voice-response", "employees-answer-calls-directly", "voicemail", "no-structured-process", "a-combination-of-the-above", "other"];
+const DAILY_CALLS = ["under-20", "20-50", "50-100", "100-300", "300-1000", "1000-plus", "not-sure"];
+const REFERRAL_SOURCES = ["google-search", "linkedin", "instagram", "x-twitter", "youtube", "referral", "friend-or-colleague", "event-or-conference", "other"];
+const HELP_OPTIONS = ["answer-incoming-calls", "book-appointments", "customer-support", "qualify-leads", "make-outbound-calls", "follow-up-with-customers", "send-appointment-reminders", "answer-faqs", "route-calls-to-the-right-person", "update-our-crm", "collect-customer-information", "process-orders", "payment-reminders", "collect-customer-feedback", "technical-support", "hr-and-recruitment-calls", "internal-employee-support", "other"];
+const SOFTWARE_OPTIONS = ["salesforce", "hubspot", "zoho-crm", "pipedrive", "microsoft-dynamics", "freshworks-crm", "twilio", "aircall", "ringcentral", "five9", "whatsapp-business", "zendesk", "intercom", "freshdesk", "google-workspace", "microsoft-365", "slack", "microsoft-teams", "calendly", "shopify", "woocommerce", "none", "other"];
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const COUNTRY_CODE_PATTERN = /^\+[1-9]\d{0,3}$/;
@@ -43,6 +81,12 @@ function allowedValue(value, field, options) {
     return `${field} must be one of: ${options.join(", ")}`;
   }
   return null;
+}
+
+function allowedSelections(value, field, options) {
+  if (!Array.isArray(value) || value.length === 0) return `${field} must contain at least one selection`;
+  const invalid = [...new Set(value)].filter((item) => !options.includes(item));
+  return invalid.length ? `${field} contains unsupported values: ${invalid.join(", ")}` : null;
 }
 
 export function validateRegistration(input) {
@@ -92,8 +136,8 @@ export function validatePreferences(input) {
     errors.push("desiredFeatures must contain at least one feature");
   } else {
     const uniqueFeatures = [...new Set(input.desiredFeatures)];
-    if (uniqueFeatures.length > 5) {
-      errors.push("desiredFeatures can contain at most 5 features");
+    if (uniqueFeatures.length > 16) {
+      errors.push("desiredFeatures can contain at most 16 features");
     }
     const invalid = uniqueFeatures.filter((feature) => {
       if (FEATURE_OPTIONS.includes(feature)) return false;
@@ -105,6 +149,20 @@ export function validatePreferences(input) {
   }
 
   return errors;
+}
+
+export function validateWaitlistSubmission(input) {
+  return [
+    ...validateRegistration(input),
+    ...validatePreferences(input),
+    allowedValue(input.role, "role", ROLES),
+    allowedSelections(input.helpWith, "helpWith", HELP_OPTIONS),
+    allowedSelections(input.biggestChallenges, "biggestChallenges", CHALLENGES),
+    allowedSelections(input.callHandlings, "callHandlings", CALL_HANDLING),
+    allowedSelections(input.software, "software", SOFTWARE_OPTIONS),
+    allowedSelections(input.dailyCalls, "dailyCalls", DAILY_CALLS),
+    allowedValue(input.referralSource, "referralSource", REFERRAL_SOURCES)
+  ].filter(Boolean);
 }
 
 export function validateSalesInquiry(input) {

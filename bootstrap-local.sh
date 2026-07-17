@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs the host tools needed to run Voxa locally. It is safe to rerun.
+# Installs the host tools needed to run Woxza locally. It is safe to rerun.
 set -Eeuo pipefail
 
 ASSUME_YES=false
@@ -62,4 +62,4 @@ has docker || fail "Docker is not available yet. Finish Docker Desktop setup, th
 has ngrok || fail "ngrok installation did not finish. Run ./bootstrap-local.sh again."
 has python3 || fail "Python installation did not finish. Run ./bootstrap-local.sh again."
 docker compose version >/dev/null 2>&1 || fail "Docker Compose is not ready yet. Start Docker Desktop, wait for it to finish starting, then run ./setup.sh again."
-note "Host setup complete. Run ./setup.sh to start Voxa."
+note "Host setup complete. Run ./setup.sh to start Woxza."

@@ -36,7 +36,7 @@
           />
         </div>
 
-        <div class="hero-proof-grid" aria-label="Voxa capabilities">
+        <div class="hero-proof-grid" aria-label="Woxza capabilities">
           <div v-for="capability in capabilities" :key="capability.title" class="proof-item">
             <span class="proof-icon" :style="{ '--icon-color': capability.color, '--icon-soft': capability.soft }"><component :is="capability.icon" /></span>
             <div><strong>{{ capability.title }}</strong><small>{{ capability.description }}</small></div>
@@ -66,7 +66,7 @@ const headlines = [
       [{ text: "customers and " }, { text: "get", accent: true }],
       [{ text: "work done", accent: true, underline: true }]
     ],
-    description: "Voxa answers every call, understands intent and takes action so your team can focus on what matters"
+    description: "Woxza answers every call, understands intent and takes action so your team can focus on what matters"
   },
   {
     id: "every-call",
@@ -76,7 +76,7 @@ const headlines = [
       [{ text: "understood Every" }],
       [{ text: "step handled", accent: true, underline: true }]
     ],
-    description: "From the first hello to the finished task, Voxa keeps every customer conversation moving forward"
+    description: "From the first hello to the finished task, Woxza keeps every customer conversation moving forward"
   },
   {
     id: "one-platform",
@@ -86,7 +86,7 @@ const headlines = [
       [{ text: "your business needs" }],
       [{ text: "completed", accent: true, underline: true }]
     ],
-    description: "Many conversations move your business and Voxa connects them, understands them and completes the work behind them"
+    description: "Many conversations move your business and Woxza connects them, understands them and completes the work behind them"
   }
 ]
 
