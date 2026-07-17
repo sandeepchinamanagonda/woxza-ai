@@ -6,6 +6,16 @@ packages:
   - curl
   - git
 
+write_files:
+  - path: /usr/local/sbin/woxza-firewall
+    permissions: "0755"
+    content: |
+      ${replace(firewall_script, "\n", "\n      ")}
+  - path: /etc/systemd/system/woxza-firewall.service
+    permissions: "0644"
+    content: |
+      ${replace(firewall_service, "\n", "\n      ")}
+
 users:
   - name: deploy
     gecos: Application deploy user
@@ -16,6 +26,8 @@ users:
       - ${ssh_public_key}
 
 runcmd:
+  - systemctl daemon-reload
+  - systemctl enable --now woxza-firewall.service
   - install -m 0755 -d /etc/apt/keyrings
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
   - chmod a+r /etc/apt/keyrings/docker.asc

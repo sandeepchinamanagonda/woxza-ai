@@ -141,6 +141,8 @@ resource "oci_core_instance" "production" {
       repository_branch = var.repository_branch
       ssh_public_key    = var.ssh_public_key
       caddyfile_base64  = base64encode(templatefile("${path.module}/caddyfile.tftpl", { domain_name = var.domain_name }))
+      firewall_script   = file("${path.module}/assets/woxza-firewall.sh")
+      firewall_service  = file("${path.module}/assets/woxza-firewall.service")
     }))
   }
 }
