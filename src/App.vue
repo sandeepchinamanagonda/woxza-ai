@@ -26,6 +26,7 @@ let smoothScrollFrame = 0
 const startSmoothScroll = () => {
   if (
     window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    window.matchMedia("(max-width: 980px)").matches ||
     window.matchMedia("(pointer: coarse)").matches
   ) return
 
