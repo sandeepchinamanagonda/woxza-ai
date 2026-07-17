@@ -90,13 +90,13 @@ behavior:"smooth"
 
 onMounted(()=>{
 
-window.addEventListener("voxa:open-demo",openDemoModal)
+window.addEventListener("woxza:open-demo",openDemoModal)
 
 })
 
 onUnmounted(()=>{
 
-window.removeEventListener("voxa:open-demo",openDemoModal)
+window.removeEventListener("woxza:open-demo",openDemoModal)
 
 })
 
