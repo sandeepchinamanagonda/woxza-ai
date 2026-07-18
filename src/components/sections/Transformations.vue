@@ -173,7 +173,7 @@
 
 <style scoped>
 .benefits-section {
-  font-family:"Futura Md BT Medium",Inter,system-ui,-apple-system,sans-serif;
+  font-family:"Inter",system-ui,-apple-system,sans-serif;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
 }
