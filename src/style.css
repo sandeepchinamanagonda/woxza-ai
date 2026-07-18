@@ -27,6 +27,8 @@ DESIGN SYSTEM
 
 :root{
 
+  --font-heading:"Inter",sans-serif;
+
   --bg:#08090B;
   --surface:#111318;
   --surface-2:#171A21;
@@ -145,7 +147,7 @@ h4,
 h5,
 h6{
 
-font-family:"Inter",sans-serif;
+font-family:var(--font-heading) !important;
 
 font-weight:700;
 
