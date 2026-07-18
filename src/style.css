@@ -1,3 +1,4 @@
+@import url("https://db.onlinewebfonts.com/c/e55e9079ee863276569c8a68d776ef04?family=Futura+Md+BT+Medium");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
 @tailwind base;
 @tailwind components;
@@ -489,6 +490,21 @@ will-change:opacity,transform;
 opacity:1;
 transform:translate3d(0,0,0);
 will-change:auto;
+}
+
+.reveal-ready.reveal-exited-above{
+opacity:0;
+transform:translate3d(0,-24px,0);
+}
+
+@media (prefers-reduced-motion:reduce){
+.reveal-ready,
+.reveal-ready.is-revealed,
+.reveal-ready.reveal-exited-above{
+opacity:1;
+transform:none;
+transition:none;
+}
 }
 
 /* ==========================================================

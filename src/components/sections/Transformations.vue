@@ -36,7 +36,7 @@
             </h3>
 
             <p class="mt-12 max-w-[290px] text-[13px] font-light leading-relaxed text-white/70 sm:mt-20 sm:text-[14px]">
-              Voxa answers, understands the request, checks live availability and leaves the team with a complete next stepâ€”not another note to decode.
+              Voxa answers, understands the request, checks live availability and leaves the team with a complete next step—not another note to decode.
             </p>
 
             <div class="mt-auto flex items-end justify-between border-t border-white/10 pt-5">
@@ -104,7 +104,7 @@
 
             <div class="mt-auto flex items-end justify-between border-t border-white/10 pt-5">
               <div>
-                <strong class="block text-2xl font-light text-white">2.4Ã—</strong>
+                <strong class="block text-2xl font-light text-white">2.4×</strong>
                 <span class="mt-1 block text-[10px] uppercase tracking-[0.12em] text-white/45">faster response</span>
               </div>
               <div class="text-right">
@@ -148,7 +148,7 @@
                 <path d="m3 17 5-5 4 3 7-8"/><path d="M14 7h5v5"/>
               </svg>
             </span>
-            <strong>2â€“5Ã—</strong>
+            <strong>2–5×</strong>
             <p>Faster request resolution</p>
           </article>
 

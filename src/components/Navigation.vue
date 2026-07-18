@@ -130,7 +130,7 @@ aria-label="Toggle navigation menu"
 @click="mobile=!mobile"
 >
 
-â˜°
+☰
 
 </button>
 
