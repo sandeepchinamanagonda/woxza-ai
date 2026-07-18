@@ -32,17 +32,6 @@ The public endpoint is `POST /api/demo/call`. It accepts `use_case`, `language`,
 
 Demo lead review is available at `GET /api/leads` with `Authorization: Bearer $ADMIN_API_TOKEN`. It accepts `page`, `pageSize`, `use_case`, `contact_status`, `from`, `to`, and `format=csv`.
 
-## Feature management
-
-The server creates and seeds the `features` and `agent_prompt_templates` tables on startup. Admin routes use the same bearer token:
-
-- `GET` / `POST` `/api/admin/features`
-- `PATCH` / `DELETE` `/api/admin/features/:id` (`?hard=true` permanently deletes; the default disables)
-- `GET` `/api/admin/feature-tags`
-- `GET` / `PATCH` `/api/admin/prompt-templates/:key`
-
-The public admin screens are `/admin/features` and `/admin/prompts`. The token is held only in the browser session and is never embedded in the frontend build.
-
 ### View local data in IntelliJ IDEA
 
 The Docker database is published only on the host loopback interface. This repository includes an IntelliJ data source named **Woxza PostgreSQL** with these settings:

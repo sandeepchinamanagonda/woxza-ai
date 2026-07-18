@@ -106,7 +106,7 @@ export function createDemoService({ db, limiter, plivo, twilio, followupQueue, b
       })
       // Plivo's current docs disallow audioTrack="both" for bidirectional streams;
       // inbound is the valid caller-audio track while model audio is sent via playAudio.
-      return `<?xml version="1.0" encoding="UTF-8"?><Response><Stream bidirectional="true" audioTrack="inbound" keepCallAlive="true" contentType="audio/x-mulaw;rate=8000">${xmlEscape(stream.toString())}</Stream><Wait length="120"/><Hangup/></Response>`
+      return `<?xml version="1.0" encoding="UTF-8"?><Response><Stream bidirectional="true" audioTrack="inbound" keepCallAlive="true" contentType="audio/x-l16;rate=16000">${xmlEscape(stream.toString())}</Stream><Wait length="95"/><Hangup/></Response>`
     },
     async twilioAnswer(id, fields = {}) {
       const result = await db.query(`UPDATE demo_calls SET status='connected',answered_at=COALESCE(answered_at,NOW()),provider_call_id=COALESCE($2,provider_call_id),updated_at=NOW() WHERE id=$1 RETURNING language`, [id,fields.CallSid || null])

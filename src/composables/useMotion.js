@@ -78,7 +78,8 @@ export function useScrollReveal(
     rootMargin = "0px 0px -12% 0px",
     threshold = 0.08,
     readyClass = "reveal-ready",
-    revealedClass = "is-revealed"
+    revealedClass = "is-revealed",
+    exitedAboveClass = "reveal-exited-above"
   } = {}
 ) {
   let observer
@@ -90,15 +91,25 @@ export function useScrollReveal(
 
     elements.forEach((element) => {
       element.classList.add(readyClass)
+
+      const rect = element.getBoundingClientRect()
+      const initiallyVisible = rect.bottom > 0 && rect.top < window.innerHeight * 0.88
+
+      element.classList.toggle(revealedClass, initiallyVisible)
+      element.classList.toggle(exitedAboveClass, !initiallyVisible && rect.bottom <= 0)
     })
 
     observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (!entry.isIntersecting) return
+          if (entry.isIntersecting) {
+            entry.target.classList.add(revealedClass)
+            entry.target.classList.remove(exitedAboveClass)
+            return
+          }
 
-          entry.target.classList.add(revealedClass)
-          observer.unobserve(entry.target)
+          entry.target.classList.remove(revealedClass)
+          entry.target.classList.toggle(exitedAboveClass, entry.boundingClientRect.top < 0)
         })
       },
       {
