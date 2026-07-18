@@ -302,7 +302,7 @@
               <button
                 class="btn-primary"
                 type="submit"
-                :disabled="!salesReady || isSubmitting"
+                :disabled="isSubmitting"
               >
                 {{ isSubmitting ? "Requesting" : "Request My Demo" }}
               </button>
@@ -655,6 +655,20 @@ const salesReady = computed(() =>
   )
 )
 
+const salesMissingFields = computed(() => {
+  const missing = []
+
+  if (!form.value.firstName) missing.push("first name")
+  if (!form.value.lastName) missing.push("last name")
+  if (!emailReady.value) missing.push("a valid email address")
+  if (!phoneReady.value) missing.push("a valid phone number")
+  if (!form.value.industry) missing.push("industry")
+  if (form.value.industry === "other" && !form.value.otherIndustry.trim()) missing.push("your industry")
+  if (!form.value.message) missing.push("what you want Woxza to help with")
+
+  return missing
+})
+
 const optionLabel = (options, value) =>
   options.find((option) => option.value === value)?.label || value
 
@@ -819,6 +833,12 @@ const handleSubmit = async () => {
   if (isSubmitting.value) return
 
   submitError.value = ""
+
+  if (props.mode === "sales" && !salesReady.value) {
+    submitError.value = `Please complete: ${salesMissingFields.value.join(", ")}`
+    return
+  }
+
   isSubmitting.value = true
 
   try {
