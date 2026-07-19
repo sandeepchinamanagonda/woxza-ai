@@ -2,14 +2,23 @@
   <section class="waitlist-confirmation" role="status" aria-labelledby="waitlist-confirmation-title">
     <button class="waitlist-confirmation__close" type="button" aria-label="Close confirmation" @click="emit('close')">×</button>
 
-    <p class="waitlist-confirmation__eyebrow">Status</p>
-    <h2 id="waitlist-confirmation-title">Confirmed</h2>
+    <p class="waitlist-confirmation__eyebrow">{{ eyebrow }}</p>
+    <h2 id="waitlist-confirmation-title">{{ title }}</h2>
     <div class="waitlist-confirmation__divider"></div>
-    <p class="waitlist-confirmation__body">You're on the Woxza waitlist. We'll reach out to the email you gave us as soon as your access is ready.</p>
+    <p class="waitlist-confirmation__body">{{ message }}</p>
   </section>
 </template>
 
 <script setup>
+defineProps({
+  eyebrow: { type: String, default: "Status" },
+  title: { type: String, default: "Confirmed" },
+  message: {
+    type: String,
+    default: "You're on the Woxza waitlist. We'll reach out to the email you gave us as soon as your access is ready."
+  }
+})
+
 const emit = defineEmits(["close"])
 </script>
 

@@ -7,7 +7,8 @@
         @click.self="closeModal"
       >
         <WaitlistConfirmation
-          v-if="successMessage && props.mode === 'waitlist'"
+          v-if="successMessage"
+          :message="confirmationMessage"
           @close="closeModal"
         />
 
@@ -612,6 +613,12 @@ const successDetail = computed(() =>
   props.mode === "sales"
     ? "Our team will be in touch shortly to arrange your tailored demo."
     : "We'll reach out as soon as you're up."
+)
+
+const confirmationMessage = computed(() =>
+  props.mode === "sales"
+    ? "Your demo request is confirmed. Our team will be in touch shortly to arrange your tailored demo."
+    : "You're on the Woxza waitlist. We'll reach out to the email you gave us as soon as your access is ready."
 )
 
 const emailReady = computed(() =>
