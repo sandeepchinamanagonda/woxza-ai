@@ -6,7 +6,11 @@
     </button>
 
     <Teleport to="body">
-      <div v-if="isOpen" ref="menu" class="multi-select__menu" :class="{ 'multi-select__menu--dark': dark }" :style="menuStyle" role="group" :aria-label="label" @wheel.stop>
+      <div v-if="isOpen" ref="menu" class="multi-select__menu" :class="{ 'multi-select__menu--dark': dark }" :style="menuStyle" role="group" :aria-label="label" @wheel.stop @keydown.esc.stop="closeMenu">
+        <div class="multi-select__menu-actions">
+          <button class="multi-select__save" type="button" @click="closeMenu">Save</button>
+          <button class="multi-select__close" type="button" :aria-label="`Close ${label}`" @click="closeMenu">×</button>
+        </div>
         <button v-for="option in options" :key="option.value" type="button" :class="{ selected: draftValues.includes(option.value), disabled: isDisabled(option.value) }" :disabled="isDisabled(option.value)" @click="toggle(option.value)">
           <span>{{ option.label }}</span>
           <b v-if="draftValues.includes(option.value)" aria-hidden="true">✓</b>
@@ -48,9 +52,8 @@ const toggle = (value) => {
     ? draftValues.value.filter((item) => item !== value)
     : [...draftValues.value, value]
   draftValues.value = selected
-  // Persist the choice and close like a standard select; users can reopen it to add or remove choices.
+  // Persist every choice immediately while keeping the menu open for multiple selections.
   emit("update:modelValue", selected)
-  isOpen.value = false
 }
 
 const openMenu = () => {
@@ -71,6 +74,7 @@ const openMenu = () => {
   isOpen.value = true
 }
 const toggleMenu = () => { if (isOpen.value) isOpen.value = false; else openMenu() }
+const closeMenu = () => { isOpen.value = false }
 const closeOutside = (event) => {
   if (!root.value?.contains(event.target) && !menu.value?.contains(event.target)) isOpen.value = false
 }
@@ -82,4 +86,5 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", closeOutside, 
 .multi-select__trigger{display:grid;width:100%;min-height:48px;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 13px;border:1px solid rgba(15,23,42,.10);border-radius:8px;color:var(--lead-accent,var(--woxza-blue));background:#fff;font:inherit;font-size:17px;font-weight:400;text-align:left;cursor:pointer}.multi-select__trigger span{overflow:hidden;font-weight:400;text-overflow:ellipsis;white-space:nowrap}.multi-select__trigger .placeholder{color:#94a3b8;font-weight:400}.multi-select__trigger i{width:8px;height:8px;margin-right:3px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}.multi-select__trigger:focus{border-color:var(--lead-accent,var(--woxza-accent));box-shadow:0 0 0 4px rgba(var(--lead-accent-rgb,var(--woxza-accent-rgb)),.1);outline:none}
 .multi-select__menu{overflow-y:auto;overscroll-behavior:contain;padding:6px;border:1px solid rgba(15,23,42,.12);border-radius:10px;background:#fff;box-shadow:0 18px 44px rgba(15,23,42,.18);font-family:var(--font-primary)}.multi-select__menu button{display:grid;width:100%;min-height:46px;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:0 10px;border:0;border-radius:7px;color:#475569;background:#fff;font:inherit;font-size:17px;font-weight:400;text-align:left;cursor:pointer}.multi-select__menu button:hover,.multi-select__menu button.selected{color:#14264d;background:#eef2f8}.multi-select__menu button.disabled{opacity:.45;cursor:not-allowed}.multi-select__menu button b{font-weight:800}
 .multi-select__menu--dark{border-color:rgba(147,197,253,.28);background:#081a34;box-shadow:0 18px 44px rgba(0,0,0,.38)}.multi-select__menu--dark button{color:#e8f1ff;background:transparent}.multi-select__menu--dark button:hover{color:#fff;background:rgba(255,255,255,.10)}.multi-select__menu--dark button.selected{color:#fff;background:var(--woxza-accent)}
+.multi-select__menu-actions{position:sticky;z-index:1;top:-6px;display:flex;justify-content:flex-end;gap:6px;margin:-6px -6px 6px;padding:7px 8px 6px;border-bottom:1px solid rgba(15,23,42,.1);background:#fff}.multi-select__menu-actions button{display:inline-flex;width:auto;min-height:28px;align-items:center;justify-content:center;padding:0 9px;font-size:12px;font-weight:800}.multi-select__menu-actions .multi-select__save{color:#fff;background:var(--woxza-accent)}.multi-select__menu-actions .multi-select__close{width:28px;padding:0;color:#475569;font-size:21px;line-height:1}.multi-select__menu--dark .multi-select__menu-actions{border-bottom-color:rgba(147,197,253,.22);background:#081a34}.multi-select__menu--dark .multi-select__menu-actions .multi-select__save{color:#fff;background:var(--woxza-accent)}.multi-select__menu--dark .multi-select__menu-actions .multi-select__close{color:#e8f1ff;background:rgba(255,255,255,.08)}
 </style>
