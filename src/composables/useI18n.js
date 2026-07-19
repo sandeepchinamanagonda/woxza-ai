@@ -111,8 +111,11 @@ translations.kn = {
 }
 
 const validLanguage = (value) => supportedLanguages.some(({ code }) => code === value)
-const savedLanguage = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null
-const language = ref(validLanguage(savedLanguage) ? savedLanguage : "en")
+// The language switcher is intentionally hidden from the public navigation.
+// Always start in English and clear any previously saved visitor preference so
+// the site cannot open in a language the visitor can no longer switch away from.
+if (typeof window !== "undefined") window.localStorage.removeItem(STORAGE_KEY)
+const language = ref("en")
 const originalText = new WeakMap()
 const originalAttributes = new WeakMap()
 const translatableAttributes = ["placeholder", "aria-label", "title"]
