@@ -29,16 +29,16 @@ updates systems and keeps every customer conversation moving
 
 <a href="tel:+918125869888">
 <span class="contact-icon"><PhoneCall /></span>
-<span><small>Call us</small><b>081258 69888</b></span>
+<span><small>Call us</small><b>+918125869888</b></span>
 </a>
 
 <a
-href="https://mail.google.com/mail/?view=cm&fs=1&to=nagarjunainnovations@gmail.com"
+href="mailto:support@woxza.io"
 target="_blank"
 rel="noopener noreferrer"
 >
 <span class="contact-icon"><Mail /></span>
-<span><small>Email us</small><b>nagarjunainnovations@gmail.com</b></span>
+<span><small>Email us</small><b>support@woxza.io</b></span>
 </a>
 
 </div>
@@ -93,7 +93,7 @@ rel="noopener noreferrer"
 aria-label="Open Woxza India on Instagram"
 >Instagram</a>
 <a
-href="https://mail.google.com/mail/?view=cm&fs=1&to=nagarjunainnovations@gmail.com"
+href="mailto:support@woxza.io"
 target="_blank"
 rel="noopener noreferrer"
 >Email us</a>
@@ -148,7 +148,7 @@ rel="noopener noreferrer"
 <p>You may ask to access, correct, or delete the personal information you have provided, or opt out of marketing messages, by contacting us.</p>
 
 <h3>Contact</h3>
-<p>Email <a href="mailto:nagarjunainnovations@gmail.com">nagarjunainnovations@gmail.com</a> or call <a href="tel:+918125869888">081258 69888</a> with privacy questions or requests.</p>
+<p>Email <a href="mailto:support@woxza.io">support@woxza.io</a> or call <a href="tel:+918125869888">+918125869888</a> with privacy questions or requests.</p>
 </div>
 </template>
 
@@ -176,7 +176,7 @@ rel="noopener noreferrer"
 <p>The website is provided on an “as available” basis. To the extent permitted by law, Woxza is not responsible for indirect loss arising from use of the website. We may update these terms and will publish the revised date here.</p>
 
 <h3>Contact</h3>
-<p>For questions about these terms, email <a href="mailto:nagarjunainnovations@gmail.com">nagarjunainnovations@gmail.com</a>.</p>
+<p>For questions about these terms, email <a href="mailto:support@woxza.io">support@woxza.io</a>.</p>
 </div>
 </template>
 </section>
