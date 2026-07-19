@@ -1,24 +1,21 @@
 <template>
-  <section id="faq" class="faq">
+  <section id="faq" class="faq landing-section">
     <div class="container-custom">
       <div class="heading">
         <span>FREQUENTLY ASKED QUESTIONS</span>
-        <h2>Everything you<br>need to know</h2>
-        <p>Answers based on what businesses want to know before joining Voxa.</p>
+        <h2 class="display-heading">Everything you<br>need to know</h2>
+        <p>Answers to the questions businesses ask before launching a Woxza voice AI solution.</p>
       </div>
 
       <div class="faq-list">
         <TransitionGroup name="faq-reveal">
-          <article
-            v-for="(item, index) in visibleFaqs"
-            :key="item.question"
-            class="faq-item"
-          >
+          <article v-for="item in visibleFaqs" :key="item.question" class="faq-item">
             <div class="question">
-              <span>{{ String(index + 1).padStart(2, "0") }}</span>
               <h3>{{ item.question }}</h3>
             </div>
-            <p>{{ item.answer }}</p>
+            <div class="answer">
+              <p>{{ item.answer }}</p>
+            </div>
           </article>
         </TransitionGroup>
 
@@ -28,7 +25,7 @@
           type="button"
           :aria-expanded="showAll"
           aria-controls="faq"
-          @click="showAll = !showAll"
+          @click="toggleAll"
         >
           {{ showAll ? "Less" : "More..." }}
         </button>
@@ -38,94 +35,102 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 
-const initialCount = 4
+const initialCount = 3
 const showAll = ref(false)
+const featuredStart = ref(0)
 
 const faqs = [
   {
-    question: "What can Voxa help my business automate?",
-    answer: "Voxa can answer incoming calls, book appointments, support customers, qualify leads, make outbound calls, follow up, send reminders, route calls, update your CRM, collect information, process orders and more."
+    question: "What services does Woxza provide?",
+    answer: "Woxza lets you build and launch AI voice agents yourself—without code or a developer—and go live the same day. Need separate agents for wholesale and retail, each with its own pricing? Build both. You are billed per call, not per agent, so running five agents costs the same as running one. You can customise each agent's voice, tone, behaviour, and data at any time, without tickets or vendor delays."
   },
   {
-    question: "Which business challenges is Voxa designed to solve?",
-    answer: "Voxa is built for missed calls, repetitive questions, high staffing costs, overloaded support teams, inconsistent follow-ups, slow response times, limited after-hours coverage and manual operations."
+    question: "Which industries do you work with?",
+    answer: "Woxza is not limited to one industry. The platform adapts to your business, whether you are a restaurant that cannot miss a booking during rush hour or a hospital checking in patients without a front-desk queue. We work across restaurants, healthcare, education, distribution, and enterprise. Our platform already handles live pharmaceutical and wholesale orders across more than 1,500 products in real time."
   },
   {
-    question: "Can Voxa work with the software we already use?",
-    answer: "Yes. Voxa can connect with platforms such as Salesforce, HubSpot, Zoho CRM, Pipedrive, Microsoft Dynamics, Freshworks, Twilio, Aircall, RingCentral, Five9, Zendesk, Intercom, Google Workspace, Microsoft 365, Slack, Teams, Calendly, Shopify and WooCommerce."
+    question: "Can the AI handle both inbound and outbound calls?",
+    answer: "Yes. Woxza agents answer incoming calls instantly, helping you avoid hold music and missed calls during busy periods. They can also make outbound calls to follow up on abandoned orders, confirm appointments, and re-engage inactive leads whenever a workflow calls for it."
   },
   {
-    question: "Which capabilities can we prioritize?",
-    answer: "You can prioritize human-like conversations, appointment booking, CRM integrations, multilingual support, 24/7 availability, human handoff, call recording and transcripts, analytics, knowledge-base integration, custom workflows, outbound calling, WhatsApp, email automation and existing-number support."
+    question: "Can the AI integrate with our existing software?",
+    answer: "Yes. Woxza connects to the CRM, calendars, and databases you already use, with no need to replace your existing tools. You control your agent's information directly. For example, if a restaurant special sells out at 3 p.m., update its availability and the agent will stop offering it on the next call."
   },
   {
-    question: "Which industries can use Voxa?",
-    answer: "Voxa can be configured for healthcare, real estate, finance, insurance, retail, ecommerce, hospitality, education, logistics, manufacturing, construction, automotive, legal, recruitment, home services, travel, telecom, SaaS, agencies, government, nonprofits and other industries."
+    question: "Can the AI answer questions about my business?",
+    answer: "Yes. Your agent is trained on your real business information, not a generic script. Connect it to live systems or upload your catalogue, pricing, and FAQs. You can also customise its messages, tone, and behaviour. When customers ask about stock or availability, the agent uses your current information rather than guessing."
   },
   {
-    question: "Will Voxa fit the way our calls are handled today?",
-    answer: "Yes. Voxa can work alongside a receptionist, support team, call centre, IVR, direct employee call handling, voicemail or a mixed setup, then automate only the parts that make sense for your business."
+    question: "Can the AI book appointments and update my CRM?",
+    answer: "Yes. Your agent can book appointments directly in your calendar, update your CRM with customer details, and move workflows forward during the call. Your team does not need to enter the information again afterwards."
   },
   {
-    question: "Can Voxa support our daily call volume?",
-    answer: "Voxa is planned for businesses receiving anything from fewer than 20 calls a day to more than 1,000. The final setup is sized around your actual traffic, workflows and peak demand."
+    question: "Can the AI speak multiple languages?",
+    answer: "Yes. Woxza supports English, Hindi, Telugu, Tamil, Kannada, and more. It can follow customers as they naturally switch languages during a conversation, including mixed-language conversations such as Telugu and English."
   },
   {
-    question: "Can Voxa use our existing phone number?",
-    answer: "Existing phone-number support can be included in the solution, so your customers can continue using the number they already know."
+    question: "Does the AI sound natural?",
+    answer: "Yes. Woxza agents are designed to sound natural, respond to tone, and handle interruptions mid-sentence. Conversations feel responsive and human rather than like a script being read aloud."
   },
   {
-    question: "Does Voxa support human handoff?",
-    answer: "Yes. Voxa can transfer a conversation to the right person when a request needs human attention, while preserving the context already collected."
+    question: "What happens if the AI can't answer a question?",
+    answer: "When an agent cannot answer a question, it does not guess. It can transfer the call to your team, schedule a callback, or collect the customer's details for follow-up. Unanswered questions are flagged so you can fill the knowledge gap and improve future conversations."
   },
   {
-    question: "Can Voxa communicate in multiple languages?",
-    answer: "Multilingual support is one of the capabilities that can be included and prioritized based on your customers and operating regions."
+    question: "How long does implementation take?",
+    answer: "Woxza can get you live in minutes, not weeks. Sign up, choose a plan, upload your data, and create your agent yourself—without waiting for a vendor team or working around someone else's schedule."
   },
   {
-    question: "How soon can we implement Voxa?",
-    answer: "Implementation can be planned immediately, within 30 days, in one to three months, in three to six months or later, depending on your readiness, integrations and workflow complexity."
+    question: "How much does a Voice AI solution cost?",
+    answer: "Woxza uses pay-as-you-go pricing. You are charged per call, not per agent, so you can create as many voice agents as you need without an extra charge for each one. Your cost scales with usage rather than the number of agents you build. Join the waitlist for pricing based on your expected call volume."
   },
   {
-    question: "What size of company is Voxa suitable for?",
-    answer: "Voxa is intended for businesses ranging from solo operators and small teams to organizations with more than 1,000 employees. The solution scales with the scope of the operation."
+    question: "Is customer data secure?",
+    answer: "Yes. Woxza is designed with India's data-protection standards in mind. Calls, transcripts, and business data are encrypted in transit and at rest; customer data is isolated at the platform level; and access controls limit information to authorised team members."
   },
   {
-    question: "Can Voxa make outbound calls and follow up automatically?",
-    answer: "Yes. Voxa can support outbound calling, lead qualification, customer follow-ups, appointment reminders, payment reminders and feedback collection as part of a connected workflow."
+    question: "Can the solution scale as my business grows?",
+    answer: "Yes. Woxza is built to scale with your business. Agents can handle multiple calls at the same time, helping you manage seasonal spikes, outbound campaigns, and sudden surges without callers waiting on hold. Complex or high-value calls can be handed to your team with full context."
+  },
+  {
+    question: "Will I get analytics and call recordings?",
+    answer: "Yes. Every call can be recorded and transcribed, with a summary of the customer's request, the outcome, and any required follow-up. Recordings, transcripts, and summaries are available in your Woxza dashboard. APIs and webhooks can also send call data to your CRM, spreadsheets, or other tools."
+  },
+  {
+    question: "Do you provide ongoing support?",
+    answer: "Yes. We continue to support your agent as your business changes. Contact us at support@woxza.com, join the Woxza community on Discord or in our forums, or work with a dedicated solutions engineer on an Enterprise plan. We also monitor system health around the clock."
   }
 ]
 
-const visibleFaqs = computed(() =>
-  showAll.value ? faqs : faqs.slice(0, initialCount)
-)
+const visibleFaqs = computed(() => {
+  if (showAll.value) return faqs
+
+  return Array.from({ length: initialCount }, (_, offset) =>
+    faqs[(featuredStart.value + offset) % faqs.length]
+  )
+})
+
+const toggleAll = () => {
+  showAll.value = !showAll.value
+}
+
+let rotationTimer
+
+onMounted(() => {
+  rotationTimer = window.setInterval(() => {
+    if (!showAll.value) featuredStart.value = (featuredStart.value + initialCount) % faqs.length
+  }, 60_000)
+})
+
+onBeforeUnmount(() => window.clearInterval(rotationTimer))
 </script>
 
 <style scoped>
 .faq {
   position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  padding: 170px 0;
-  background:
-    radial-gradient(circle at 12% 18%, rgba(var(--voxa-accent-rgb), .08), transparent 32%),
-    #fff;
-}
-
-.faq::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 900px;
-  height: 900px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(91, 140, 255, .08), transparent 72%);
-  filter: blur(90px);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
+  background: #fff;
 }
 
 .container-custom,
@@ -201,18 +206,11 @@ const visibleFaqs = computed(() =>
   display: flex;
   align-items: center;
   gap: 18px;
-  margin-bottom: 12px;
-}
-
-.question span {
-  flex: 0 0 auto;
-  color: #5b8cff;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .28em;
 }
 
 .question h3 {
+  flex: 1;
+  margin: 0;
   color: #101828;
   font-size: 22px;
   transition: color .35s ease;
@@ -222,7 +220,12 @@ const visibleFaqs = computed(() =>
   color: #3b82f6;
 }
 
+.answer {
+  padding-top: 12px;
+}
+
 .faq-item p {
+  margin: 0;
   color: #667085;
   font-size: 15px;
   line-height: 1.7;
@@ -258,6 +261,39 @@ const visibleFaqs = computed(() =>
   transition: opacity .35s ease, transform .35s ease;
 }
 
+@media (max-width: 640px) {
+
+  .heading {
+    margin-bottom: 44px;
+  }
+
+  .heading h2 {
+    font-size: clamp(46px, 14vw, 60px);
+  }
+
+  .heading p {
+    font-size: 17px;
+    line-height: 1.6;
+  }
+
+  .faq-item {
+    padding: 22px 20px;
+  }
+
+  .question {
+    gap: 12px;
+  }
+
+  .question h3 {
+    font-size: 18px;
+    line-height: 1.3;
+  }
+
+  .answer {
+    padding-top: 14px;
+  }
+}
+
 .faq-reveal-enter-from,
 .faq-reveal-leave-to {
   opacity: 0;
@@ -265,14 +301,12 @@ const visibleFaqs = computed(() =>
 }
 
 @media (max-width: 1100px) {
-  .faq { padding: 140px 0; }
   .heading { margin-bottom: 64px; }
   .question h3 { font-size: 21px; }
   .faq-item { padding: 24px 26px; }
 }
 
 @media (max-width: 768px) {
-  .faq { padding: 100px 0; }
   .heading h2 { font-size: 44px; line-height: 1; }
   .heading p { font-size: 17px; }
   .question { align-items: flex-start; gap: 16px; }

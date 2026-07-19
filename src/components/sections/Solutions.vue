@@ -1,15 +1,15 @@
 <template>
-  <section id="solutions" class="solutions">
+  <section id="solutions" class="solutions landing-section">
     <div class="bg-grid" aria-hidden="true"></div>
     <div class="ambient ambient-left" aria-hidden="true"></div>
     <div class="ambient ambient-right" aria-hidden="true"></div>
 
     <div class="container-custom">
       <header class="heading">
-        <h2>AI built for <em>every</em> industry</h2>
+        <h2 class="display-heading">AI built for <em>every</em> industry</h2>
         <p>
           Woxza adapts to the way your industry works and automates workflows,
-          enhancing customer experiences and driving real business impact
+          enhancing customer experiences and driving real business impact.
         </p>
       </header>
 
@@ -115,7 +115,7 @@ import {
   Languages,
   MapPinned,
   MessageCircleQuestion,
-  MessagesSquare,
+  MessageSquareText,
   PackageSearch,
   Plane,
   RefreshCcw,
@@ -140,7 +140,7 @@ let rotationTimer
 const benefits = [
   { title: "Purpose-built AI", detail: "Tailored to industry needs", icon: Bot },
   { title: "Proven impact", detail: "Measurable business results", icon: TrendingUp },
-  { title: "Enterprise ready", detail: "Secure, reliable and scalable", icon: ShieldCheck }
+  { title: "Enterprise-ready", detail: "Secure, reliable, and scalable", icon: ShieldCheck }
 ]
 
 const industries = [
@@ -178,7 +178,7 @@ const industries = [
     features: [
       { label: "Lead qualification", icon: UserCheck },
       { label: "Consultation booking", icon: CalendarCheck },
-      { label: "Client follow-ups", icon: MessagesSquare },
+      { label: "Client follow-ups", icon: MessageSquareText },
       { label: "Document collection", icon: Files }
     ],
     icon: Briefcase,
@@ -323,7 +323,6 @@ onBeforeUnmount(() => window.clearInterval(rotationTimer))
 .solutions {
   position: relative;
   min-height: 100vh;
-  padding: 108px 0 64px;
   overflow: hidden;
   color: #fff;
   background:
@@ -355,8 +354,8 @@ onBeforeUnmount(() => window.clearInterval(rotationTimer))
 .value-strip { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 850px; margin: 18px auto 0; }
 .value-item { display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 0; padding: 8px 22px; border-right: 1px solid rgba(148, 163, 184, .12); }
 .value-item:last-child { border-right: 0; }
-.value-icon { width: 38px; height: 38px; display: grid; flex: 0 0 auto; place-items: center; border: 1px solid rgba(96, 165, 250, .14); border-radius: 50%; color: #82aaff; background: rgba(37, 99, 235, .08); }
-.value-icon :deep(svg) { width: 18px; height: 18px; stroke-width: 1.8; }
+.value-icon { width: 46px; height: 46px; display: grid; flex: 0 0 auto; place-items: center; border: 1px solid rgba(96, 165, 250, .14); border-radius: 14px; color: #82aaff; background: rgba(37, 99, 235, .08); }
+.value-icon :deep(svg) { width: 20px; height: 20px; stroke-width: 2; }
 .value-item > span:last-child { display: grid; gap: 3px; }
 .value-item strong { color: #eef4ff; font-size: 12px; }
 .value-item small { color: #77869d; font-size: 10px; }
@@ -417,7 +416,6 @@ onBeforeUnmount(() => window.clearInterval(rotationTimer))
 .trust-note :deep(svg) { width: 17px; height: 17px; color: #5f94ff; }
 
 @media (max-height: 840px) and (min-width: 769px) {
-  .solutions { padding: 76px 0 48px; }
   .heading { margin-bottom: 24px; }
   .heading h2 { font-size: clamp(42px, 4.6vw, 60px); }
   .heading p { margin-top: 14px; font-size: 14px; }
@@ -433,7 +431,6 @@ onBeforeUnmount(() => window.clearInterval(rotationTimer))
 }
 
 @media (max-width: 900px) {
-  .solutions { padding: 100px 0 76px; }
   .heading h2 { font-size: 46px; }
   .value-strip { grid-template-columns: 1fr; max-width: 420px; }
   .value-item { justify-content: flex-start; border-right: 0; border-bottom: 1px solid rgba(148, 163, 184, .1); }
@@ -444,7 +441,6 @@ onBeforeUnmount(() => window.clearInterval(rotationTimer))
 }
 
 @media (max-width: 560px) {
-  .solutions { padding-top: 88px; }
   .solutions .ambient { display: none; }
   .solutions .container-custom { width: calc(100% - 24px); max-width: 100%; }
   .heading { margin-bottom: 28px; }

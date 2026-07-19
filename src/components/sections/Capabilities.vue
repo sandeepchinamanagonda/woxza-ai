@@ -54,12 +54,13 @@
 <script setup>
 
 import CoverFlow from "@/components/ui/CoverFlow.vue"
+import { AudioLines, BookOpen, Bot, Sparkles, Workflow } from "lucide-vue-next"
 
 const capabilities=[
 
 {
 
-icon:"✨",
+icon:Sparkles,
 
 title:"Enterprise AI",
 
@@ -69,7 +70,7 @@ description:"Connect Voice AI, workflows and intelligent agents into one scalabl
 
 {
 
-icon:"🎙️",
+icon:AudioLines,
 
 title:"Voice AI",
 
@@ -79,7 +80,7 @@ description:"Natural conversations, multilingual support and always-on customer 
 
 {
 
-icon:"⚡",
+icon:Workflow,
 
 title:"Automation",
 
@@ -89,7 +90,7 @@ description:"Automate repetitive business processes and integrate every tool."
 
 {
 
-icon:"🧠",
+icon:BookOpen,
 
 title:"Knowledge AI",
 
@@ -99,7 +100,7 @@ description:"Search documents, SOPs and company knowledge using natural language
 
 {
 
-icon:"🤖",
+icon:Bot,
 
 title:"AI Agents",
 

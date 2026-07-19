@@ -1,45 +1,45 @@
 <template>
-  <section id="about" class="manifesto">
+  <section id="about" class="manifesto landing-section">
     <div class="glow"></div>
 
     <div class="container-custom">
       <aside class="manifesto-label">
         <span>OUR MANIFESTO</span>
-        <p>Built for the people who answer the calls, and the people waiting on the other end</p>
+        <p>Built for the people who answer the calls and the people waiting on the other end.</p>
       </aside>
 
       <article class="manifesto-story">
         <span class="section-tag">WHY WE BUILT WOXZA</span>
 
-        <h2>No one should have to choose which customer gets heard</h2>
+        <h2 class="display-heading">No one should have to choose which customer gets heard.</h2>
 
         <div class="story-copy">
           <p>
-            There was one desk, one phone, and one person trying to be everywhere at once
+            There was one desk, one phone, and one person trying to be everywhere at once.
           </p>
 
           <p>
-            Every ring asked for something, an appointment, an answer, a little
-            reassurance, and when the day got busy, someone had to wait, sometimes that
-            person never called back
+            Every ring asked for something: an appointment, an answer, or a little
+            reassurance. When the day got busy, someone had to wait. Sometimes, that
+            person never called back.
           </p>
 
           <p>
-            Woxza gives a business room to breathe and welcomes the customer a
-            thousand kilometers away with the same patience as the person next door,
-            and it listens, helps, and follows through, even when the team is already
-            giving everything they have
+            Woxza gives a business room to breathe. It welcomes the customer a
+            thousand kilometres away with the same patience as the person next door,
+            listening, helping, and following through even when the team is already
+            giving everything they have.
           </p>
 
           <p>
-            The people behind the business get something back too, time to solve the
-            hard problem, time to sit with a customer who needs more than a quick
-            answer, and time to do the work only they can do
+            The people behind the business get something back too: time to solve the
+            hard problem, sit with a customer who needs more than a quick answer, and
+            do the work only they can do.
           </p>
 
           <p class="closing-line">
-            Being there for everyone once felt impossible, now it can simply be how
-            the business runs
+            Being there for everyone once felt impossible. Now, it can simply be how
+            the business runs.
           </p>
         </div>
       </article>
@@ -53,7 +53,6 @@
 <style scoped>
 .manifesto {
   position: relative;
-  padding: 180px 0;
   overflow: hidden;
   isolation: isolate;
   background:
@@ -109,7 +108,7 @@
   max-width: 285px;
   margin: 32px 0 0 66px;
   color: #6f7d95;
-  font-size: clamp(17px, 1.35vw, 20px);
+  font-size: clamp(16px, 1.2vw, 18px);
   line-height: 1.62;
   letter-spacing: -.012em;
 }
@@ -151,7 +150,7 @@
   max-width: 860px;
   margin: 0 0 54px;
   color: #11152b;
-  font-size: clamp(52px, 5.2vw, 80px);
+  font-size: clamp(36px, 3.6vw, 54px);
   font-weight: 750;
   line-height: .98;
   letter-spacing: -.055em;
@@ -167,14 +166,14 @@
 .story-copy p {
   margin: 0 0 28px;
   color: #58657b;
-  font-size: 19px;
+  font-size: 17px;
   line-height: 1.85;
   text-wrap: pretty;
 }
 
 .story-copy p:first-child {
   color: #14264d;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 650;
   line-height: 1.65;
 }
@@ -186,27 +185,24 @@
 }
 
 @media (max-width: 1100px) {
-  .manifesto { padding: 140px 0; }
   .container-custom { grid-template-columns: 1fr; gap: 46px; }
   .manifesto-label { position: static; }
   .manifesto-label p { max-width: 360px; }
 }
 
 @media (max-width: 768px) {
-  .manifesto { padding: 100px 0; }
   .container-custom { width: 92%; }
   .manifesto-label p { margin-left: 0; }
   .manifesto-story { padding: 38px 30px; border-radius: 26px; }
-  .manifesto-story h2 { margin-bottom: 38px; font-size: 44px; }
+  .manifesto-story h2 { margin-bottom: 38px; font-size: 38px; }
   .story-copy { padding-left: 22px; }
   .story-copy p { font-size: 16px; line-height: 1.8; }
   .story-copy p:first-child { font-size: 19px; }
 }
 
 @media (max-width: 480px) {
-  .manifesto { padding: 80px 0; }
   .manifesto-story { padding: 32px 24px; }
-  .manifesto-story h2 { font-size: 37px; }
+  .manifesto-story h2 { font-size: 32px; }
   .story-copy { padding-left: 18px; }
 }
 </style>

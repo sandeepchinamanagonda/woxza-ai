@@ -4,6 +4,24 @@ import { listFeatures, listTags, normalizeTags } from "./features.js";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
+// Questionnaire answers belong in the typed registration and preference columns.
+// Keeping another copy in metadata made lead exports show the same answer twice.
+const LEAD_METADATA_FIELDS_STORED_IN_COLUMNS = new Set([
+  "role", "businessTypeLabel", "companySizeLabel", "helpWith", "biggestChallenge",
+  "biggestChallenges", "callHandling", "callHandlings", "software", "dailyCalls",
+  "onePerfectThing", "selectedCapabilities", "selectedFeatures", "implementationTimeline",
+  "investmentPriority", "pricingLabel", "referralSource", "message"
+]);
+
+function leadMetadata(metadata) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return {};
+  return Object.fromEntries(
+    Object.entries(metadata).filter(([key, value]) =>
+      !LEAD_METADATA_FIELDS_STORED_IN_COLUMNS.has(key) && value !== undefined
+    )
+  );
+}
+
 function sendJson(res, status, body, headers = {}) {
   res.writeHead(status, { ...JSON_HEADERS, ...headers });
   res.end(JSON.stringify(body));
@@ -228,7 +246,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
             FROM registration`,
             [id, input.firstName.trim(), input.lastName.trim(), input.email.trim().toLowerCase(),
               input.countryCode.trim(), input.phoneNumber.trim(), input.businessName?.trim() || null,
-              input.businessType, input.role, JSON.stringify(input.metadata ?? {}), input.priceRange,
+              input.businessType, input.role, JSON.stringify(leadMetadata(input.metadata)), input.priceRange,
               JSON.stringify([...new Set(input.desiredFeatures)]), input.primaryChallenge.trim(), input.adoptionTimeline,
               input.teamSize, JSON.stringify([...new Set(input.helpWith)]), input.biggestChallenges[0],
               JSON.stringify([...new Set(input.biggestChallenges)]), input.callHandlings[0],
@@ -255,7 +273,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)`,
             [id, input.firstName.trim(), input.lastName.trim(), input.email.trim().toLowerCase(),
               input.countryCode.trim(), input.phoneNumber.trim(), input.businessName?.trim() || null,
-              input.businessType, JSON.stringify(input.metadata ?? {})]
+              input.businessType, JSON.stringify(leadMetadata(input.metadata))]
           );
         } catch (error) {
           if (error.code === "23505") {
@@ -277,7 +295,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)`,
           [id, input.firstName.trim(), input.lastName.trim(), input.email.trim().toLowerCase(),
             input.countryCode.trim(), input.phoneNumber.trim(), input.businessName?.trim() || null,
-            input.businessType, input.message.trim(), JSON.stringify(input.metadata ?? {})]
+            input.businessType, input.message.trim(), JSON.stringify(leadMetadata(input.metadata))]
         );
         return sendJson(res, 201, { inquiryId: id, status: "received" }, cors);
       }

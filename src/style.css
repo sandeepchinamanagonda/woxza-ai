@@ -28,7 +28,8 @@ DESIGN SYSTEM
 
 :root{
 
-  --font-heading:"Inter",sans-serif;
+  --font-primary:"Futura Md BT Medium","Inter",sans-serif;
+  --font-heading:var(--font-primary);
 
   --bg:#08090B;
   --surface:#111318;
@@ -55,6 +56,9 @@ DESIGN SYSTEM
 
   --radius:22px;
 
+  --landing-section-padding-y:96px;
+  --landing-section-padding-y-mobile:64px;
+
   --shadow-sm:
   0 8px 24px rgba(0,0,0,.18);
 
@@ -67,9 +71,13 @@ DESIGN SYSTEM
 BODY
 ========================================================== */
 
-body{
+body,
+button,
+input,
+textarea,
+select{
 
-  font-family:"Inter",sans-serif;
+  font-family:var(--font-primary) !important;
 
   background:var(--bg);
 
@@ -182,6 +190,21 @@ line-height:1.1;
 
 }
 
+/* Primary headings share one type scale across the landing page. */
+.display-heading{
+  font-family:var(--font-heading) !important;
+  font-size:clamp(42px,4.4vw,64px) !important;
+  font-weight:700 !important;
+  line-height:.98 !important;
+  letter-spacing:-.05em !important;
+}
+
+@media(max-width:768px){
+  .display-heading{
+    font-size:clamp(38px,10vw,48px) !important;
+  }
+}
+
 p{
 
 font-size:18px;
@@ -192,10 +215,43 @@ color:#A8B2C1;
 
 }
 
-small{
+small{ font-family:inherit; }
 
-font-family:"IBM Plex Sans",sans-serif;
-
+/* Keep Indic-language pages legible instead of falling back to Futura glyphs. */
+html:lang(hi) body,
+html:lang(hi) button,
+html:lang(hi) input,
+html:lang(hi) textarea,
+html:lang(hi) select,
+html:lang(hi) h1,
+html:lang(hi) h2,
+html:lang(hi) h3,
+html:lang(hi) h4,
+html:lang(hi) h5,
+html:lang(hi) h6,
+html:lang(te) body,
+html:lang(te) button,
+html:lang(te) input,
+html:lang(te) textarea,
+html:lang(te) select,
+html:lang(te) h1,
+html:lang(te) h2,
+html:lang(te) h3,
+html:lang(te) h4,
+html:lang(te) h5,
+html:lang(te) h6,
+html:lang(ta) body,
+html:lang(ta) button,
+html:lang(ta) input,
+html:lang(ta) textarea,
+html:lang(ta) select,
+html:lang(ta) h1,
+html:lang(ta) h2,
+html:lang(ta) h3,
+html:lang(ta) h4,
+html:lang(ta) h5,
+html:lang(ta) h6{
+  font-family:"Noto Sans Devanagari","Noto Sans Telugu","Noto Sans Tamil",var(--font-primary) !important;
 }
 
 /* ==========================================================
@@ -208,6 +264,17 @@ position:relative;
 
 padding:180px 0;
 
+}
+
+/* Shared vertical rhythm for the landing page's top-level sections. */
+.landing-section{
+  padding-block:var(--landing-section-padding-y);
+}
+
+@media(max-width:768px){
+  .landing-section{
+    padding-block:var(--landing-section-padding-y-mobile);
+  }
 }
 
 .container-custom{
@@ -246,7 +313,7 @@ BUTTONS
 
 button{
 
-font-family:"Inter",sans-serif;
+font-family:var(--font-primary);
 
 }
 

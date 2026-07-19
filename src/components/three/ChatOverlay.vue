@@ -14,37 +14,47 @@
       </svg>
     </div>
 
-    <article class="call-card">
+    <article class="call-card notranslate" data-no-translate :lang="scenario.language" translate="no">
       <header>
         <div class="call-identity">
-          <span class="scenario-icon">{{ scenario.icon }}</span>
+          <span class="scenario-icon"><component :is="scenario.icon" /></span>
           <div><small>{{ scenario.eyebrow }}</small><h2>{{ scenario.title }}</h2><span class="scenario-tag">{{ scenario.tag }}</span></div>
         </div>
         <div class="call-presence">
-          <span class="call-status" :class="{ active: isWoxzaSpeaking }"><i />{{ isWoxzaSpeaking ? 'Woxza is speaking' : 'Listening' }}</span>
+          <div ref="languageMenu" class="demo-language">
+            <button type="button" class="demo-language__trigger" :aria-expanded="isLanguageMenuOpen" aria-label="Choose live example language" @click.stop="isLanguageMenuOpen = !isLanguageMenuOpen">
+              <Languages aria-hidden="true" /><span>{{ activeLanguageLabel }}</span><ChevronDown aria-hidden="true" />
+            </button>
+            <div v-if="isLanguageMenuOpen" class="demo-language__menu" role="menu">
+              <button type="button" role="menuitem" :class="{ selected: !demoLanguage }" @click="setDemoLanguage('')"><Check aria-hidden="true" />Use website language <small>({{ pageLanguageLabel }})</small></button>
+              <button v-for="item in languages" :key="item.code" type="button" role="menuitem" :class="{ selected: demoLanguage === item.code }" @click="setDemoLanguage(item.code)"><Check aria-hidden="true" />{{ item.nativeLabel }}</button>
+            </div>
+          </div>
+          <span class="call-status" :class="{ active: isWoxzaSpeaking }"><i />{{ isWoxzaSpeaking ? scenario.ui.speaking : scenario.ui.listening }}</span>
           <span class="status-wave" :class="{ active: isWoxzaSpeaking }" aria-hidden="true">
             <i v-for="(height, index) in statusWaveHeights" :key="index" :style="{ height: `${height}px`, animationDelay: `${index * -75}ms` }" />
           </span>
         </div>
       </header>
 
-      <div ref="transcriptElement" class="transcript">
+      <div ref="transcriptElement" class="transcript" :lang="scenario.language">
         <div
           v-for="(message, index) in visibleMessages"
           :key="`${scenario.id}-${index}`"
           class="message"
-          :class="[message.speaker.toLowerCase(), { current: index === visibleMessages.length - 1 }]"
+          :class="[message.role.toLowerCase(), { current: index === visibleMessages.length - 1 }]"
         >
-          <span><b v-if="message.speaker === 'Woxza'" class="mini-bars"><i /><i /><i /></b>{{ message.speaker }}</span>
+          <span><b v-if="message.role === 'Woxza'" class="mini-bars"><i /><i /><i /></b>{{ message.speaker }}</span>
           <p>{{ message.text }}</p>
         </div>
       </div>
 
       <CompletionConfirm
         v-if="isComplete"
-        :key="`${scenario.id}-${scenarioIndex}`"
+        :key="`${scenario.id}-${scenarioIndex}-${scenario.language}`"
         :label="completionLabel"
-        :duration="2000"
+        :duration="scenario.completionDuration"
+        :duration-label="scenario.durationLabel"
       />
 
       <footer>
@@ -57,7 +67,7 @@
       <div class="progress"><i :style="{ width: `${((scenarioIndex + 1) / scenarios.length) * 100}%` }" /></div>
       <div class="scenario-buttons">
         <button v-for="(item, index) in scenarios" :key="item.id" :class="{ active: index === scenarioIndex }" @click="selectScenario(index)">
-          <b>{{ item.icon }}</b><span>{{ item.short }}</span>
+          <b><component :is="item.icon" /></b><span>{{ item.short }}</span>
         </button>
       </div>
     </div>
@@ -66,58 +76,64 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue"
+import { CalendarCheck, Check, ChevronDown, CreditCard, Languages, PackageCheck, Utensils } from "lucide-vue-next"
 import CompletionConfirm from "@/components/CompletionConfirm.vue"
+import { useI18n } from "@/composables/useI18n"
 
 const sharedStyle = { color: "#14264d", soft: "#eef1f5" }
+const { language: pageLanguage, languages } = useI18n()
+const demoLanguage = ref("")
+const isLanguageMenuOpen = ref(false)
+const languageMenu = ref(null)
 
 const scenarioSets = {
   india: [
-    { ...sharedStyle, id: "clinic", icon: "▣", short: "Appointment", eyebrow: "Hyderabad care desk", title: "Doctor appointment", tag: "Live calendar", messages: [
+    { ...sharedStyle, id: "clinic", language: "en", icon: CalendarCheck, completionDuration: 1200, short: "Appointment", eyebrow: "Hyderabad care desk", title: "Doctor appointment", tag: "Live calendar", messages: [
       { speaker: "Caller", text: "Namaste, my daughter has had a fever since morning, is a paediatrician available in Hyderabad today?" },
       { speaker: "Woxza", text: "Doctor Ananya Rao can see her at the Jubilee Hills clinic at 4:15 PM, shall I book it?" },
       { speaker: "Caller", text: "Yes, please send the patient form to me on WhatsApp too" },
       { speaker: "Woxza", text: "Done, the appointment is confirmed and the form is on your WhatsApp" }
     ], outcomes: ["Appointment confirmed", "Patient form sent"] },
-    { ...sharedStyle, id: "restaurant", icon: "♨", short: "Restaurant", eyebrow: "Delhi guest services", title: "Restaurant reservation", tag: "Menu and tables", messages: [
-      { speaker: "Caller", text: "Do you have paneer tikka and a rooftop table at Connaught Place tonight?" },
-      { speaker: "Woxza", text: "Yes, paneer tikka is available and I found a rooftop table at 7:30 PM" },
-      { speaker: "Caller", text: "Please book it for four, we are celebrating my mother’s birthday" },
-      { speaker: "Woxza", text: "Your table is booked, and I also asked the restaurant to arrange a small birthday cake" }
+    { ...sharedStyle, id: "restaurant", language: "te", icon: Utensils, completionDuration: 1750, short: "Restaurant", eyebrow: "Delhi guest services", title: "Restaurant reservation", tag: "Menu and tables", messages: [
+      { speaker: "Caller", text: "ఈ రాత్రి కనాట్ ప్లేస్‌లో పనీర్ టిక్కా, రూఫ్‌టాప్ టేబుల్ దొరుకుతుందా?" },
+      { speaker: "Woxza", text: "అవును. పనీర్ టిక్కా అందుబాటులో ఉంది. రాత్రి 7:30కి రూఫ్‌టాప్ టేబుల్ ఉంది." },
+      { speaker: "Caller", text: "నలుగురికి బుక్ చేయండి. మా అమ్మ పుట్టినరోజు కోసం కేక్ కూడా కావాలి." },
+      { speaker: "Woxza", text: "అయింది. టేబుల్ బుక్ చేశాను, పుట్టినరోజు కేక్ అభ్యర్థనను కూడా జోడించాను." }
     ], outcomes: ["Table booked", "Birthday request added"] },
-    { ...sharedStyle, id: "distribution", icon: "◇", short: "Distribution", eyebrow: "North India operations", title: "Medical distribution", tag: "Inventory linked", messages: [
-      { speaker: "Caller", text: "Our Delhi hospital needs 60 infusion sets by Monday morning, can you check nearby stock?" },
-      { speaker: "Woxza", text: "Yes, Gurugram has 42 sets and Noida has 18, both can reach the hospital by 9 AM Monday" },
-      { speaker: "Caller", text: "Please combine them and use our priority contract" },
-      { speaker: "Woxza", text: "Done, transfer order VOX 2841 is confirmed, and I will WhatsApp the tracking details after pickup" }
+    { ...sharedStyle, id: "distribution", language: "hi", icon: PackageCheck, completionDuration: 2400, short: "Distribution", eyebrow: "North India operations", title: "Medical distribution", tag: "Inventory linked", messages: [
+      { speaker: "Caller", text: "दिल्ली के हमारे अस्पताल को सोमवार सुबह तक 60 इन्फ्यूज़न सेट चाहिए। क्या पास का स्टॉक देख सकते हैं?" },
+      { speaker: "Woxza", text: "हाँ। गुरुग्राम में 42 और नोएडा में 18 सेट उपलब्ध हैं। दोनों सोमवार सुबह 9 बजे तक पहुँच सकते हैं।" },
+      { speaker: "Caller", text: "कृपया इन्हें मिलाकर हमारे प्राथमिकता वाले अनुबंध से भेज दीजिए।" },
+      { speaker: "Woxza", text: "हो गया। ट्रांसफर ऑर्डर VOX 2841 की पुष्टि हो गई है। पिकअप के बाद मैं ट्रैकिंग विवरण WhatsApp कर दूँगा।" }
     ], outcomes: ["Transfer order confirmed", "Tracking scheduled"] },
-    { ...sharedStyle, id: "payment", icon: "↗", short: "Payments", eyebrow: "Accounts receivable", title: "Payment reminder", tag: "Invoice workflow", messages: [
-      { speaker: "Woxza", text: "Hi Priya, invoice 1048 for ₹1,52,000 is due today, would you like help arranging payment?" },
-      { speaker: "Caller", text: "We can pay ₹1,00,000 on Friday and the balance next Tuesday" },
-      { speaker: "Woxza", text: "Certainly, I can record both dates and create two secure payment links" },
-      { speaker: "Caller", text: "Please do, and send the confirmation to our finance team on WhatsApp" },
-      { speaker: "Woxza", text: "Done, both payment dates are recorded and the secure links are with your finance team" }
+    { ...sharedStyle, id: "payment", language: "ta", icon: CreditCard, completionDuration: 1550, short: "Payments", eyebrow: "Accounts receivable", title: "Payment reminder", tag: "Invoice workflow", messages: [
+      { speaker: "Woxza", text: "வணக்கம் பிரியா. ₹1,52,000-க்கான விலைப்பட்டியல் 1048 இன்று செலுத்தப்பட வேண்டும். கட்டணத்தை ஏற்பாடு செய்ய உதவவா?" },
+      { speaker: "Caller", text: "வெள்ளிக்கிழமை ₹1,00,000 செலுத்துகிறோம்; மீதத்தை அடுத்த செவ்வாய்க்கிழமை செலுத்தலாம்." },
+      { speaker: "Woxza", text: "சரி. இரண்டு கட்டண தேதிகளையும் பதிவு செய்து பாதுகாப்பான கட்டண இணைப்புகளை உருவாக்குகிறேன்." },
+      { speaker: "Caller", text: "ஆம், தயவுசெய்து உறுதிப்படுத்தலை எங்கள் நிதிக் குழுவுக்கு WhatsApp-ல் அனுப்புங்கள்." },
+      { speaker: "Woxza", text: "முடிந்தது. இரண்டு கட்டண தேதிகளும் பதிவு செய்யப்பட்டன; இணைப்புகள் நிதிக் குழுவுக்கு அனுப்பப்பட்டுள்ளன." }
     ], outcomes: ["Payment plan recorded", "Finance team notified"] }
   ],
   us: [
-    { ...sharedStyle, id: "clinic", icon: "▣", short: "Appointment", eyebrow: "New York care desk", title: "Doctor appointment", tag: "Live calendar", messages: [
+    { ...sharedStyle, id: "clinic", icon: CalendarCheck, completionDuration: 1300, short: "Appointment", eyebrow: "New York care desk", title: "Doctor appointment", tag: "Live calendar", messages: [
       { speaker: "Caller", text: "My daughter has had a fever since this morning, is a pediatrician available in New York today?" },
       { speaker: "Woxza", text: "Doctor Patel can see her at the Midtown clinic at 4:15 PM, would you like me to book it?" },
       { speaker: "Caller", text: "Yes, please send the patient form to my phone too" },
       { speaker: "Woxza", text: "Done, the appointment is confirmed and the form has been sent to your phone" }
     ], outcomes: ["Appointment confirmed", "Patient form sent"] },
-    { ...sharedStyle, id: "restaurant", icon: "♨", short: "Restaurant", eyebrow: "Dallas guest services", title: "Restaurant reservation", tag: "Menu and tables", messages: [
+    { ...sharedStyle, id: "restaurant", icon: Utensils, completionDuration: 1650, short: "Restaurant", eyebrow: "Dallas guest services", title: "Restaurant reservation", tag: "Menu and tables", messages: [
       { speaker: "Caller", text: "Do you have a vegan main and a patio table in Dallas tonight?" },
       { speaker: "Woxza", text: "Yes, the roasted cauliflower steak is available and I found a patio table at 7:30 PM" },
       { speaker: "Caller", text: "Please reserve it for three, we are celebrating a birthday" },
       { speaker: "Woxza", text: "Your table is reserved, and I also added a birthday note for the host" }
     ], outcomes: ["Table reserved", "Birthday note added"] },
-    { ...sharedStyle, id: "distribution", icon: "◇", short: "Distribution", eyebrow: "Texas order operations", title: "Medical distribution", tag: "Inventory linked", messages: [
+    { ...sharedStyle, id: "distribution", icon: PackageCheck, completionDuration: 2250, short: "Distribution", eyebrow: "Texas order operations", title: "Medical distribution", tag: "Inventory linked", messages: [
       { speaker: "Caller", text: "Our Dallas hospital needs 60 infusion sets by Monday morning, can you check nearby stock?" },
       { speaker: "Woxza", text: "Yes, Fort Worth has 42 sets and Plano has 18, both can reach Dallas by 9 AM Monday" },
       { speaker: "Caller", text: "Please combine them and use our priority contract" },
       { speaker: "Woxza", text: "Done, transfer order VOX 2841 is confirmed, and I will send tracking details after pickup" }
     ], outcomes: ["Transfer order confirmed", "Tracking scheduled"] },
-    { ...sharedStyle, id: "payment", icon: "↗", short: "Payments", eyebrow: "Accounts receivable", title: "Payment reminder", tag: "Invoice workflow", messages: [
+    { ...sharedStyle, id: "payment", icon: CreditCard, completionDuration: 1450, short: "Payments", eyebrow: "Accounts receivable", title: "Payment reminder", tag: "Invoice workflow", messages: [
       { speaker: "Woxza", text: "Hi Maya, invoice 1048 for $1,840 is due today, would you like help arranging payment?" },
       { speaker: "Caller", text: "We can pay $1,000 on Friday and the balance next Tuesday" },
       { speaker: "Woxza", text: "Certainly, I can record both dates and create two secure payment links" },
@@ -127,17 +143,225 @@ const scenarioSets = {
   ]
 }
 
-const market = ref("us")
+// Live examples intentionally use this fixed multilingual sequence, independent of
+// the language selected for the rest of the website.
+const market = ref("india")
 const scenarios = computed(() => scenarioSets[market.value])
+
+// Each complete pass through the four live examples advances to the next row.
+// This remains independent of the website's selected language.
+const languagePatterns = [
+  ["en", "te", "hi", "ta"],
+  ["te", "ta", "en", "hi"],
+  ["hi", "en", "te", "ta"],
+  ["ta", "hi", "ta", "te"]
+]
+
+const liveDialogues = {
+  clinic: {
+    en: [
+      { speaker: "Caller", text: "My daughter has had a fever since morning. Is a paediatrician available in Hyderabad today?" },
+      { speaker: "Woxza", text: "Dr Ananya Rao is available at the Jubilee Hills clinic at 4:15 p.m. Shall I book it?" },
+      { speaker: "Caller", text: "Yes, please send the patient form on WhatsApp too." },
+      { speaker: "Woxza", text: "Done. The appointment is confirmed, and the form has been sent on WhatsApp." }
+    ],
+    te: [
+      { speaker: "Caller", text: "నా కుమార్తెకు ఉదయం నుంచి జ్వరం ఉంది. హైదరాబాద్‌లో ఈ రోజు పిల్లల డాక్టర్ అందుబాటులో ఉన్నారా?" },
+      { speaker: "Woxza", text: "డాక్టర్ అనన్య రావు జూబ్లీ హిల్స్ క్లినిక్‌లో సాయంత్రం 4:15కి అందుబాటులో ఉన్నారు. బుక్ చేయాలా?" },
+      { speaker: "Caller", text: "అవును, పేషెంట్ ఫారమ్‌ను WhatsApp‌లో కూడా పంపండి." },
+      { speaker: "Woxza", text: "అయింది. అపాయింట్‌మెంట్ నిర్ధారించబడింది, ఫారమ్‌ను WhatsApp‌లో పంపాను." }
+    ],
+    hi: [
+      { speaker: "Caller", text: "मेरी बेटी को सुबह से बुखार है। क्या हैदराबाद में आज बच्चों के डॉक्टर उपलब्ध हैं?" },
+      { speaker: "Woxza", text: "डॉ. अनन्या राव जुबली हिल्स क्लिनिक में शाम 4:15 बजे उपलब्ध हैं। क्या मैं बुक कर दूँ?" },
+      { speaker: "Caller", text: "हाँ, कृपया मरीज़ का फॉर्म WhatsApp पर भी भेज दीजिए।" },
+      { speaker: "Woxza", text: "हो गया। अपॉइंटमेंट की पुष्टि हो गई है और फॉर्म WhatsApp पर भेज दिया गया है।" }
+    ],
+    ta: [
+      { speaker: "Caller", text: "என் மகளுக்கு காலை முதல் காய்ச்சல் உள்ளது. இன்று ஹைதராபாத்தில் குழந்தைகள் மருத்துவர் கிடைப்பாரா?" },
+      { speaker: "Woxza", text: "டாக்டர் அனன்யா ராவ் ஜூபிலி ஹில்ஸ் கிளினிக்கில் மாலை 4:15க்கு உள்ளார். முன்பதிவு செய்யவா?" },
+      { speaker: "Caller", text: "ஆம், நோயாளி படிவத்தையும் WhatsApp-ல் அனுப்புங்கள்." },
+      { speaker: "Woxza", text: "முடிந்தது. முன்பதிவு உறுதிசெய்யப்பட்டது; படிவமும் WhatsApp-ல் அனுப்பப்பட்டது." }
+    ]
+  },
+  restaurant: {
+    en: [
+      { speaker: "Caller", text: "Do you have paneer tikka and a rooftop table at Connaught Place tonight?" },
+      { speaker: "Woxza", text: "Yes. Paneer tikka is available, and I found a rooftop table at 7:30 p.m." },
+      { speaker: "Caller", text: "Please book it for four. It is my mother's birthday, so we need a cake too." },
+      { speaker: "Woxza", text: "Done. Your table is booked, and I have added a birthday-cake request." }
+    ],
+    te: [
+      { speaker: "Caller", text: "ఈ రాత్రి కనాట్ ప్లేస్‌లో పనీర్ టిక్కా, రూఫ్‌టాప్ టేబుల్ దొరుకుతుందా?" },
+      { speaker: "Woxza", text: "అవును. పనీర్ టిక్కా అందుబాటులో ఉంది. రాత్రి 7:30కి రూఫ్‌టాప్ టేబుల్ ఉంది." },
+      { speaker: "Caller", text: "నలుగురికి బుక్ చేయండి. మా అమ్మ పుట్టినరోజు కోసం కేక్ కూడా కావాలి." },
+      { speaker: "Woxza", text: "అయింది. టేబుల్ బుక్ చేశాను, పుట్టినరోజు కేక్ అభ్యర్థనను కూడా జోడించాను." }
+    ],
+    hi: [
+      { speaker: "Caller", text: "क्या आज रात कनॉट प्लेस में पनीर टिक्का और रूफटॉप टेबल मिल सकती है?" },
+      { speaker: "Woxza", text: "हाँ। पनीर टिक्का उपलब्ध है और रात 7:30 बजे के लिए रूफटॉप टेबल है।" },
+      { speaker: "Caller", text: "चार लोगों के लिए बुक कर दीजिए। मेरी माँ का जन्मदिन है, केक भी चाहिए।" },
+      { speaker: "Woxza", text: "हो गया। टेबल बुक हो गई है और जन्मदिन के केक का अनुरोध भी जोड़ दिया गया है।" }
+    ],
+    ta: [
+      { speaker: "Caller", text: "இன்று இரவு கன்னாட் பிளேஸில் பனீர் டிக்காவும் ரூஃப்டாப் டேபிளும் கிடைக்குமா?" },
+      { speaker: "Woxza", text: "ஆம். பனீர் டிக்கா உள்ளது; இரவு 7:30க்கு ரூஃப்டாப் டேபிள் கிடைக்கிறது." },
+      { speaker: "Caller", text: "நால்வருக்கு முன்பதிவு செய்யுங்கள். என் அம்மாவின் பிறந்தநாள்; கேக்கும் வேண்டும்." },
+      { speaker: "Woxza", text: "முடிந்தது. டேபிள் முன்பதிவு செய்யப்பட்டு, பிறந்தநாள் கேக் கோரிக்கையும் சேர்க்கப்பட்டது." }
+    ]
+  },
+  distribution: {
+    en: [
+      { speaker: "Caller", text: "Our Delhi hospital needs 60 infusion sets by Monday morning. Can you check nearby stock?" },
+      { speaker: "Woxza", text: "Yes. Gurugram has 42 sets and Noida has 18; both can arrive by 9 a.m. Monday." },
+      { speaker: "Caller", text: "Please combine them and use our priority contract." },
+      { speaker: "Woxza", text: "Done. Transfer order VOX 2841 is confirmed, and tracking will be sent after pickup." }
+    ],
+    te: [
+      { speaker: "Caller", text: "మా ఢిల్లీ ఆసుపత్రికి సోమవారం ఉదయం వరకు 60 ఇన్ఫ్యూషన్ సెట్లు కావాలి. దగ్గర్లో స్టాక్ చూడగలరా?" },
+      { speaker: "Woxza", text: "అవును. గురుగ్రామ్‌లో 42, నోయిడాలో 18 సెట్లు ఉన్నాయి. రెండూ సోమవారం ఉదయం 9 గంటలకల్లా చేరతాయి." },
+      { speaker: "Caller", text: "వాటిని కలిపి మా ప్రాధాన్య ఒప్పందం ద్వారా పంపండి." },
+      { speaker: "Woxza", text: "అయింది. ట్రాన్స్‌ఫర్ ఆర్డర్ VOX 2841 నిర్ధారించబడింది; పికప్ తర్వాత ట్రాకింగ్ పంపుతాను." }
+    ],
+    hi: [
+      { speaker: "Caller", text: "दिल्ली के हमारे अस्पताल को सोमवार सुबह तक 60 इन्फ्यूज़न सेट चाहिए। क्या पास का स्टॉक देख सकते हैं?" },
+      { speaker: "Woxza", text: "हाँ। गुरुग्राम में 42 और नोएडा में 18 सेट उपलब्ध हैं। दोनों सोमवार सुबह 9 बजे तक पहुँच सकते हैं।" },
+      { speaker: "Caller", text: "कृपया इन्हें मिलाकर हमारे प्राथमिकता वाले अनुबंध से भेज दीजिए।" },
+      { speaker: "Woxza", text: "हो गया। ट्रांसफर ऑर्डर VOX 2841 की पुष्टि हो गई है। पिकअप के बाद ट्रैकिंग भेज दी जाएगी।" }
+    ],
+    ta: [
+      { speaker: "Caller", text: "எங்கள் டெல்லி மருத்துவமனைக்கு திங்கள்கிழமை காலை 60 இன்ஃப்யூஷன் செட்கள் தேவை. அருகிலுள்ள இருப்பை பார்க்க முடியுமா?" },
+      { speaker: "Woxza", text: "ஆம். குருகிராமில் 42, நொய்டாவில் 18 செட்கள் உள்ளன. இரண்டும் திங்கள் காலை 9 மணிக்குள் சேரும்." },
+      { speaker: "Caller", text: "அவற்றை ஒன்றாக இணைத்து எங்கள் முன்னுரிமை ஒப்பந்தத்தில் அனுப்புங்கள்." },
+      { speaker: "Woxza", text: "முடிந்தது. VOX 2841 பரிமாற்ற ஆணை உறுதிசெய்யப்பட்டது; பிக்கப்புக்குப் பிறகு டிராக்கிங் அனுப்பப்படும்." }
+    ]
+  },
+  payment: {
+    en: [
+      { speaker: "Woxza", text: "Hi Priya. Invoice 1048 for ₹1,52,000 is due today. Would you like help arranging payment?" },
+      { speaker: "Caller", text: "We can pay ₹1,00,000 on Friday and the balance next Tuesday." },
+      { speaker: "Woxza", text: "Certainly. I can record both dates and create two secure payment links." },
+      { speaker: "Caller", text: "Please do, and send the confirmation to our finance team on WhatsApp." },
+      { speaker: "Woxza", text: "Done. Both payment dates are recorded, and the links have been sent to your finance team." }
+    ],
+    te: [
+      { speaker: "Woxza", text: "నమస్తే ప్రియా. ₹1,52,000కు సంబంధించిన ఇన్వాయిస్ 1048 ఈ రోజు చెల్లించాలి. చెల్లింపుకు సహాయం కావాలా?" },
+      { speaker: "Caller", text: "శుక్రవారం ₹1,00,000, మిగిలినది వచ్చే మంగళవారం చెల్లిస్తాము." },
+      { speaker: "Woxza", text: "సరే. రెండు తేదీలను నమోదు చేసి రెండు సురక్షిత చెల్లింపు లింకులు సృష్టిస్తాను." },
+      { speaker: "Caller", text: "అవును, నిర్ధారణను మా ఫైనాన్స్ బృందానికి WhatsApp‌లో పంపండి." },
+      { speaker: "Woxza", text: "అయింది. రెండు చెల్లింపు తేదీలు నమోదు చేశాను; లింకులు ఫైనాన్స్ బృందానికి పంపబడ్డాయి." }
+    ],
+    hi: [
+      { speaker: "Woxza", text: "नमस्ते प्रिया। ₹1,52,000 का इनवॉइस 1048 आज देय है। क्या भुगतान की व्यवस्था में मदद चाहिए?" },
+      { speaker: "Caller", text: "हम शुक्रवार को ₹1,00,000 और बाकी अगले मंगलवार को दे सकते हैं।" },
+      { speaker: "Woxza", text: "ज़रूर। मैं दोनों तारीखें दर्ज करके दो सुरक्षित भुगतान लिंक बना देता हूँ।" },
+      { speaker: "Caller", text: "कृपया पुष्टि हमारी वित्त टीम को WhatsApp पर भेज दीजिए।" },
+      { speaker: "Woxza", text: "हो गया। दोनों भुगतान तिथियाँ दर्ज हो गई हैं और लिंक आपकी वित्त टीम को भेज दिए गए हैं।" }
+    ],
+    ta: [
+      { speaker: "Woxza", text: "வணக்கம் பிரியா. ₹1,52,000-க்கான விலைப்பட்டியல் 1048 இன்று செலுத்தப்பட வேண்டும். கட்டணத்தை ஏற்பாடு செய்ய உதவவா?" },
+      { speaker: "Caller", text: "வெள்ளிக்கிழமை ₹1,00,000 செலுத்துகிறோம்; மீதத்தை அடுத்த செவ்வாய்க்கிழமை செலுத்தலாம்." },
+      { speaker: "Woxza", text: "சரி. இரண்டு கட்டண தேதிகளையும் பதிவு செய்து பாதுகாப்பான கட்டண இணைப்புகளை உருவாக்குகிறேன்." },
+      { speaker: "Caller", text: "ஆம், உறுதிப்படுத்தலை எங்கள் நிதிக் குழுவுக்கு WhatsApp-ல் அனுப்புங்கள்." },
+      { speaker: "Woxza", text: "முடிந்தது. இரண்டு கட்டண தேதிகளும் பதிவு செய்யப்பட்டன; இணைப்புகள் நிதிக் குழுவுக்கு அனுப்பப்பட்டுள்ளன." }
+    ]
+  }
+}
+
+const liveHeadings = {
+  clinic: {
+    en: { eyebrow: "Hyderabad care desk", title: "Doctor appointment", tag: "Live calendar" },
+    te: { eyebrow: "హైదరాబాద్ కేర్ డెస్క్", title: "డాక్టర్ అపాయింట్‌మెంట్", tag: "లైవ్ క్యాలెండర్" },
+    hi: { eyebrow: "हैदराबाद केयर डेस्क", title: "डॉक्टर अपॉइंटमेंट", tag: "लाइव कैलेंडर" },
+    ta: { eyebrow: "ஹைதராபாத் உதவி மையம்", title: "மருத்துவர் முன்பதிவு", tag: "நேரடி நாட்காட்டி" }
+  },
+  restaurant: {
+    en: { eyebrow: "Delhi guest services", title: "Restaurant reservation", tag: "Menu and tables" },
+    te: { eyebrow: "ఢిల్లీ అతిథి సేవలు", title: "రెస్టారెంట్ రిజర్వేషన్", tag: "మెనూ మరియు టేబుల్స్" },
+    hi: { eyebrow: "दिल्ली अतिथि सेवाएँ", title: "रेस्तरां आरक्षण", tag: "मेनू और टेबल" },
+    ta: { eyebrow: "டெல்லி விருந்தினர் சேவை", title: "உணவக முன்பதிவு", tag: "மெனு மற்றும் மேசைகள்" }
+  },
+  distribution: {
+    en: { eyebrow: "North India operations", title: "Medical distribution", tag: "Inventory linked" },
+    te: { eyebrow: "ఉత్తర భారత ఆపరేషన్స్", title: "మెడికల్ పంపిణీ", tag: "ఇన్వెంటరీ అనుసంధానం" },
+    hi: { eyebrow: "उत्तर भारत परिचालन", title: "चिकित्सा वितरण", tag: "इन्वेंटरी से जुड़ा" },
+    ta: { eyebrow: "வட இந்திய செயல்பாடுகள்", title: "மருத்துவ விநியோகம்", tag: "இருப்புடன் இணைக்கப்பட்டது" }
+  },
+  payment: {
+    en: { eyebrow: "Accounts receivable", title: "Payment reminder", tag: "Invoice workflow" },
+    te: { eyebrow: "రాబడుల ఖాతాలు", title: "చెల్లింపు రిమైండర్", tag: "ఇన్వాయిస్ వర్క్‌ఫ్లో" },
+    hi: { eyebrow: "प्राप्य खाते", title: "भुगतान अनुस्मारक", tag: "इनवॉइस वर्कफ़्लो" },
+    ta: { eyebrow: "பெறவேண்டிய கணக்குகள்", title: "கட்டண நினைவூட்டல்", tag: "விலைப்பட்டியல் பணிப்பாய்வு" }
+  }
+}
+
+// Everything displayed inside the live card belongs to its conversation language.
+// It deliberately does not inherit the language selected for the surrounding page.
+const liveUi = {
+  en: { caller: "Caller", listening: "Listening", speaking: "Woxza is speaking", duration: "s to complete" },
+  te: { caller: "కస్టమర్", listening: "వింటోంది", speaking: "Woxza మాట్లాడుతోంది", duration: " సెకన్లలో పూర్తయింది" },
+  hi: { caller: "कॉलर", listening: "सुन रहा है", speaking: "Woxza बोल रहा है", duration: " सेकंड में पूरा हुआ" },
+  ta: { caller: "அழைப்பாளர்", listening: "கேட்கிறது", speaking: "Woxza பேசுகிறது", duration: " வினாடிகளில் முடிந்தது" }
+}
+
+const liveResults = {
+  clinic: {
+    en: ["Appointment confirmed", "Appointment confirmed", "Patient form sent"],
+    te: ["అపాయింట్‌మెంట్ నిర్ధారించబడింది", "అపాయింట్‌మెంట్ నిర్ధారించబడింది", "పేషెంట్ ఫారమ్ పంపబడింది"],
+    hi: ["अपॉइंटमेंट की पुष्टि हुई", "अपॉइंटमेंट की पुष्टि हुई", "मरीज़ का फॉर्म भेज दिया गया"],
+    ta: ["முன்பதிவு உறுதிசெய்யப்பட்டது", "முன்பதிவு உறுதிசெய்யப்பட்டது", "நோயாளி படிவம் அனுப்பப்பட்டது"]
+  },
+  restaurant: {
+    en: ["Table booked", "Table booked", "Birthday request added"],
+    te: ["టేబుల్ బుక్ అయింది", "టేబుల్ బుక్ అయింది", "పుట్టినరోజు అభ్యర్థన జోడించబడింది"],
+    hi: ["टेबल बुक हो गई", "टेबल बुक हो गई", "जन्मदिन का अनुरोध जोड़ा गया"],
+    ta: ["மேசை முன்பதிவு செய்யப்பட்டது", "மேசை முன்பதிவு செய்யப்பட்டது", "பிறந்தநாள் கோரிக்கை சேர்க்கப்பட்டது"]
+  },
+  distribution: {
+    en: ["Transfer order confirmed", "Transfer order confirmed", "Tracking scheduled"],
+    te: ["బదిలీ ఆర్డర్ నిర్ధారించబడింది", "బదిలీ ఆర్డర్ నిర్ధారించబడింది", "ట్రాకింగ్ షెడ్యూల్ చేయబడింది"],
+    hi: ["ट्रांसफर ऑर्डर की पुष्टि हुई", "ट्रांसफर ऑर्डर की पुष्टि हुई", "ट्रैकिंग निर्धारित की गई"],
+    ta: ["பரிமாற்ற ஆணை உறுதிசெய்யப்பட்டது", "பரிமாற்ற ஆணை உறுதிசெய்யப்பட்டது", "டிராக்கிங் திட்டமிடப்பட்டது"]
+  },
+  payment: {
+    en: ["Payment plan recorded", "Payment plan recorded", "Finance team notified"],
+    te: ["చెల్లింపు ప్రణాళిక నమోదు చేయబడింది", "చెల్లింపు ప్రణాళిక నమోదు చేయబడింది", "ఫైనాన్స్ బృందానికి తెలియజేయబడింది"],
+    hi: ["भुगतान योजना दर्ज की गई", "भुगतान योजना दर्ज की गई", "वित्त टीम को सूचित किया गया"],
+    ta: ["கட்டணத் திட்டம் பதிவு செய்யப்பட்டது", "கட்டணத் திட்டம் பதிவு செய்யப்பட்டது", "நிதிக் குழுவுக்கு அறிவிக்கப்பட்டது"]
+  }
+}
 
 const scenarioIndex = ref(0)
 const messageCount = ref(1)
-const scenario = computed(() => scenarios.value[scenarioIndex.value])
+const activeLanguage = computed(() => demoLanguage.value || pageLanguage.value)
+const languageByCode = computed(() => Object.fromEntries(languages.map((item) => [item.code, item])))
+const pageLanguageLabel = computed(() => languageByCode.value[pageLanguage.value]?.nativeLabel || "English")
+const activeLanguageLabel = computed(() => demoLanguage.value ? languageByCode.value[demoLanguage.value]?.nativeLabel : pageLanguageLabel.value)
+const scenario = computed(() => {
+  const source = scenarios.value[scenarioIndex.value]
+  const language = activeLanguage.value
+  const ui = liveUi[language]
+  const result = liveResults[source.id][language]
+  return {
+    ...source,
+    language,
+    ui,
+    ...liveHeadings[source.id][language],
+    outcomes: result.slice(1),
+    completionLabel: result[0],
+    durationLabel: `${(source.completionDuration / 1000).toFixed(1)}${ui.duration}`,
+    messages: liveDialogues[source.id][language].map((message) => ({
+      ...message,
+      role: message.speaker,
+      speaker: message.speaker === "Caller" ? ui.caller : "Woxza"
+    }))
+  }
+})
 const visibleMessages = computed(() => scenario.value.messages.slice(0, messageCount.value))
 const currentMessage = computed(() => visibleMessages.value[visibleMessages.value.length - 1])
-const isWoxzaSpeaking = computed(() => currentMessage.value?.speaker === "Woxza")
+const isWoxzaSpeaking = computed(() => currentMessage.value?.role === "Woxza")
 const isComplete = computed(() => messageCount.value === scenario.value.messages.length)
-const completionLabel = computed(() => scenario.value.outcomes[0])
+const completionLabel = computed(() => scenario.value.completionLabel)
 const transcriptElement = ref(null)
 const barHeights = [18, 34, 54, 72, 42, 62, 30, 48, 22]
 const statusWaveHeights = [4, 9, 14, 7, 5, 12, 18, 9, 5, 11, 7, 4]
@@ -156,7 +380,8 @@ const restartTimers = () => {
     }
     window.clearInterval(messageTimer)
     scenarioTimer = window.setTimeout(() => {
-      scenarioIndex.value = (scenarioIndex.value + 1) % scenarios.value.length
+      const nextScenario = (scenarioIndex.value + 1) % scenarios.value.length
+      scenarioIndex.value = nextScenario
       restartTimers()
     }, 2800)
   }, 1900)
@@ -172,14 +397,13 @@ watch(messageCount, async () => {
 })
 
 const selectScenario = (index) => { scenarioIndex.value = index; restartTimers() }
-const detectMarket = () => {
-  const locale = navigator.language || ""
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || ""
-  market.value = /(^|-)IN$/i.test(locale) || /^Asia\/(Kolkata|Calcutta)$/i.test(timeZone) ? "india" : "us"
+const setDemoLanguage = (code) => { demoLanguage.value = code; isLanguageMenuOpen.value = false }
+const closeLanguageMenu = (event) => {
+  if (!languageMenu.value?.contains(event.target)) isLanguageMenuOpen.value = false
 }
-
-onMounted(() => { detectMarket(); restartTimers() })
-onUnmounted(() => { window.clearInterval(messageTimer); window.clearTimeout(scenarioTimer) })
+watch(activeLanguage, () => restartTimers())
+onMounted(() => { document.addEventListener("click", closeLanguageMenu); restartTimers() })
+onUnmounted(() => { document.removeEventListener("click", closeLanguageMenu); window.clearInterval(messageTimer); window.clearTimeout(scenarioTimer) })
 </script>
 
 <style scoped>
@@ -197,9 +421,14 @@ onUnmounted(() => { window.clearInterval(messageTimer); window.clearTimeout(scen
 .call-card::after { content: ""; position: absolute; inset: 0 34px auto; z-index: 2; height: 2px; border-radius: 999px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--scenario) 72%, white), transparent); opacity: .72; pointer-events: none; }
 .call-card::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .34; pointer-events: none; transition: background .35s ease; }
 .call-card header { display: flex; align-items: center; justify-content: space-between; padding: 2px 2px 19px; border-bottom: 1px solid #e8ebf4; }
-.call-identity { display: flex; align-items: center; gap: 13px; }.scenario-icon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 14px; color: #fff; background: var(--scenario); font-size: 20px; box-shadow: 0 10px 22px color-mix(in srgb, var(--scenario) 30%, transparent); }
+.call-identity { display: flex; align-items: center; gap: 13px; }.scenario-icon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 14px; color: #fff; background: var(--scenario); box-shadow: 0 10px 22px color-mix(in srgb, var(--scenario) 30%, transparent); }.scenario-icon svg { width:21px; height:21px; stroke-width:1.9; }
 .call-identity small { display: block; margin-bottom: 4px; color: #8b93a9; font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }.call-identity h2 { margin: 0; color: #11152b; font-size: 17px; line-height: 1.1; letter-spacing: -.02em; }.scenario-tag { display: inline-flex; margin-top: 6px; padding: 3px 7px; border-radius: 999px; color: var(--scenario); background: color-mix(in srgb, var(--scenario) 9%, white); font-size: 8px; font-weight: 800; }
 .call-presence { display: grid; justify-items: end; gap: 8px; flex: 0 0 auto; }
+.demo-language { position: relative; z-index: 8; }
+.demo-language__trigger { display: inline-flex; align-items: center; gap: 5px; min-height: 27px; padding: 0 9px; border: 1px solid rgba(20,38,77,.11); border-radius: 999px; color: #68738d; background: rgba(255,255,255,.8); font: inherit; font-size: 9px; font-weight: 780; cursor: pointer; }
+.demo-language__trigger svg:first-child { width: 12px; height: 12px; color: var(--scenario); stroke-width: 2; }.demo-language__trigger svg:last-child { width: 11px; height: 11px; color: #8a94a9; }
+.demo-language__menu { position: absolute; top: calc(100% + 7px); right: 0; width: 178px; padding: 5px; border: 1px solid #e3e8f2; border-radius: 12px; background: #fff; box-shadow: 0 14px 34px rgba(20,38,77,.17); }
+.demo-language__menu button { width: 100%; display: grid; grid-template-columns: 14px 1fr; align-items: center; gap: 7px; padding: 8px; border: 0; border-radius: 8px; color: #52607a; background: transparent; font: inherit; font-size: 10px; font-weight: 720; text-align: left; cursor: pointer; }.demo-language__menu button:hover, .demo-language__menu button.selected { color: #14264d; background: #f0f5ff; }.demo-language__menu button svg { width: 13px; height: 13px; color: #2f6bf2; opacity: 0; }.demo-language__menu button.selected svg { opacity: 1; }.demo-language__menu small { color: #8a94a9; font-size: 9px; font-weight: 600; }
 .call-status { display: flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid rgba(20,38,77,.07); border-radius: 999px; color: #727c94; background: rgba(255,255,255,.62); font-size: 10px; font-weight: 780; white-space: nowrap; }.call-status i { width: 7px; height: 7px; border-radius: 50%; background: #aab1c5; }.call-status.active { color: var(--scenario); background: color-mix(in srgb, var(--scenario) 6%, white); }.call-status.active i { background: var(--scenario); box-shadow: 0 0 0 6px color-mix(in srgb, var(--scenario) 12%, transparent); animation: signal 1.4s ease-in-out infinite; }
 .status-wave { height: 19px; display: flex; align-items: center; gap: 3px; padding-right: 5px; opacity: .22; }
 .status-wave i { width: 2px; min-height: 3px; border-radius: 3px; background: var(--scenario); transform: scaleY(.55); transform-origin: center; }
@@ -231,7 +460,7 @@ onUnmounted(() => { window.clearInterval(messageTimer); window.clearTimeout(scen
 .reservation-ticket { position: relative; display: grid; grid-template-columns: 1.3fr .7fr .7fr; align-items: center; gap: 9px; padding: 10px 13px; overflow: hidden; border-radius: 10px; color: white; background: #0f172a; }.reservation-ticket::before, .reservation-ticket::after { content: ""; position: absolute; width: 12px; height: 12px; top: 50%; border-radius: 50%; background: white; transform: translateY(-50%); }.reservation-ticket::before { left: -6px; }.reservation-ticket::after { right: -6px; }.reservation-ticket small, .reservation-ticket strong { display: block; }.reservation-ticket small { font-size: 7px; opacity: .65; text-transform: uppercase; }.reservation-ticket strong { margin-top: 3px; font-size: 10px; }.reservation-ticket > span { padding-left: 9px; border-left: 1px dashed rgba(255,255,255,.3); font-size: 8px; }.reservation-ticket > i { display: none; }
 
 /* Distribution: warehouse inventory and fulfillment route */
-.distribution-flow { display: grid; grid-template-rows: auto 1fr auto auto; gap: 9px; font-family: "IBM Plex Sans", sans-serif; }
+.distribution-flow { display: grid; grid-template-rows: auto 1fr auto auto; gap: 9px; font-family: var(--font-primary); }
 .stock-query { display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 10px 12px; border: 1px solid #dce4f1; border-radius: 7px; background: white; }.stock-query span, .stock-query strong { display: block; }.stock-query span { color: #8791a4; font-size: 7px; text-transform: uppercase; }.stock-query strong { margin-top: 3px; color: #26314b; font-size: 10px; }.stock-query b { grid-column: 2; grid-row: 1 / 3; color: #2563eb; font-size: 16px; }
 .warehouse-result { display: grid; grid-template-columns: 1fr 1.4fr auto; align-items: center; gap: 14px; padding: 12px; border-radius: 8px; color: white; background: #0f172a; }.warehouse-result small, .warehouse-result strong, .warehouse-result span { display: block; }.warehouse-result small { font-size: 7px; opacity: .65; text-transform: uppercase; }.warehouse-result strong { display: inline; margin-right: 4px; font-size: 24px; }.warehouse-result span { display: inline; font-size: 8px; opacity: .75; }.warehouse-result > b { font-size: 9px; }.stock-meter { display: flex; align-items: end; gap: 4px; height: 38px; }.stock-meter i { flex: 1; border-radius: 2px 2px 0 0; background: #2563eb; }.stock-meter i:nth-child(1) { height: 35%; }.stock-meter i:nth-child(2) { height: 65%; }.stock-meter i:nth-child(3) { height: 90%; }.stock-meter i:nth-child(4) { height: 70%; }.stock-meter i:nth-child(5) { height: 48%; }
 .fulfillment-route { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border: 1px dashed #cad7ec; border-radius: 7px; }.fulfillment-route span { display: flex; align-items: center; gap: 5px; color: #536079; font-size: 8px; font-weight: 750; }.fulfillment-route i { display: grid; width: 19px; height: 19px; place-items: center; border-radius: 50%; color: white; background: #2563eb; font-size: 6px; font-style: normal; }.fulfillment-route b { color: #9aa4b6; }
@@ -244,7 +473,7 @@ onUnmounted(() => { window.clearInterval(messageTimer); window.clearTimeout(scen
 .collection-timeline { display: grid; grid-template-columns: auto 1fr auto 1fr auto; align-items: start; gap: 6px; padding: 10px; }.collection-timeline > div { display: grid; justify-items: center; gap: 4px; color: #8b95a9; font-size: 7px; text-align: center; }.collection-timeline > div i { display: grid; width: 22px; height: 22px; place-items: center; border: 1px solid #cdd6e5; border-radius: 50%; font-style: normal; }.collection-timeline > div.done { color: #2563eb; }.collection-timeline > div.done i { color: white; border-color: #2563eb; background: #2563eb; }.collection-timeline > b { height: 1px; margin-top: 11px; background: #cfd8e8; }
 .secure-link { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 9px; padding: 9px 10px; border: 1px solid #d8e2f2; border-radius: 9px; background: #f8faff; }.secure-link > span { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; color: white; background: #2563eb; }.secure-link small, .secure-link strong { display: block; }.secure-link small { color: #8b95a8; font-size: 7px; text-transform: uppercase; }.secure-link strong { margin-top: 2px; color: #2e3852; font-size: 8px; }.secure-link > b { color: #2563eb; font-size: 8px; }
 .call-card footer { display: flex; align-items: center; justify-content: space-between; padding-top: 15px; border-top: 1px solid #e8ebf4; color: #9aa2b6; }.call-card footer > div { display: flex; flex-wrap: wrap; gap: 7px; }.call-card footer span { padding: 6px 9px; border: 1px solid #e2e6f0; border-radius: 99px; color: #5f6881; background: rgba(255,255,255,.72); font-size: 9px; font-weight: 740; }.call-card footer b { letter-spacing: -3px; }
-.scenario-nav { position: absolute; z-index: 6; left: 7%; right: 7%; bottom: 2%; }.progress { display: none; }.scenario-buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; }.scenario-buttons button { position: relative; display: flex; align-items: center; gap: 6px; padding: 9px 13px; border: 1px solid rgba(20,38,77,.09); border-radius: 999px; color: #858da4; background: rgba(255,255,255,.76); font-size: 9px; font-weight: 720; cursor: pointer; box-shadow: 0 8px 18px rgba(20,38,77,.04); }.scenario-buttons button:not(:last-child)::after { content: "›"; position: absolute; right: -10px; color: #14264d; font-size: 18px; font-weight: 500; }.scenario-buttons button.active { color: #fff; border-color: #14264d; background: #14264d; box-shadow: 0 10px 24px rgba(20,38,77,.25); }.scenario-buttons b { font-size: 12px; }
+.scenario-nav { position: absolute; z-index: 6; left: 7%; right: 7%; bottom: 2%; }.progress { display: none; }.scenario-buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; }.scenario-buttons button { position: relative; display: flex; align-items: center; gap: 6px; padding: 9px 13px; border: 1px solid rgba(20,38,77,.09); border-radius: 999px; color: #858da4; background: rgba(255,255,255,.76); font-size: 9px; font-weight: 720; cursor: pointer; box-shadow: 0 8px 18px rgba(20,38,77,.04); }.scenario-buttons button:not(:last-child)::after { content: "›"; position: absolute; right: -10px; color: #14264d; font-size: 18px; font-weight: 500; }.scenario-buttons button.active { color: #fff; border-color: #14264d; background: #14264d; box-shadow: 0 10px 24px rgba(20,38,77,.25); }.scenario-buttons b { display:grid; place-items:center; }.scenario-buttons b svg { width:13px; height:13px; stroke-width:1.9; }
 
 /* Every call type has its own visual system, not just a new accent color. */
 .scenario-clinic .call-card::before { background-image: linear-gradient(90deg, transparent 94%, color-mix(in srgb, var(--scenario) 9%, transparent) 94%), linear-gradient(transparent 94%, color-mix(in srgb, var(--scenario) 9%, transparent) 94%); background-size: 28px 28px; }

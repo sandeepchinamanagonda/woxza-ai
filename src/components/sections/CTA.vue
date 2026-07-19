@@ -1,5 +1,5 @@
 <template>
-<section id="contact" class="cta-section">
+<section id="contact" class="cta-section landing-section">
 
 <div class="grid-bg"></div>
 <div class="glow glow-left"></div>
@@ -13,7 +13,7 @@
 EARLY ACCESS
 </span>
 
-<h2>
+<h2 class="display-heading">
 Ready to put Woxza
 <br>
 on your phones?
@@ -21,7 +21,8 @@ on your phones?
 
 <p>
 Join the waitlist for early access, or talk with sales if you
-already know which calls and workflows you want Woxza to handle
+already know which calls and workflows you want Woxza to handle.
+
 </p>
 
 <div class="actions">
@@ -30,7 +31,7 @@ already know which calls and workflows you want Woxza to handle
 class="btn-primary"
 @click="$emit('open-demo','waitlist')"
 >
-Join the Waitlist
+Join the waitlist
 </button>
 
 <button
@@ -62,7 +63,6 @@ defineEmits([
 
 .cta-section{
 position:relative;
-padding:180px 0;
 background:var(--woxza-blue);
 overflow:hidden;
 }
@@ -195,10 +195,6 @@ background:rgba(255,255,255,.06);
 border-color:rgba(255,255,255,.24);
 }
 @media(max-width:768px){
-
-.cta-section{
-padding:110px 0;
-}
 
 .cta{
 padding:60px 26px;

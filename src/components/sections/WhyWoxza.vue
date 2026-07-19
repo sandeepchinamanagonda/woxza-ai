@@ -54,7 +54,7 @@
           </div>
 
           <div class="node node-top" :class="{ lit: isLit('voice') }">
-            <span class="node-icon"><Mic2 /></span>
+            <span class="node-icon"><AudioLines /></span>
             <strong>Voice AI</strong>
           </div>
           <div class="node node-right" :class="{ lit: isLit('agents') }">
@@ -62,7 +62,7 @@
             <strong>Agents</strong>
           </div>
           <div class="node node-bottom" :class="{ lit: isLit('automation') }">
-            <span class="node-icon"><Settings2 /></span>
+            <span class="node-icon"><Workflow /></span>
             <strong>Automation</strong>
           </div>
           <div class="node node-left" :class="{ lit: isLit('knowledge') }">
@@ -71,7 +71,7 @@
           </div>
 
           <div class="service service-top-left" :class="{ lit: isLit('incoming') }">
-            <PhoneIncoming />
+            <span class="node-icon"><PhoneCall /></span>
             <div><strong>Incoming call</strong><span>Customer intent</span></div>
           </div>
           <div class="service service-top-right" :class="{ lit: isLit('crm') }">
@@ -107,9 +107,9 @@ import {
   ChartNoAxesCombined,
   ContactRound,
   ListChecks,
-  Mic2,
-  PhoneIncoming,
-  Settings2,
+  AudioLines,
+  PhoneCall,
+  Workflow,
   ShieldCheck,
   UserRoundCheck
 } from "lucide-vue-next"
@@ -313,8 +313,8 @@ const isLit = key => activeKeys.value.has(key)
   transition: opacity .4s, filter .4s, border-color .4s, box-shadow .4s;
 }
 .node.lit { opacity: 1; filter: saturate(1); border-color: rgba(52, 120, 246, .5); box-shadow: 0 14px 40px rgba(52, 120, 246, .16); }
-.node-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; background: #eef4ff; color: #3478f6; }
-.node-icon svg { width: 18px; height: 18px; }
+.node-icon { width: 46px; height: 46px; display: grid; flex: 0 0 auto; place-items: center; border-radius: 14px; background: #eef4ff; color: #3478f6; }
+.node-icon svg { width: 20px; height: 20px; stroke-width: 2; }
 .node strong { font-size: 13px; }
 .node-top { left: 50%; top: 66px; transform: translateX(-50%); }
 .node-right { right: 26px; top: 50%; transform: translateY(-50%); }
@@ -338,7 +338,7 @@ const isLit = key => activeKeys.value.has(key)
   transition: opacity .4s, filter .4s, border-color .4s, box-shadow .4s;
 }
 .service.lit { opacity: 1; filter: saturate(1); border-color: rgba(52, 120, 246, .42); box-shadow: 0 15px 42px rgba(52, 120, 246, .14); }
-.service > svg { width: 19px; height: 19px; flex: 0 0 auto; color: #3478f6; }
+.service > .node-icon { width: 46px; height: 46px; color: #3478f6; }
 .service div { display: grid; gap: 3px; }
 .service strong { color: #14264d; font-size: 11px; }
 .service span { color: #8994a8; font-size: 9px; }

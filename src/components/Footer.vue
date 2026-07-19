@@ -28,7 +28,7 @@ updates systems and keeps every customer conversation moving
 </div>
 
 <a href="tel:+918125869888">
-<span class="contact-icon"><Phone /></span>
+<span class="contact-icon"><PhoneCall /></span>
 <span><small>Call us</small><b>081258 69888</b></span>
 </a>
 
@@ -52,8 +52,8 @@ rel="noopener noreferrer"
 <h4>Company</h4>
 
 <a href="#about">About</a>
-<a href="#services">Services</a>
-<a href="#programs">Programs</a>
+<a href="#solutions">Solutions</a>
+<a href="#approach">Approach</a>
 
 </div>
 
@@ -108,7 +108,7 @@ rel="noopener noreferrer"
 
 <div class="bottom">
 
-<p>© 2026 Woxza, all rights reserved</p>
+<p>© 2026 Woxza. All rights reserved.</p>
 
 <p>Voice AI Platform • Waitlist Access • Customer Automation</p>
 
@@ -186,7 +186,7 @@ rel="noopener noreferrer"
 
 <script setup>
 import { ref } from "vue"
-import { Mail, Phone, X } from "lucide-vue-next"
+import { Mail, PhoneCall, X } from "lucide-vue-next"
 
 const legalView = ref(null)
 </script>
@@ -302,17 +302,18 @@ border-top:1px solid rgba(255,255,255,.07);
 
 .contact-icon{
 display:grid;
-width:38px;
-height:38px;
+width:46px;
+height:46px;
 place-items:center;
-border-radius:12px;
+border-radius:14px;
 color:#93c5fd;
 background:rgba(59,130,246,.12);
 }
 
 .contact-icon svg{
-width:17px;
-height:17px;
+width:20px;
+height:20px;
+stroke-width:2;
 }
 
 .contact-card>a>span:last-child{

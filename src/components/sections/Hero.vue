@@ -1,13 +1,14 @@
 <template>
-  <section id="hero" class="hero">
+  <section id="hero" class="hero landing-section">
     <div class="hero-glow" />
 
     <div class="hero-container">
       <div class="hero-content">
         <span class="hero-badge">AI voice agent platform</span>
 
-        <div class="headline-stage" aria-live="polite">
+        <div class="headline-stage" aria-live="polite" @mouseenter="pauseHeadlines" @mouseleave="resumeHeadlines" @focusin="pauseHeadlines" @focusout="resumeHeadlines">
           <h1
+            class="display-heading"
             v-for="(headline, index) in headlines"
             :key="headline.id"
             :class="{ active: index === headlineIndex }"
@@ -32,8 +33,17 @@
             :key="index"
             :class="{ active: index === headlineIndex }"
             :aria-label="`Show headline ${index + 1}`"
-            @click="headlineIndex = index"
+            @click="selectHeadline(index)"
           />
+          <button
+            class="caption-play-toggle"
+            type="button"
+            :aria-label="isHeadlinePaused ? 'Resume headline rotation' : 'Pause headline rotation'"
+            :aria-pressed="isHeadlinePaused"
+            @click="toggleHeadlineRotation"
+          >
+            <span aria-hidden="true">{{ isHeadlinePaused ? '▶' : 'Ⅱ' }}</span>
+          </button>
         </div>
 
         <div class="hero-proof-grid" aria-label="Woxza capabilities">
@@ -66,17 +76,17 @@ const headlines = [
       [{ text: "customers and " }, { text: "get", accent: true }],
       [{ text: "work done", accent: true, underline: true }]
     ],
-    description: "Woxza answers every call, understands intent and takes action so your team can focus on what matters"
+    description: "Woxza answers every call, understands intent, and takes action so your team can focus on what matters."
   },
   {
     id: "every-call",
     lines: [
       [{ text: "Every call answered" }],
       [{ text: "Every customer" }],
-      [{ text: "understood Every" }],
+      [{ text: "understood. Every" }],
       [{ text: "step handled", accent: true, underline: true }]
     ],
-    description: "From the first hello to the finished task, Woxza keeps every customer conversation moving forward"
+    description: "From the first hello to the finished task, Woxza keeps every customer conversation moving forward."
   },
   {
     id: "one-platform",
@@ -86,7 +96,7 @@ const headlines = [
       [{ text: "your business needs" }],
       [{ text: "completed", accent: true, underline: true }]
     ],
-    description: "Many conversations move your business and Woxza connects them, understands them and completes the work behind them"
+    description: "Many conversations move your business. Woxza connects them, understands them, and completes the work behind them."
   }
 ]
 
@@ -98,14 +108,31 @@ const capabilities = [
 ]
 
 const headlineIndex = ref(0)
+const isHeadlinePaused = ref(false)
 let headlineTimer
 
-onMounted(() => {
+const startHeadlineTimer = () => {
+  window.clearInterval(headlineTimer)
   headlineTimer = window.setInterval(() => {
     headlineIndex.value = (headlineIndex.value + 1) % headlines.length
-  }, 4300)
-})
+  }, 8000)
+}
 
+const pauseHeadlines = () => window.clearInterval(headlineTimer)
+const resumeHeadlines = () => {
+  if (!isHeadlinePaused.value) startHeadlineTimer()
+}
+const selectHeadline = (index) => {
+  headlineIndex.value = index
+  if (!isHeadlinePaused.value) startHeadlineTimer()
+}
+const toggleHeadlineRotation = () => {
+  isHeadlinePaused.value = !isHeadlinePaused.value
+  if (isHeadlinePaused.value) pauseHeadlines()
+  else startHeadlineTimer()
+}
+
+onMounted(startHeadlineTimer)
 onUnmounted(() => window.clearInterval(headlineTimer))
 </script>
 
@@ -119,7 +146,6 @@ onUnmounted(() => window.clearInterval(headlineTimer))
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  padding: 124px 0 46px;
   isolation: isolate;
   background:
     radial-gradient(circle at 76% 34%, rgba(15, 23, 42, .2), transparent 31%),
@@ -197,18 +223,20 @@ onUnmounted(() => window.clearInterval(headlineTimer))
 .hero-content > p { max-width: 640px; margin: 17px 0 0; color: #66708a; font-size: 16px; line-height: 1.62; }
 .headline-description { min-height: 58px; animation: description-in .55s cubic-bezier(.2,.8,.2,1) both; }
 
-.caption-controls { display: flex; gap: 8px; margin-top: 14px; }
+.caption-controls { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
 .caption-controls button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 10px; background: #c7cde0; cursor: pointer; transition: width .25s ease, background .25s ease; }
 .caption-controls button.active { width: 32px; background: var(--hero-blue); }
+.caption-controls .caption-play-toggle { display: grid; width: 24px; height: 24px; margin-left: 3px; place-items: center; border: 1px solid rgba(20,38,77,.2); border-radius: 50%; color: var(--hero-blue); background: rgba(255,255,255,.8); font-size: 9px; line-height: 1; transition: background .2s ease, border-color .2s ease, transform .2s ease; }
+.caption-controls .caption-play-toggle:hover, .caption-controls .caption-play-toggle:focus-visible { border-color: var(--hero-blue); background: #fff; transform: scale(1.06); outline: none; }
 
 .hero-proof-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 18px; border: 1px solid rgba(20,38,77,.11); border-radius: 22px; background: rgba(255,255,255,.68); box-shadow: 0 18px 48px rgba(20,38,77,.08); backdrop-filter: blur(16px); overflow: hidden; }
-.proof-item { display: grid; grid-template-columns: 38px 1fr; align-items: center; gap: 9px; min-width: 0; padding: 17px 12px; }
+.proof-item { display: grid; grid-template-columns: 46px 1fr; align-items: center; gap: 9px; min-width: 0; padding: 17px 12px; }
 .proof-item + .proof-item { border-left: 1px solid rgba(20,38,77,.09); }
 .proof-item > div { display: grid; gap: 3px; min-width: 0; }
 .proof-item strong { color: var(--hero-blue); font-size: 10px; line-height: 1.25; }
 .proof-item small { color: #7b879d; font-family: inherit; font-size: 8px; line-height: 1.35; }
-.proof-icon { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--icon-color) 20%, white); border-radius: 50%; color: var(--icon-color); background: var(--icon-soft); box-shadow: 0 7px 20px color-mix(in srgb, var(--icon-color) 13%, transparent); }
-.proof-icon svg { width: 19px; height: 19px; stroke-width: 1.9; }
+.proof-icon { display: grid; width: 46px; height: 46px; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--icon-color) 20%, white); border-radius: 14px; color: var(--icon-color); background: var(--icon-soft); box-shadow: 0 7px 20px color-mix(in srgb, var(--icon-color) 13%, transparent); }
+.proof-icon svg { width: 20px; height: 20px; stroke-width: 2; }
 
 .hero-visual { position: relative; width: 100%; height: clamp(560px, calc(100vh - 170px), 710px); min-height: 0; }
 
@@ -222,7 +250,6 @@ onUnmounted(() => window.clearInterval(headlineTimer))
 }
 
 @media (max-height: 820px) and (min-width: 861px) {
-  .hero { padding: 96px 0 24px; }
   .hero-container { min-height: calc(100vh - 120px); }
   .hero-content { padding: 10px 0 16px 8px; }
   .hero-badge { margin-bottom: 10px; }
@@ -232,9 +259,9 @@ onUnmounted(() => window.clearInterval(headlineTimer))
   .headline-description { min-height: 48px; }
   .caption-controls { margin-top: 10px; }
   .hero-proof-grid { margin-top: 10px; }
-  .proof-item { grid-template-columns: 31px 1fr; padding: 11px 8px; }
-  .proof-icon { width: 31px; height: 31px; }
-  .proof-icon svg { width: 15px; height: 15px; }
+  .proof-item { grid-template-columns: 46px 1fr; padding: 11px 8px; }
+  .proof-icon { width: 46px; height: 46px; }
+  .proof-icon svg { width: 20px; height: 20px; }
   .proof-item strong { font-size: 8px; }
   .proof-item small { font-size: 7px; }
   .hero-visual { height: calc(100vh - 120px); min-height: 500px; max-height: 620px; }
@@ -247,7 +274,6 @@ onUnmounted(() => window.clearInterval(headlineTimer))
   .headline-stage {
     touch-action: pan-y;
   }
-  .hero { padding-top: 112px; }
   .hero-container { width: calc(100% - 32px); grid-template-columns: 1fr; }
   .hero-content { max-width: 720px; padding: 58px 12px 0; }
   .headline-stage { height: 350px; }
@@ -256,7 +282,6 @@ onUnmounted(() => window.clearInterval(headlineTimer))
 }
 
 @media (max-width: 540px) {
-  .hero { padding-top: 92px; }
   .hero-content { padding-top: 50px; }
   .eyebrow { font-size: 9px; }
   .headline-stage { height: 285px; }

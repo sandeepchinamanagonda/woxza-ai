@@ -44,11 +44,7 @@ experiences and driving real business impact.
 
 <div class="feature">
 
-<div class="feature-icon">
-
-🤖
-
-</div>
+<div class="feature-icon"><Bot aria-hidden="true" /></div>
 
 <div>
 
@@ -70,11 +66,7 @@ Tailored to industry needs
 
 <div class="feature">
 
-<div class="feature-icon">
-
-📈
-
-</div>
+<div class="feature-icon"><ChartNoAxesCombined aria-hidden="true" /></div>
 
 <div>
 
@@ -96,11 +88,7 @@ Measurable business results
 
 <div class="feature">
 
-<div class="feature-icon">
-
-🛡️
-
-</div>
+<div class="feature-icon"><ShieldCheck aria-hidden="true" /></div>
 
 <div>
 
@@ -156,11 +144,7 @@ active:index===3
 
 >
 
-<div class="icon">
-
-{{ industry.icon }}
-
-</div>
+<div class="icon"><component :is="industry.icon" aria-hidden="true" /></div>
 
 <h3>
 
@@ -244,7 +228,7 @@ active:i===current
 
 <div class="bottom">
 
-🏢 Trusted by businesses across 20+ industries worldwide
+Trusted by businesses across 20+ industries worldwide
 
 </div>
 
@@ -257,6 +241,7 @@ active:i===current
 <script setup>
 
 import { computed, ref } from "vue"
+import { Banknote, Bot, BriefcaseBusiness, Building2, ChartNoAxesCombined, Factory, GraduationCap, HeartPulse, Plane, ShieldCheck, ShoppingBag } from "lucide-vue-next"
 
 const current = ref(3)
 
@@ -267,7 +252,7 @@ INDUSTRIES
 const industries = [
 
 {
-icon:"✈️",
+icon:Plane,
 title:"Travel",
 headline:"Deliver seamless journeys from booking to arrival.",
 
@@ -282,7 +267,7 @@ tag:"BOOKING & SUPPORT"
 },
 
 {
-icon:"💼",
+icon:BriefcaseBusiness,
 title:"Professional Services",
 headline:"Convert more enquiries into clients.",
 
@@ -297,7 +282,7 @@ tag:"CLIENT ENGAGEMENT"
 },
 
 {
-icon:"🏥",
+icon:HeartPulse,
 title:"Healthcare",
 headline:"Never miss a patient call.",
 
@@ -312,7 +297,7 @@ tag:"PATIENT ACCESS"
 },
 
 {
-icon:"🎓",
+icon:GraduationCap,
 title:"Education",
 headline:"Support every learner from enquiry to enrollment.",
 
@@ -327,7 +312,7 @@ tag:"STUDENT ENROLLMENT"
 },
 
 {
-icon:"🛍️",
+icon:ShoppingBag,
 title:"Retail",
 headline:"Turn every shopper into a returning customer.",
 
@@ -342,7 +327,7 @@ tag:"CUSTOMER SUPPORT"
 },
 
 {
-icon:"🏭",
+icon:Factory,
 title:"Manufacturing",
 headline:"Keep operations moving without missed calls.",
 
@@ -357,7 +342,7 @@ tag:"OPERATIONS SUPPORT"
 },
 
 {
-icon:"🏢",
+icon:Building2,
 title:"Enterprise",
 headline:"Automate conversations across every department.",
 
@@ -372,7 +357,7 @@ tag:"BUSINESS OPERATIONS"
 },
 
 {
-icon:"🏦",
+icon:Banknote,
 title:"Finance",
 headline:"Deliver secure banking conversations 24/7.",
 
@@ -686,9 +671,9 @@ border-color:#2563EB;
 
 .feature-icon{
 
-width:58px;
+width:46px;
 
-height:58px;
+height:46px;
 
 display:flex;
 
@@ -696,7 +681,7 @@ align-items:center;
 
 justify-content:center;
 
-border-radius:18px;
+border-radius:14px;
 
 background:#2563EB;
 
@@ -705,6 +690,8 @@ font-size:24px;
 flex-shrink:0;
 
 }
+
+.feature-icon svg{ width:20px; height:20px; stroke:#fff; stroke-width:2; }
 
 .feature strong{
 
@@ -925,6 +912,8 @@ margin-bottom:22px;
 transition:.35s;
 
 }
+
+.icon svg{ width:24px; height:24px; stroke:currentColor; stroke-width:1.9; }
 
 .card.active .icon,
 

@@ -1,9 +1,9 @@
 <template>
   <section class="voice-experience" :class="{ embedded }" aria-labelledby="voice-experience-title">
     <header class="section-heading">
-      <span>VOXA IN CONVERSATION</span>
-      <h2 id="voice-experience-title">One call. Every language.<br />Work completed instantly.</h2>
-      <p>Watch Voxa listen, understand, respond and take action while the customer is still on the line.</p>
+      <span>WOXZA IN CONVERSATION</span>
+      <h2 id="voice-experience-title" class="display-heading">One call. Every language.<br />Work completed instantly.</h2>
+      <p>Watch Woxza listen, understand, respond, and take action while the customer is still on the line.</p>
     </header>
 
     <div class="call-console">
@@ -62,7 +62,7 @@
               </div>
 
               <article v-if="phase === 'responding' || phase === 'completed'" class="utterance voxa-utterance">
-                <div class="voxa-label"><span class="voxa-mark"><AudioLines /></span><span>VOXA AI</span><i v-if="phase === 'responding'">Responding</i></div>
+                <div class="voxa-label"><span class="voxa-mark"><AudioLines /></span><span>WOXZA AI</span><i v-if="phase === 'responding'">Responding</i></div>
                 <p :lang="currentConversation.code">{{ currentConversation.answer }}</p>
                 <small>{{ currentConversation.answerTranslation }}</small>
                 <Transition name="completion-pop">
@@ -77,7 +77,7 @@
 
         <aside class="execution-panel">
           <header><span>EXECUTION LOG</span><i :class="{ active:phase === 'completed' }"></i></header>
-          <p class="execution-intro">What Voxa completes behind the conversation.</p>
+          <p class="execution-intro">What Woxza completes behind the conversation.</p>
 
           <TransitionGroup v-if="phase === 'completed'" name="task-reveal" tag="div" class="task-list">
             <article v-for="(action,index) in currentConversation.actions" :key="action.label" :style="{ '--delay':`${index * 110}ms` }">
@@ -90,7 +90,7 @@
           <div v-else class="execution-waiting">
             <span><i></i><i></i><i></i></span>
             <strong>{{ phase === 'caller' ? 'Listening for the request' : phase === 'understanding' ? 'Preparing the right actions' : 'Actions ready to run' }}</strong>
-            <small>Updates appear only after Voxa completes them.</small>
+            <small>Updates appear only after Woxza completes them.</small>
           </div>
         </aside>
       </div>
@@ -107,11 +107,11 @@
 
 <script setup>
 import { computed,onBeforeUnmount,onMounted,ref,watch } from "vue"
-import { AudioLines,CalendarCheck,Check,CheckCircle2,ContactRound,DatabaseZap,MailCheck,MessageSquareCheck,PackageCheck,PhoneCall } from "lucide-vue-next"
+import { AudioLines,CalendarCheck,Check,CheckCircle2,ContactRound,DatabaseZap,MailCheck,MessageSquareText,PackageCheck,PhoneCall } from "lucide-vue-next"
 
 const conversations = [
   { code:"en",short:"EN",language:"English",capabilitySequence:[3,1,4,2],question:"Can I move my appointment to Friday afternoon?",questionTranslation:"",answer:"Absolutely. I’ve moved it to Friday at 3:30 PM and sent your confirmation.",answerTranslation:"",actions:[{ icon:CalendarCheck,label:"Calendar updated",detail:"Friday · 3:30 PM confirmed" },{ icon:MailCheck,label:"Email sent",detail:"Confirmation delivered" }] },
-  { code:"hi",short:"हिं",language:"हिन्दी",capabilitySequence:[3,0,4,2],question:"मेरा ऑर्डर कब पहुँचेगा?",questionTranslation:"When will my order arrive?",answer:"आपका ऑर्डर भेज दिया गया है और कल शाम तक पहुँच जाएगा।",answerTranslation:"Your order has been dispatched and will arrive by tomorrow evening.",actions:[{ icon:PackageCheck,label:"Order located",detail:"Shipment status verified" },{ icon:MessageSquareCheck,label:"SMS update sent",detail:"Tracking link delivered" }] },
+  { code:"hi",short:"हिं",language:"हिन्दी",capabilitySequence:[3,0,4,2],question:"मेरा ऑर्डर कब पहुँचेगा?",questionTranslation:"When will my order arrive?",answer:"आपका ऑर्डर भेज दिया गया है और कल शाम तक पहुँच जाएगा।",answerTranslation:"Your order has been dispatched and will arrive by tomorrow evening.",actions:[{ icon:PackageCheck,label:"Order located",detail:"Shipment status verified" },{ icon:MessageSquareText,label:"SMS update sent",detail:"Tracking link delivered" }] },
   { code:"te",short:"తె",language:"తెలుగు",capabilitySequence:[3,1,4,2],question:"రేపు ఉదయం సర్వీస్ బుక్ చేయగలరా?",questionTranslation:"Can you book a service for tomorrow morning?",answer:"తప్పకుండా. రేపు ఉదయం 10 గంటలకు సర్వీస్ బుక్ చేశాను.",answerTranslation:"Certainly. Your service is booked for tomorrow at 10 AM.",actions:[{ icon:CalendarCheck,label:"Service booked",detail:"Tomorrow · 10:00 AM" },{ icon:ContactRound,label:"CRM updated",detail:"Request assigned to service" }] },
   { code:"ta",short:"த",language:"தமிழ்",capabilitySequence:[3,5,4,2],question:"இந்தப் பொருள் மீண்டும் எப்போது கிடைக்கும்?",questionTranslation:"When will this product be available again?",answer:"அடுத்த செவ்வாய்க்கிழமை கிடைக்கும். உங்களுக்காக முன்னுரிமை அறிவிப்பை அமைத்துள்ளேன்.",answerTranslation:"It returns next Tuesday. I’ve created a priority notification for you.",actions:[{ icon:DatabaseZap,label:"Inventory checked",detail:"Restock · Next Tuesday" },{ icon:MailCheck,label:"Alert created",detail:"Priority notification active" }] }
 ]
@@ -126,7 +126,7 @@ const phaseIndex = ref(0)
 const elapsed = ref(0)
 const currentConversation = computed(() => conversations[conversationIndex.value])
 const phase = computed(() => steps[phaseIndex.value].key)
-const phaseLabel = computed(() => ({ caller:"Caller speaking",understanding:"Voxa is understanding",responding:"Voxa responding",completed:"Work completed" })[phase.value])
+const phaseLabel = computed(() => ({ caller:"Caller speaking",understanding:"Woxza is understanding",responding:"Woxza is responding",completed:"Work completed" })[phase.value])
 const activeCapability = computed(() => currentConversation.value.capabilitySequence[phaseIndex.value])
 const formattedTime = computed(() => `00:${String(elapsed.value).padStart(2,"0")}`)
 let phaseTimer

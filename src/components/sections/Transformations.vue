@@ -1,5 +1,5 @@
 <template>
-  <section id="approach" class="benefits-section relative w-full overflow-hidden bg-[#06142a] px-4 py-12 text-white sm:px-6 sm:py-20 md:px-10">
+  <section id="approach" class="benefits-section landing-section relative w-full overflow-hidden bg-[#06142a] px-4 text-white sm:px-6 md:px-10">
     <div class="background-grid absolute inset-0 pointer-events-none"></div>
 
     <div class="relative mx-auto w-full max-w-[1400px]">
@@ -8,10 +8,10 @@
           Transformation, delivered
         </p>
         <h2
-          class="font-sans text-center text-3xl font-bold text-white sm:text-4xl md:text-5xl"
+          class="display-heading font-sans text-center text-3xl font-bold text-white sm:text-4xl md:text-5xl"
           style="letter-spacing: -0.04em"
         >
-          What changes when Voxa gets to work
+          What changes when Woxza gets to work
         </h2>
         <p class="mx-auto mt-5 max-w-2xl text-sm font-light leading-relaxed text-white/60 sm:text-base">
           Three everyday workflows, transformed from loose conversations into clear action.
@@ -24,9 +24,7 @@
           <div class="relative z-10 flex h-full flex-col">
             <div class="mb-5 flex items-center gap-3">
               <span class="grid h-9 w-9 place-items-center rounded-xl border border-blue-400/25 bg-blue-400/10 text-blue-300">
-                <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M4 13a8 8 0 0 1 16 0"/><path d="M4 13v4a2 2 0 0 0 2 2h1v-7H6a2 2 0 0 0-2 2"/><path d="M20 13v4a2 2 0 0 1-2 2h-1v-7h1a2 2 0 0 1 2 2"/><path d="M17 19c0 1.1-.9 2-2 2h-3"/>
-                </svg>
+                <PhoneCall class="h-[18px] w-[18px]" aria-hidden="true" />
               </span>
               <span class="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-300">Front desk</span>
             </div>
@@ -36,7 +34,7 @@
             </h3>
 
             <p class="mt-12 max-w-[290px] text-[13px] font-light leading-relaxed text-white/70 sm:mt-20 sm:text-[14px]">
-              Voxa answers, understands the request, checks live availability and leaves the team with a complete next step, not another note to decode.
+              Woxza answers, understands the request, checks live availability, and leaves the team with a complete next step—not another note to decode.
             </p>
 
             <div class="mt-auto flex items-end justify-between border-t border-white/10 pt-5">
@@ -54,9 +52,7 @@
           <div class="relative z-10 flex h-full flex-col">
             <div class="mb-5 flex items-center gap-3">
               <span class="grid h-9 w-9 place-items-center rounded-xl border border-blue-400/25 bg-blue-400/10 text-blue-300">
-                <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/><path d="M9 6h4a3 3 0 0 1 3 3v6"/><path d="m13 12 3 3 3-3"/>
-                </svg>
+                <Workflow class="h-[18px] w-[18px]" aria-hidden="true" />
               </span>
               <span class="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-300">Operations</span>
             </div>
@@ -66,7 +62,7 @@
             </h3>
 
             <p class="mt-12 max-w-[305px] text-[13px] font-light leading-relaxed text-white/70 sm:mt-20 sm:text-[14px]">
-              Voxa captures the request, fills in what's missing, assigns the right team, and keeps the record current as it moves.
+              Woxza captures the request, fills in what's missing, assigns the right team, and keeps the record current as it moves.
             </p>
 
             <div class="mt-auto flex items-end justify-between border-t border-white/10 pt-5">
@@ -87,24 +83,22 @@
           <div class="relative z-10 flex h-full flex-col">
             <div class="mb-5 flex items-center gap-3">
               <span class="grid h-9 w-9 place-items-center rounded-xl border border-blue-400/25 bg-blue-400/10 text-blue-300">
-                <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="m4 17 5-5 4 4 7-8"/><path d="M14 8h6v6"/>
-                </svg>
+                <TrendingUp class="h-[18px] w-[18px]" aria-hidden="true" />
               </span>
               <span class="text-[10px] font-medium uppercase tracking-[0.18em] text-blue-300">Revenue</span>
             </div>
             <h3 class="text-xl font-light leading-tight text-white sm:text-2xl">
               Follow up while<br />
-              customer intent is fresh
+              the customer's intent is fresh
             </h3>
 
             <p class="mt-12 max-w-[305px] text-[13px] font-light leading-relaxed text-white/70 sm:mt-20 sm:text-[14px]">
-              The reason, timing and urgency behind every conversation reach sales, with the CRM updated at the same time.
+              The reason, timing, and urgency behind every conversation reach sales, while the CRM is updated at the same time.
             </p>
 
             <div class="mt-auto flex items-end justify-between border-t border-white/10 pt-5">
               <div>
-                <strong class="block text-2xl font-light text-white">2.4x</strong>
+                <strong class="block text-2xl font-light text-white">2.4×</strong>
                 <span class="mt-1 block text-[10px] uppercase tracking-[0.12em] text-white/45">faster response</span>
               </div>
               <div class="text-right">
@@ -124,9 +118,7 @@
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-3">
           <article class="impact-card">
             <span class="impact-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
-              </svg>
+              <Clock3 aria-hidden="true" />
             </span>
             <strong>70%</strong>
             <p>Less manual follow-up</p>
@@ -134,9 +126,7 @@
 
           <article class="impact-card">
             <span class="impact-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z"/>
-              </svg>
+              <PhoneCall aria-hidden="true" />
             </span>
             <strong>24/7</strong>
             <p>Calls keep moving</p>
@@ -144,19 +134,15 @@
 
           <article class="impact-card">
             <span class="impact-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="m3 17 5-5 4 3 7-8"/><path d="M14 7h5v5"/>
-              </svg>
+              <TrendingUp aria-hidden="true" />
             </span>
-            <strong>2-5x</strong>
+            <strong>2–5×</strong>
             <p>Faster request resolution</p>
           </article>
 
           <article class="impact-card impact-card-featured">
             <span class="impact-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="4" y="4" width="5" height="5" rx="1"/><rect x="4" y="15" width="5" height="5" rx="1"/><path d="M13 6h7M13 9h4M13 17h7M13 20h4"/>
-              </svg>
+              <ListTodo aria-hidden="true" />
             </span>
             <strong>0</strong>
             <p>Dropped requests</p>
@@ -165,15 +151,19 @@
       </div>
 
       <p class="mt-5 text-center text-[9px] font-light tracking-wide text-white/30">
-        Illustrative workflow targets. Actual results vary by call type, volume and system setup.
+        Illustrative workflow targets. Actual results vary by call type, volume, and system setup.
       </p>
     </div>
   </section>
 </template>
 
+<script setup>
+import { Clock3, ListTodo, PhoneCall, TrendingUp, Workflow } from "lucide-vue-next"
+</script>
+
 <style scoped>
 .benefits-section {
-  font-family:"Futura Md BT Medium",Inter,system-ui,-apple-system,sans-serif;
+  font-family:var(--font-primary);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
 }
@@ -208,16 +198,20 @@
 }
 
 .impact-icon {
-  display: block;
-  width: 26px;
-  height: 26px;
+  display: grid;
+  width: 46px;
+  height: 46px;
   margin-bottom: 16px;
+  place-items: center;
+  border-radius: 14px;
   color: #10213d;
+  background: rgba(59,130,246,.1);
 }
 
 .impact-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
 }
 
 .impact-card strong {

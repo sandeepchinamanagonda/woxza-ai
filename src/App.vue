@@ -13,11 +13,14 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, onUnmounted } from "vue"
+import { nextTick, onMounted, onUnmounted, watch } from "vue"
 import { RouterView } from "vue-router"
 import Navigation from "@/components/Navigation.vue"
 import Footer from "@/components/Footer.vue"
 import { scrollSectionIntoView } from "@/utils/sectionScroll"
+import { useI18n } from "@/composables/useI18n"
+
+const { language, startPageTranslation, translatePage } = useI18n()
 
 const alignHashTarget = async () => {
   if (!window.location.hash) return
@@ -31,6 +34,8 @@ const alignHashTarget = async () => {
 }
 
 onMounted(() => {
+  startPageTranslation()
+  watch(language, translatePage)
   window.addEventListener("hashchange", alignHashTarget)
   window.requestAnimationFrame(() => window.requestAnimationFrame(alignHashTarget))
   document.fonts?.ready.then(alignHashTarget)
@@ -75,9 +80,16 @@ body{
 background:#ffffff;
 color:var(--text);
 overflow-x:hidden;
-font-family:"Inter",sans-serif;
+font-family:var(--font-primary);
 -webkit-font-smoothing:antialiased;
 text-rendering:optimizeLegibility;
+}
+
+/* Use system Indic fonts when a visitor chooses Hindi, Telugu, or Tamil. */
+html:lang(hi) body,
+html:lang(te) body,
+html:lang(ta) body{
+font-family:"Noto Sans Devanagari","Noto Sans Telugu","Noto Sans Tamil",var(--font-primary);
 }
 
 #app{
