@@ -141,14 +141,15 @@
             </section>
 
             <section v-show="stepIndex === 1" class="step-panel">
-              <label class="wide"><span class="question-heading">What would you like Woxza to help you with?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.helpWith" :options="helpOptions" label="Ways Woxza can help" placeholder="Select one or more" dark /></label>
+              <p v-if="validationAttempted && waitlistMissingFields.length" class="validation-summary" role="alert">Please select an answer for every field marked in red.</p>
+              <label class="wide" :class="{ 'is-invalid': validationAttempted && !form.helpWith.length }"><span class="question-heading">What would you like Woxza to help you with?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.helpWith" :options="helpOptions" label="Ways Woxza can help" placeholder="Select one or more" dark /></label>
 
-              <label class="wide"><span class="question-heading">What's the biggest challenge you're trying to solve?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.biggestChallenges" :options="challengeOptions" label="Biggest challenges" placeholder="Select one or more" dark /></label>
-              <label class="wide"><span class="question-heading">How are customer calls handled today?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.callHandlings" :options="callHandlingOptions" label="Current call handling" placeholder="Select one or more" dark /></label>
+              <label class="wide" :class="{ 'is-invalid': validationAttempted && !form.biggestChallenges.length }"><span class="question-heading">What's the biggest challenge you're trying to solve?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.biggestChallenges" :options="challengeOptions" label="Biggest challenges" placeholder="Select one or more" dark /></label>
+              <label class="wide" :class="{ 'is-invalid': validationAttempted && !form.callHandlings.length }"><span class="question-heading">How are customer calls handled today?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.callHandlings" :options="callHandlingOptions" label="Current call handling" placeholder="Select one or more" dark /></label>
 
-              <label class="wide"><span class="question-heading">Which software does your business currently use?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.software" :options="softwareOptions" label="Business software" placeholder="Select one or more" dark /></label>
+              <label class="wide" :class="{ 'is-invalid': validationAttempted && !form.software.length }"><span class="question-heading">Which software does your business currently use?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.software" :options="softwareOptions" label="Business software" placeholder="Select one or more" dark /></label>
 
-              <label class="wide"><span>Approximately how many customer calls does your business receive each day?</span><FormDropdown v-model="dailyCallsSelection" :options="dailyCallOptions" label="Daily call volume" placeholder="Select daily call volume" dark /></label>
+              <label class="wide" :class="{ 'is-invalid': validationAttempted && !form.dailyCalls.length }"><span>Approximately how many customer calls does your business receive each day?</span><FormDropdown v-model="dailyCallsSelection" :options="dailyCallOptions" label="Daily call volume" placeholder="Select daily call volume" dark /></label>
             </section>
 
             <section v-show="stepIndex === 2" class="step-panel">
@@ -529,6 +530,7 @@ const emptyForm = () => ({
 })
 
 const stepIndex = ref(0)
+const validationAttempted = ref(false)
 const form = ref(emptyForm())
 const registrationId = ref("")
 const isSubmitting = ref(false)
@@ -808,15 +810,18 @@ const featureDisabled = (value) =>
 const goNext = () => {
   submitError.value = ""
   if (!canContinue.value) {
+    validationAttempted.value = true
     submitError.value = `Please complete: ${waitlistMissingFields.value.join(", ")}.`
     return
   }
+  validationAttempted.value = false
   stepIndex.value += 1
   nextTick(() => document.querySelector(".modal-content")?.scrollTo({ top:0, behavior:"auto" }))
 }
 
 const goBack = () => {
   submitError.value = ""
+  validationAttempted.value = false
   stepIndex.value -= 1
   nextTick(() => document.querySelector(".modal-content")?.scrollTo({ top:0, behavior:"auto" }))
 }
@@ -827,6 +832,7 @@ const resetForm = () => {
   registrationId.value = ""
   isSubmitting.value = false
   submitError.value = ""
+  validationAttempted.value = false
   successMessage.value = ""
   countryMenuOpen.value = false
   industryMenuOpen.value = false
@@ -2021,6 +2027,22 @@ label > span em{
   color:#b8c7dd;
   font-size:12px;
   font-weight:600;
+}
+.validation-summary{
+  margin:0;
+  padding:10px 12px;
+  border:1px solid rgba(248,113,113,.72);
+  border-radius:8px;
+  color:#fecaca;
+  background:rgba(127,29,29,.42);
+  font-size:13px;
+  font-weight:700;
+}
+.modal .form label.is-invalid > span{ color:#fca5a5; }
+.modal .form label.is-invalid :deep(.multi-select__trigger),
+.modal .form label.is-invalid :deep(.form-dropdown__trigger){
+  border-color:#f87171;
+  box-shadow:0 0 0 3px rgba(248,113,113,.16);
 }
 .modal .error-message{
   border-color:rgba(252,165,165,.72);
