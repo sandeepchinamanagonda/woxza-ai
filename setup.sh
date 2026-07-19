@@ -59,6 +59,21 @@ set_env() {
   mv "$temporary" .env
 }
 
+# This script is exclusively for a developer's local Docker stack. Keep the
+# browser and API in local-admin mode so every branch has the full feature set
+# without sharing a production admin token. A random local-only token protects
+# the admin endpoints from the public voice tunnel. Production uses
+# .env.production and does not run this script.
+LOCAL_ADMIN_TOKEN="$(env_value LOCAL_ADMIN_TOKEN)"
+if [[ ! "$LOCAL_ADMIN_TOKEN" =~ ^[A-Fa-f0-9]{64}$ ]]; then
+  command -v openssl >/dev/null 2>&1 || fail "Missing 'openssl', which is needed to create a local admin token."
+  LOCAL_ADMIN_TOKEN="$(openssl rand -hex 32)"
+  set_env LOCAL_ADMIN_TOKEN "$LOCAL_ADMIN_TOKEN"
+fi
+set_env VITE_LOCAL_ADMIN_MODE true
+set_env VITE_LOCAL_ADMIN_TOKEN "$LOCAL_ADMIN_TOKEN"
+set_env LOCAL_ADMIN_MODE true
+
 ngrok_url() {
   local ports="$(env_value NGROK_INSPECTOR_PORTS)" port body url
   ports="${ports:-4040 4041}"
@@ -134,6 +149,7 @@ WEB_PORT="${WEB_PORT:-3456}"
 printf '\nWoxza is running.\n'
 printf '  Frontend: http://localhost:%s\n' "$WEB_PORT"
 printf '  API:      http://localhost:%s/health\n' "$API_PORT"
+printf '  Admin:    http://localhost:%s/admin/features\n' "$WEB_PORT"
 if [[ -n "$PUBLIC_URL" ]]; then
   printf '  ngrok:    %s\n' "$PUBLIC_URL"
   printf '\nOutbound demo calls need no Plivo Console Answer URL change: Woxza sends the per-call answer URL automatically.\n'

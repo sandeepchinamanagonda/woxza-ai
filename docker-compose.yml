@@ -44,6 +44,8 @@ services:
       GEMINI_DEMO_VOICE: ${GEMINI_DEMO_VOICE:-Kore}
       DEMO_TEST_PHONE: ${DEMO_TEST_PHONE:-}
       ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-}
+      LOCAL_ADMIN_MODE: ${LOCAL_ADMIN_MODE:-false}
+      LOCAL_ADMIN_TOKEN: ${LOCAL_ADMIN_TOKEN:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       DEMO_EMAIL_FROM: ${DEMO_EMAIL_FROM:-Woxza <demo@example.com>}
       UNSUBSCRIBE_SIGNING_SECRET: ${UNSUBSCRIBE_SIGNING_SECRET:-development-only-change-me}
@@ -77,7 +79,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_DEMO_ADMIN_MODE: ${VITE_DEMO_ADMIN_MODE:-false}
+        VITE_LOCAL_ADMIN_MODE: ${VITE_LOCAL_ADMIN_MODE:-false}
+        VITE_LOCAL_ADMIN_TOKEN: ${VITE_LOCAL_ADMIN_TOKEN:-}
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-3456}:80"

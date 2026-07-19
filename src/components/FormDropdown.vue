@@ -125,7 +125,7 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", closeWhenClick
 .form-dropdown__trigger {
   display:grid;
   width:100%;
-  min-height:44px;
+  min-height:48px;
   grid-template-columns:minmax(0, 1fr) auto;
   align-items:center;
   gap:12px;
@@ -135,7 +135,7 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", closeWhenClick
   color:var(--lead-accent, var(--woxza-blue));
   background:#fff;
   font:inherit;
-  font-size:14px;
+  font-size:17px;
   font-weight:400;
   text-align:left;
   cursor:pointer;
@@ -165,14 +165,14 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", closeWhenClick
   font-family:var(--font-primary);
 }
 .form-dropdown__search { display:block; padding:2px 2px 7px; }
-.form-dropdown__search input { width:100%; min-height:36px; padding:0 10px; border:1px solid #d7deea; border-radius:7px; color:#14264d; background:#f8fafc; font:inherit; font-size:13px; outline:none; }
+.form-dropdown__search input { width:100%; min-height:40px; padding:0 10px; border:1px solid #d7deea; border-radius:7px; color:#14264d; background:#f8fafc; font:inherit; font-size:15px; outline:none; }
 .form-dropdown__search input:focus { border-color:#5b8cff; box-shadow:0 0 0 3px rgba(91,140,255,.12); }
-.form-dropdown__empty { margin:8px 10px; color:#64748b; font-size:13px; }
+.form-dropdown__empty { margin:8px 10px; color:#64748b; font-size:15px; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .form-dropdown__menu button {
   display:grid;
   width:100%;
-  min-height:40px;
+  min-height:46px;
   grid-template-columns:minmax(0, 1fr) auto;
   align-items:center;
   gap:12px;
@@ -182,7 +182,7 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", closeWhenClick
   color:#475569;
   background:#fff;
   font:inherit;
-  font-size:14px;
+  font-size:17px;
   font-weight:400;
   text-align:left;
   cursor:pointer;

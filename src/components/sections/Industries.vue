@@ -16,23 +16,21 @@
 
 <div class="eyebrow">
 
-INDUSTRIES
+{{ t("INDUSTRIES") }}
 
 </div>
 
 <h2>
 
-AI built for
+{{ t("AI built for") }}
 
-<span>every industry.</span>
+<span>{{ t("every industry.") }}</span>
 
 </h2>
 
 <p>
 
-Woxza adapts to the way your industry works.
-automating workflows, enhancing customer
-experiences and driving real business impact.
+{{ t("Woxza adapts to the way your industry works, automating workflows, enhancing customer experiences and driving real business impact.") }}
 
 </p>
 
@@ -50,13 +48,13 @@ experiences and driving real business impact.
 
 <strong>
 
-Purpose-built AI
+{{ t("Purpose-built AI") }}
 
 </strong>
 
 <small>
 
-Tailored to industry needs
+{{ t("Tailored to industry needs") }}
 
 </small>
 
@@ -72,13 +70,13 @@ Tailored to industry needs
 
 <strong>
 
-Proven impact
+{{ t("Proven impact") }}
 
 </strong>
 
 <small>
 
-Measurable business results
+{{ t("Measurable business results") }}
 
 </small>
 
@@ -94,13 +92,13 @@ Measurable business results
 
 <strong>
 
-Enterprise ready
+{{ t("Enterprise ready") }}
 
 </strong>
 
 <small>
 
-Secure, reliable & scalable
+{{ t("Secure, reliable & scalable") }}
 
 </small>
 
@@ -148,13 +146,13 @@ active:index===3
 
 <h3>
 
-{{ industry.title }}
+{{ t(industry.title) }}
 
 </h3>
 
 <p class="headline">
 
-{{ industry.headline }}
+{{ t(industry.headline) }}
 
 </p>
 
@@ -174,7 +172,7 @@ v-for="item in industry.features"
 
 </span>
 
-{{ item }}
+{{ t(item) }}
 
 </li>
 
@@ -182,7 +180,7 @@ v-for="item in industry.features"
 
 <div class="tag">
 
-{{ industry.tag }}
+{{ t(industry.tag) }}
 
 </div>
 
@@ -228,7 +226,7 @@ active:i===current
 
 <div class="bottom">
 
-Trusted by businesses across 20+ industries worldwide
+{{ t("Trusted by businesses across 20+ industries worldwide") }}
 
 </div>
 
@@ -241,9 +239,11 @@ Trusted by businesses across 20+ industries worldwide
 <script setup>
 
 import { computed, ref } from "vue"
+import { useI18n } from "@/composables/useI18n"
 import { Banknote, Bot, BriefcaseBusiness, Building2, ChartNoAxesCombined, Factory, GraduationCap, HeartPulse, Plane, ShieldCheck, ShoppingBag } from "lucide-vue-next"
 
 const current = ref(3)
+const { t } = useI18n()
 
 /* ===========================
 INDUSTRIES
@@ -799,7 +799,8 @@ border-radius:24px;
 
 padding:24px;
 
-height:390px;
+min-height:390px;
+height:auto;
 
 border:1px solid #E7ECF4;
 
@@ -811,7 +812,7 @@ transition:
 
 all .35s cubic-bezier(.22,1,.36,1);
 
-overflow:hidden;
+overflow:visible;
 
 }
 
@@ -963,7 +964,7 @@ color:#667085;
 
 margin:0 0 22px;
 
-min-height:54px;
+min-height:0;
 
 }
 

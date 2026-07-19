@@ -104,8 +104,6 @@ RIGHT
 
 <div class="actions">
 
-<LanguageSelector class="language-selector-nav" />
-
 <button
 class="cta"
 @click="openLeadModal('waitlist')"
@@ -152,8 +150,6 @@ MOBILE
 v-if="mobile"
 class="mobile-menu"
 >
-
-<LanguageSelector class="language-selector-mobile" />
 
 <a @click="scrollTo('solutions')">
 
@@ -223,7 +219,6 @@ import { computed, ref, onMounted, onUnmounted, watch } from "vue"
 import { Menu, X } from "lucide-vue-next"
 import { RouterLink } from "vue-router"
 import { scrollSectionIntoView } from "@/utils/sectionScroll"
-import LanguageSelector from "@/components/LanguageSelector.vue"
 
 const emit = defineEmits([
   "open-demo"
@@ -249,7 +244,7 @@ const isScrolling = ref(false)
 const activeSection = ref("")
 
 const isDarkBackground = computed(() =>
-  ["solutions", "approach", "contact"].includes(activeSection.value)
+  ["solutions", "demo", "approach", "contact"].includes(activeSection.value)
 )
 
 let scrollFrame = 0
@@ -291,13 +286,16 @@ const openLeadModal = (intent) => {
 const scrollTo = (id) => {
 
   mobile.value = false
+  // Release the mobile scroll lock before calculating and moving to the target.
+  // Without this, mobile browsers can ignore the smooth scroll while the menu closes.
+  syncMobileMenuScrollLock(false)
 
   const section = document.getElementById(id)
 
   if (!section) return
 
   window.history.replaceState(null, "", `#${id}`)
-  scrollSectionIntoView(section)
+  window.requestAnimationFrame(() => scrollSectionIntoView(section))
 
 }
 
@@ -1677,5 +1675,9 @@ background:#14264D!important;
 .navbar.on-dark :deep(.language-selector:focus-visible){
 background:#1d3568!important;
 }
+
 }
+
+/* The language popover opens below the bar, so it must not be clipped by the scroll shine wrapper. */
+.navbar.scrolled .navbar-inner{ overflow:visible; }
 </style>

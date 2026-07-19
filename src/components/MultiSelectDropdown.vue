@@ -11,7 +11,6 @@
           <span>{{ option.label }}</span>
           <b v-if="draftValues.includes(option.value)" aria-hidden="true">✓</b>
         </button>
-        <button class="multi-select__done" type="button" @click="applySelection">Done</button>
       </div>
     </Teleport>
   </div>
@@ -57,7 +56,7 @@ const openMenu = () => {
   draftValues.value = [...props.modelValue]
   const bounds = trigger.value?.getBoundingClientRect()
   if (bounds) {
-    const desiredHeight = Math.min(360, props.options.length * 44 + 58)
+    const desiredHeight = Math.min(360, props.options.length * 44 + 12)
     const below = window.innerHeight - bounds.bottom - 12
     const above = bounds.top - 12
     const opensUp = below < desiredHeight && above > below
@@ -71,9 +70,6 @@ const openMenu = () => {
   isOpen.value = true
 }
 const toggleMenu = () => { if (isOpen.value) isOpen.value = false; else openMenu() }
-const applySelection = () => {
-  isOpen.value = false
-}
 const closeOutside = (event) => {
   if (!root.value?.contains(event.target) && !menu.value?.contains(event.target)) isOpen.value = false
 }
@@ -82,7 +78,7 @@ onBeforeUnmount(() => document.removeEventListener("pointerdown", closeOutside, 
 </script>
 
 <style scoped>
-.multi-select__trigger{display:grid;width:100%;min-height:44px;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 13px;border:1px solid rgba(15,23,42,.10);border-radius:8px;color:var(--lead-accent,var(--woxza-blue));background:#fff;font:inherit;font-size:14px;font-weight:400;text-align:left;cursor:pointer}.multi-select__trigger span{overflow:hidden;font-weight:400;text-overflow:ellipsis;white-space:nowrap}.multi-select__trigger .placeholder{color:#94a3b8;font-weight:400}.multi-select__trigger i{width:8px;height:8px;margin-right:3px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}.multi-select__trigger:focus{border-color:var(--lead-accent,var(--woxza-accent));box-shadow:0 0 0 4px rgba(var(--lead-accent-rgb,var(--woxza-accent-rgb)),.1);outline:none}
-.multi-select__menu{overflow-y:auto;overscroll-behavior:contain;padding:6px;border:1px solid rgba(15,23,42,.12);border-radius:10px;background:#fff;box-shadow:0 18px 44px rgba(15,23,42,.18);font-family:var(--font-primary)}.multi-select__menu button{display:grid;width:100%;min-height:42px;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:0 10px;border:0;border-radius:7px;color:#475569;background:#fff;font:inherit;font-size:14px;font-weight:400;text-align:left;cursor:pointer}.multi-select__menu button:hover,.multi-select__menu button.selected{color:#14264d;background:#eef2f8}.multi-select__menu button.disabled{opacity:.45;cursor:not-allowed}.multi-select__menu button b{font-weight:800}.multi-select__done{display:block!important;width:100%;min-height:38px;margin-top:6px;border:0!important;border-radius:7px!important;color:#fff!important;background:var(--lead-accent,var(--woxza-blue))!important;font:inherit!important;font-weight:700!important;text-align:center!important;cursor:pointer}
-.multi-select__menu--dark{border-color:rgba(147,197,253,.28);background:#081a34;box-shadow:0 18px 44px rgba(0,0,0,.38)}.multi-select__menu--dark button{color:#e8f1ff;background:transparent}.multi-select__menu--dark button:hover{color:#fff;background:rgba(255,255,255,.10)}.multi-select__menu--dark button.selected{color:#06142a;background:#fff}.multi-select__menu--dark .multi-select__done{background:var(--woxza-accent)!important}
+.multi-select__trigger{display:grid;width:100%;min-height:48px;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 13px;border:1px solid rgba(15,23,42,.10);border-radius:8px;color:var(--lead-accent,var(--woxza-blue));background:#fff;font:inherit;font-size:17px;font-weight:400;text-align:left;cursor:pointer}.multi-select__trigger span{overflow:hidden;font-weight:400;text-overflow:ellipsis;white-space:nowrap}.multi-select__trigger .placeholder{color:#94a3b8;font-weight:400}.multi-select__trigger i{width:8px;height:8px;margin-right:3px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}.multi-select__trigger:focus{border-color:var(--lead-accent,var(--woxza-accent));box-shadow:0 0 0 4px rgba(var(--lead-accent-rgb,var(--woxza-accent-rgb)),.1);outline:none}
+.multi-select__menu{overflow-y:auto;overscroll-behavior:contain;padding:6px;border:1px solid rgba(15,23,42,.12);border-radius:10px;background:#fff;box-shadow:0 18px 44px rgba(15,23,42,.18);font-family:var(--font-primary)}.multi-select__menu button{display:grid;width:100%;min-height:46px;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:0 10px;border:0;border-radius:7px;color:#475569;background:#fff;font:inherit;font-size:17px;font-weight:400;text-align:left;cursor:pointer}.multi-select__menu button:hover,.multi-select__menu button.selected{color:#14264d;background:#eef2f8}.multi-select__menu button.disabled{opacity:.45;cursor:not-allowed}.multi-select__menu button b{font-weight:800}
+.multi-select__menu--dark{border-color:rgba(147,197,253,.28);background:#081a34;box-shadow:0 18px 44px rgba(0,0,0,.38)}.multi-select__menu--dark button{color:#e8f1ff;background:transparent}.multi-select__menu--dark button:hover{color:#fff;background:rgba(255,255,255,.10)}.multi-select__menu--dark button.selected{color:#06142a;background:#fff}
 </style>

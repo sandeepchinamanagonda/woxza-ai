@@ -5,7 +5,8 @@ const supportedLanguages = [
   { code: "en", label: "English", nativeLabel: "English" },
   { code: "hi", label: "Hindi", nativeLabel: "हिन्दी" },
   { code: "te", label: "Telugu", nativeLabel: "తెలుగు" },
-  { code: "ta", label: "Tamil", nativeLabel: "தமிழ்" }
+  { code: "ta", label: "Tamil", nativeLabel: "தமிழ்" },
+  { code: "kn", label: "Kannada", nativeLabel: "ಕನ್ನಡ" }
 ]
 
 const translations = {
@@ -51,6 +52,64 @@ Object.assign(translations.te, {
   "Building voice AI that answers calls, books appointments, updates systems and keeps every customer conversation moving": "కాల్స్‌కు సమాధానం ఇచ్చే, అపాయింట్‌మెంట్‌లను బుక్ చేసే, సిస్టమ్‌లను నవీకరించే మరియు ప్రతి కస్టమర్ సంభాషణను ముందుకు నడిపించే వాయిస్ AIని నిర్మిస్తున్నాము", "LET'S TALK": "మాట్లాడుకుందాం", "Start a conversation with Woxza": "Woxzaతో సంభాషణ ప్రారంభించండి", "Call us": "మాకు కాల్ చేయండి", "Email us": "మాకు ఇమెయిల్ చేయండి", "Company": "కంపెనీ", "Services": "సేవలు", "Programs": "ప్రోగ్రామ్‌లు", "Resources": "వనరులు", "Waitlist": "వెయిట్‌లిస్ట్", "Insights": "అవగాహనలు", "Legal": "చట్టపరమైన", "Privacy": "గోప్యత", "Terms": "నిబంధనలు", "Connect": "కనెక్ట్ అవ్వండి", "© 2026 Woxza, all rights reserved": "© 2026 Woxza, అన్ని హక్కులు ప్రత్యేకించబడ్డాయి", "Voice AI Platform • Waitlist Access • Customer Automation": "వాయిస్ AI ప్లాట్‌ఫారమ్ • వెయిట్‌లిస్ట్ యాక్సెస్ • కస్టమర్ ఆటోమేషన్"
 })
 
+Object.assign(translations.hi, {
+  "Woxza answers every call, understands intent, and takes action so your team can focus on what matters.": "Woxza हर कॉल का जवाब देता है, इरादा समझता है और कार्रवाई करता है, ताकि आपकी टीम महत्वपूर्ण काम पर ध्यान दे सके।",
+  "From the first hello to the finished task, Woxza keeps every customer conversation moving forward.": "पहले नमस्ते से काम पूरा होने तक, Woxza हर ग्राहक बातचीत को आगे बढ़ाता है।",
+  "Many conversations move your business. Woxza connects them, understands them, and completes the work behind them.": "कई बातचीत आपके व्यवसाय को चलाती हैं। Woxza उन्हें जोड़ता है, समझता है और उनके पीछे का काम पूरा करता है।",
+  "Purpose-built AI": "उद्देश्य के लिए बना AI", "Tailored to industry needs": "उद्योग की ज़रूरतों के अनुरूप", "Proven impact": "सिद्ध प्रभाव", "Measurable business results": "मापने योग्य व्यावसायिक परिणाम", "Enterprise ready": "एंटरप्राइज़ के लिए तैयार", "Secure, reliable & scalable": "सुरक्षित, भरोसेमंद और विस्तार योग्य"
+})
+
+Object.assign(translations.te, {
+  "Woxza answers every call, understands intent, and takes action so your team can focus on what matters.": "Woxza ప్రతి కాల్‌కు సమాధానం ఇచ్చి, ఉద్దేశాన్ని అర్థం చేసుకుని చర్య తీసుకుంటుంది; మీ బృందం ముఖ్యమైన పనిపై దృష్టి పెట్టవచ్చు.",
+  "From the first hello to the finished task, Woxza keeps every customer conversation moving forward.": "మొదటి హలో నుంచి పని పూర్తయ్యే వరకు Woxza ప్రతి కస్టమర్ సంభాషణను ముందుకు నడిపిస్తుంది.",
+  "Many conversations move your business. Woxza connects them, understands them, and completes the work behind them.": "అనేక సంభాషణలు మీ వ్యాపారాన్ని నడిపిస్తాయి. Woxza వాటిని కలుపుతుంది, అర్థం చేసుకుంటుంది, వాటి వెనుక పనిని పూర్తి చేస్తుంది.",
+  "Purpose-built AI": "ప్రత్యేక అవసరాలకు రూపొందిన AI", "Tailored to industry needs": "పరిశ్రమ అవసరాలకు అనుగుణంగా", "Proven impact": "నిరూపిత ప్రభావం", "Measurable business results": "కొలవగల వ్యాపార ఫలితాలు", "Enterprise ready": "ఎంటర్‌ప్రైజ్‌కు సిద్ధం", "Secure, reliable & scalable": "సురక్షితమైన, నమ్మదగిన మరియు విస్తరించగల"
+})
+
+Object.assign(translations.ta, {
+  "Woxza answers every call, understands intent, and takes action so your team can focus on what matters.": "Woxza ஒவ்வொரு அழைப்பிற்கும் பதிலளித்து, நோக்கத்தைப் புரிந்து நடவடிக்கை எடுக்கிறது; உங்கள் குழு முக்கியமானவற்றில் கவனம் செலுத்தலாம்.",
+  "From the first hello to the finished task, Woxza keeps every customer conversation moving forward.": "முதல் வணக்கம் முதல் பணி முடியும் வரை, Woxza ஒவ்வொரு வாடிக்கையாளர் உரையாடலையும் முன்னோக்கி நகர்த்துகிறது.",
+  "Many conversations move your business. Woxza connects them, understands them, and completes the work behind them.": "பல உரையாடல்கள் உங்கள் வணிகத்தை நகர்த்துகின்றன. Woxza அவற்றை இணைத்து, புரிந்துகொண்டு, பின்னால் உள்ள வேலையை முடிக்கிறது.",
+  "Purpose-built AI": "நோக்கத்திற்காக உருவாக்கப்பட்ட AI", "Tailored to industry needs": "துறை தேவைகளுக்கேற்ப", "Proven impact": "நிரூபிக்கப்பட்ட தாக்கம்", "Measurable business results": "அளவிடக்கூடிய வணிக முடிவுகள்", "Enterprise ready": "நிறுவனத்திற்குத் தயாரானது", "Secure, reliable & scalable": "பாதுகாப்பான, நம்பகமான, விரிவாக்கக்கூடியது"
+})
+
+// Industry carousel: values must exactly match the source strings in
+// Industries.vue (including punctuation) because this dictionary is key based.
+Object.assign(translations.te, {
+  "Professional Services": "వృత్తిపరమైన సేవలు", "Healthcare": "ఆరోగ్య సంరక్షణ", "Education": "విద్య", "Finance": "ఆర్థిక సేవలు",
+  "Deliver seamless journeys from booking to arrival.": "బుకింగ్ నుంచి చేరుకునే వరకు సాఫీ ప్రయాణ అనుభవాన్ని అందించండి.",
+  "Booking assistance": "బుకింగ్ సహాయం", "Cancellations & changes": "రద్దులు మరియు మార్పులు", "Itinerary updates": "ప్రయాణ ప్రణాళిక నవీకరణలు", "Travel support": "ప్రయాణ సహాయం", "BOOKING & SUPPORT": "బుకింగ్ మరియు సహాయం",
+  "Convert more enquiries into clients.": "మరిన్ని విచారణలను కస్టమర్లుగా మార్చండి.",
+  "Lead qualification": "లీడ్ అర్హత నిర్ధారణ", "Consultation booking": "సంప్రదింపుల బుకింగ్", "Client follow-ups": "క్లయింట్ ఫాలో-అప్‌లు", "Document collection": "పత్రాల సేకరణ", "CLIENT ENGAGEMENT": "క్లయింట్ అనుసంధానం",
+  "Never miss a patient call.": "రోగి కాల్‌ను ఎప్పుడూ మిస్ అవ్వకండి.",
+  "Appointment scheduling": "అపాయింట్‌మెంట్ షెడ్యూలింగ్", "Patient FAQs & triage": "రోగి ప్రశ్నలు మరియు ప్రాధాన్యత నిర్ధారణ", "Prescription & report updates": "ప్రిస్క్రిప్షన్ మరియు రిపోర్ట్ నవీకరణలు", "Multilingual patient support": "బహుభాషా రోగి సహాయం", "PATIENT ACCESS": "రోగి ప్రాప్యత",
+  "Support every learner from enquiry to enrollment.": "విచారణ నుంచి నమోదు వరకు ప్రతి విద్యార్థికి సహాయం చేయండి.",
+  "Admission enquiries": "ప్రవేశ విచారణలు", "Course recommendations": "కోర్సు సిఫార్సులు", "Interview scheduling": "ఇంటర్వ్యూ షెడ్యూలింగ్", "Fee & application reminders": "ఫీజు మరియు దరఖాస్తు గుర్తింపులు", "STUDENT ENROLLMENT": "విద్యార్థి నమోదు",
+  "Turn every shopper into a returning customer.": "ప్రతి కొనుగోలుదారుని మళ్లీ వచ్చే కస్టమర్‌గా మార్చండి.",
+  "Product enquiries": "ఉత్పత్తి విచారణలు", "Order tracking": "ఆర్డర్ ట్రాకింగ్", "Returns & exchanges": "రిటర్న్‌లు మరియు మార్పిడులు", "Personalized recommendations": "వ్యక్తిగత సిఫార్సులు", "CUSTOMER SUPPORT": "కస్టమర్ సహాయం",
+  "Keep operations moving without missed calls.": "మిస్సైన కాల్స్ లేకుండా కార్యకలాపాలను కొనసాగించండి.",
+  "Supplier coordination": "సరఫరాదారుల సమన్వయం", "Inventory enquiries": "ఇన్వెంటరీ విచారణలు", "Service requests": "సేవ అభ్యర్థనలు", "Dispatch & order updates": "డిస్పాచ్ మరియు ఆర్డర్ నవీకరణలు", "OPERATIONS SUPPORT": "కార్యకలాపాల సహాయం",
+  "Automate conversations across every department.": "ప్రతి విభాగంలోని సంభాషణలను ఆటోమేట్ చేయండి.",
+  "IT helpdesk": "IT సహాయ కేంద్రం", "HR employee support": "HR ఉద్యోగి సహాయం", "Internal workflows": "అంతర్గత వర్క్‌ఫ్లోలు", "Customer service automation": "కస్టమర్ సేవ ఆటోమేషన్", "BUSINESS OPERATIONS": "వ్యాపార కార్యకలాపాలు",
+  "Deliver secure banking conversations 24/7.": "24/7 సురక్షిత బ్యాంకింగ్ సంభాషణలను అందించండి.",
+  "Account enquiries": "ఖాతా విచారణలు", "Loan pre-qualification": "రుణ ముందస్తు అర్హత", "Appointment booking": "అపాయింట్‌మెంట్ బుకింగ్", "Payment reminders": "చెల్లింపు గుర్తింపులు", "CUSTOMER BANKING": "కస్టమర్ బ్యాంకింగ్"
+})
+
+// Kannada was previously selectable nowhere, which made the advertised fifth
+// locale impossible to use.  Keep its UI copy in the same source dictionary
+// as every other locale so missing entries are reported by `translationFor`.
+translations.kn = {
+  "Solutions": "ಪರಿಹಾರಗಳು", "About": "ನಮ್ಮ ಬಗ್ಗೆ", "Why Woxza": "Woxza ಏಕೆ", "Demo": "ಡೆಮೋ", "Approach": "ವಿಧಾನ", "FAQ": "ಪದೇಪದೇ ಕೇಳುವ ಪ್ರಶ್ನೆಗಳು",
+  "Join Waitlist": "ಕಾಯುವ ಪಟ್ಟಿಗೆ ಸೇರಿ", "Join the Waitlist": "ಕಾಯುವ ಪಟ್ಟಿಗೆ ಸೇರಿ", "Get a Demo": "ಡೆಮೋ ಪಡೆಯಿರಿ", "Learn More →": "ಇನ್ನಷ್ಟು ತಿಳಿಯಿರಿ →",
+  "AI voice agent platform": "AI ಧ್ವನಿ ಏಜೆಂಟ್ ವೇದಿಕೆ", "Never miss a call": "ಯಾವುದೇ ಕರೆಯನ್ನು ತಪ್ಪಿಸಬೇಡಿ", "24/7 AI availability": "24/7 AI ಲಭ್ಯತೆ", "Understand intent": "ಉದ್ದೇಶವನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಿ", "Human-like conversations": "ಮನುಷ್ಯರಂತಹ ಸಂಭಾಷಣೆಗಳು", "Take action": "ಕ್ರಮ ಕೈಗೊಳ್ಳಿ", "Book, update, notify & more": "ಬುಕ್ ಮಾಡಿ, ನವೀಕರಿಸಿ, ತಿಳಿಸಿ ಮತ್ತು ಇನ್ನಷ್ಟು", "Speak every language": "ಪ್ರತಿ ಭಾಷೆಯಲ್ಲೂ ಮಾತನಾಡಿ", "Multilingual by default": "ಪೂರ್ವನಿಯೋಜಿತವಾಗಿ ಬಹುಭಾಷಾ",
+  "AI voice agents that": "AI ಧ್ವನಿ ಏಜೆಂಟ್‌ಗಳು", "answer calls, understand": "ಕರೆಗಳಿಗೆ ಉತ್ತರಿಸಿ, ಅರ್ಥಮಾಡಿಕೊಂಡು", "customers and ": "ಗ್ರಾಹಕರನ್ನು ಮತ್ತು ", "get": "ಕೆಲಸ", "work done": "ಮುಗಿಸುತ್ತವೆ", "Every call answered": "ಪ್ರತಿ ಕರೆಗೆ ಉತ್ತರ", "Every customer": "ಪ್ರತಿ ಗ್ರಾಹಕ", "understood. Every": "ಅರ್ಥವಾಗುತ್ತಾರೆ. ಪ್ರತಿ", "step handled": "ಹಂತ ನಿರ್ವಹಣೆ", "One platform for": "ಒಂದೇ ವೇದಿಕೆ", "every conversation": "ಪ್ರತಿ ಸಂಭಾಷಣೆಗೆ", "your business needs": "ನಿಮ್ಮ ವ್ಯವಹಾರದ ಅಗತ್ಯಗಳಿಗೆ", "completed": "ಪೂರ್ಣಗೊಂಡಿದೆ",
+  "Woxza answers every call, understands intent, and takes action so your team can focus on what matters.": "Woxza ಪ್ರತಿ ಕರೆಗೆ ಉತ್ತರಿಸಿ, ಉದ್ದೇಶವನ್ನು ಅರ್ಥಮಾಡಿಕೊಂಡು ಕ್ರಮ ಕೈಗೊಳ್ಳುತ್ತದೆ; ನಿಮ್ಮ ತಂಡ ಮುಖ್ಯವಾದುದರ ಮೇಲೆ ಗಮನಹರಿಸಬಹುದು.", "From the first hello to the finished task, Woxza keeps every customer conversation moving forward.": "ಮೊದಲ ನಮಸ್ಕಾರದಿಂದ ಕೆಲಸ ಪೂರ್ಣಗೊಳ್ಳುವವರೆಗೆ Woxza ಪ್ರತಿಯೊಂದು ಗ್ರಾಹಕ ಸಂಭಾಷಣೆಯನ್ನು ಮುಂದಕ್ಕೆ ಕೊಂಡೊಯ್ಯುತ್ತದೆ.", "Many conversations move your business. Woxza connects them, understands them, and completes the work behind them.": "ಅನೇಕ ಸಂಭಾಷಣೆಗಳು ನಿಮ್ಮ ವ್ಯವಹಾರವನ್ನು ಮುನ್ನಡೆಸುತ್ತವೆ. Woxza ಅವುಗಳನ್ನು ಸಂಪರ್ಕಿಸಿ, ಅರ್ಥಮಾಡಿಕೊಂಡು, ಹಿಂದಿನ ಕೆಲಸವನ್ನು ಪೂರ್ಣಗೊಳಿಸುತ್ತದೆ.",
+  "INDUSTRIES": "ಉದ್ಯಮಗಳು", "AI built for": "AI ನಿರ್ಮಿತ", "every industry.": "ಪ್ರತಿ ಉದ್ಯಮಕ್ಕಾಗಿ.", "Woxza adapts to the way your industry works, automating workflows, enhancing customer experiences and driving real business impact.": "ನಿಮ್ಮ ಉದ್ಯಮದ ಕಾರ್ಯವಿಧಾನಕ್ಕೆ Woxza ಹೊಂದಿಕೊಂಡು, ಕಾರ್ಯಹರಿವುಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತಗೊಳಿಸಿ, ಗ್ರಾಹಕ ಅನುಭವವನ್ನು ಉತ್ತಮಗೊಳಿಸಿ ನೈಜ ವ್ಯವಹಾರ ಫಲಿತಾಂಶ ನೀಡುತ್ತದೆ.", "Purpose-built AI": "ಉದ್ದೇಶಪೂರ್ವಕ AI", "Tailored to industry needs": "ಉದ್ಯಮದ ಅಗತ್ಯಗಳಿಗೆ ಹೊಂದಿಕೆ", "Proven impact": "ಸಾಬೀತಾದ ಪರಿಣಾಮ", "Measurable business results": "ಅಳೆಯಬಹುದಾದ ವ್ಯವಹಾರ ಫಲಿತಾಂಶ", "Enterprise ready": "ಎಂಟರ್‌ಪ್ರೈಸ್ ಸಿದ್ಧ", "Secure, reliable & scalable": "ಸುರಕ್ಷಿತ, ವಿಶ್ವಾಸಾರ್ಹ ಮತ್ತು ವಿಸ್ತರಿಸಬಹುದಾದ",
+  "Travel": "ಪ್ರಯಾಣ", "Professional Services": "ವೃತ್ತಿಪರ ಸೇವೆಗಳು", "Healthcare": "ಆರೋಗ್ಯಸೇವೆ", "Education": "ಶಿಕ್ಷಣ", "Retail": "ಚಿಲ್ಲರೆ", "Manufacturing": "ತಯಾರಿಕೆ", "Enterprise": "ಎಂಟರ್‌ಪ್ರೈಸ್", "Finance": "ಹಣಕಾಸು", "Trusted by businesses across 20+ industries worldwide": "ವಿಶ್ವದಾದ್ಯಂತ 20ಕ್ಕೂ ಹೆಚ್ಚು ಉದ್ಯಮಗಳ ವ್ಯವಹಾರಗಳ ವಿಶ್ವಾಸ",
+  "OUR MANIFESTO": "ನಮ್ಮ ಧ್ಯೇಯ", "Built for the people who answer the calls and the people waiting on the other end.": "ಕರೆಗಳಿಗೆ ಉತ್ತರಿಸುವವರಿಗಾಗಿ ಮತ್ತು ಇನ್ನೊಂದು ತುದಿಯಲ್ಲಿ ಕಾಯುವವರಿಗಾಗಿ ನಿರ್ಮಿಸಲಾಗಿದೆ.", "WHY WE BUILT WOXZA": "ನಾವು WOXZA ಅನ್ನು ಏಕೆ ನಿರ್ಮಿಸಿದ್ದೇವೆ", "No one should have to choose which customer gets heard.": "ಯಾವ ಗ್ರಾಹಕರ ಮಾತು ಕೇಳಬೇಕು ಎಂದು ಯಾರೂ ಆಯ್ಕೆ ಮಾಡಬೇಕಾಗಿಲ್ಲ.", "There was one desk, one phone, and one person trying to be everywhere at once.": "ಒಂದು ಮೇಜು, ಒಂದು ಫೋನ್ ಮತ್ತು ಒಂದೇ ಸಮಯದಲ್ಲಿ ಎಲ್ಲೆಡೆ ಇರಲು ಪ್ರಯತ್ನಿಸುವ ಒಬ್ಬ ವ್ಯಕ್ತಿ ಇದ್ದರು.", "Every ring asked for something: an appointment, an answer, or a little reassurance. When the day got busy, someone had to wait. Sometimes, that person never called back.": "ಪ್ರತಿ ಕರೆ ಒಂದು ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್, ಉತ್ತರ ಅಥವಾ ಸ್ವಲ್ಪ ಭರವಸೆಯನ್ನು ಕೇಳುತ್ತಿತ್ತು. ದಿನ ಕಾರ್ಯನಿರತವಾದಾಗ ಯಾರಾದರೂ ಕಾಯಬೇಕಾಗುತ್ತಿತ್ತು. ಕೆಲವೊಮ್ಮೆ ಅವರು ಮತ್ತೆ ಕರೆಮಾಡುತ್ತಿರಲಿಲ್ಲ.", "Being there for everyone once felt impossible. Now, it can simply be how the business runs.": "ಒಮ್ಮೆ ಎಲ್ಲರಿಗೂ ಲಭ್ಯವಾಗಿರುವುದು ಅಸಾಧ್ಯವೆನಿಸಿತ್ತು. ಈಗ ಅದು ವ್ಯವಹಾರ ನಡೆಯುವ ವಿಧಾನವಾಗಬಹುದು.",
+  "FREQUENTLY ASKED QUESTIONS": "ಪದೇಪದೇ ಕೇಳುವ ಪ್ರಶ್ನೆಗಳು", "Everything you need to know": "ನೀವು ತಿಳಿಯಬೇಕಾದ ಎಲ್ಲವೂ", "Answers to the questions businesses ask before launching a Woxza voice AI solution.": "Woxza ಧ್ವನಿ AI ಪರಿಹಾರವನ್ನು ಪ್ರಾರಂಭಿಸುವ ಮುನ್ನ ವ್ಯವಹಾರಗಳು ಕೇಳುವ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಗಳು.", "More...": "ಇನ್ನಷ್ಟು...", "Less": "ಕಡಿಮೆ"
+}
+
 const validLanguage = (value) => supportedLanguages.some(({ code }) => code === value)
 const savedLanguage = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null
 const language = ref(validLanguage(savedLanguage) ? savedLanguage : "en")
@@ -59,7 +118,17 @@ const originalAttributes = new WeakMap()
 const translatableAttributes = ["placeholder", "aria-label", "title"]
 let observer
 
-const translationFor = (value) => translations[language.value]?.[value.trim()] || value.trim()
+const translationFor = (value) => {
+  const key = value.trim()
+  if (language.value === "en") return key
+  const translated = translations[language.value]?.[key]
+  if (translated) return translated
+
+  // Missing copy must be visible during local development instead of silently
+  // blending into an otherwise translated page.
+  if (import.meta.env.DEV) console.warn(`[i18n] Missing "${language.value}" translation: ${key}`)
+  return translations.en?.[key] || key
+}
 
 function translateTextNode(node) {
   if (!originalText.has(node)) originalText.set(node, node.nodeValue)

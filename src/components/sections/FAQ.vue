@@ -2,19 +2,19 @@
   <section id="faq" class="faq landing-section">
     <div class="container-custom">
       <div class="heading">
-        <span>FREQUENTLY ASKED QUESTIONS</span>
-        <h2 class="display-heading">Everything you<br>need to know</h2>
-        <p>Answers to the questions businesses ask before launching a Woxza voice AI solution.</p>
+        <span>{{ t("FREQUENTLY ASKED QUESTIONS") }}</span>
+        <h2 class="display-heading">{{ t("Everything you need to know") }}</h2>
+        <p>{{ t("Answers to the questions businesses ask before launching a Woxza voice AI solution.") }}</p>
       </div>
 
       <div class="faq-list">
         <TransitionGroup name="faq-reveal">
           <article v-for="item in visibleFaqs" :key="item.question" class="faq-item">
             <div class="question">
-              <h3>{{ item.question }}</h3>
+              <h3>{{ t(item.question) }}</h3>
             </div>
             <div class="answer">
-              <p>{{ item.answer }}</p>
+              <p>{{ t(item.answer) }}</p>
             </div>
           </article>
         </TransitionGroup>
@@ -27,7 +27,7 @@
           aria-controls="faq"
           @click="toggleAll"
         >
-          {{ showAll ? "Less" : "More..." }}
+          {{ t(showAll ? "Less" : "More...") }}
         </button>
       </div>
     </div>
@@ -36,6 +36,9 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
+import { useI18n } from "@/composables/useI18n"
+
+const { t } = useI18n()
 
 const initialCount = 3
 const showAll = ref(false)

@@ -155,7 +155,7 @@
 
               <label class="wide"><span class="question-heading">Which software does your business currently use?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.software" :options="softwareOptions" label="Business software" placeholder="Select one or more" dark /></label>
 
-              <label class="wide"><span class="question-heading">Approximately how many customer calls does your business receive each day?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.dailyCalls" :options="dailyCallOptions" label="Daily call volume" placeholder="Select one or more" dark /></label>
+              <label class="wide"><span>Approximately how many customer calls does your business receive each day?</span><FormDropdown v-model="dailyCallsSelection" :options="dailyCallOptions" label="Daily call volume" placeholder="Select daily call volume" dark /></label>
             </section>
 
             <section v-show="stepIndex === 2" class="step-panel">
@@ -190,7 +190,7 @@
                 v-if="!isLastStep"
                 class="btn-primary"
                 type="button"
-                :disabled="!canContinue || isSubmitting"
+                :disabled="isSubmitting"
                 @click="goNext"
               >
                 Next
@@ -200,7 +200,7 @@
                 v-else
                 class="btn-primary"
                 type="submit"
-                :disabled="!canContinue || isSubmitting"
+                :disabled="isSubmitting"
               >
                 {{ isSubmitting ? "Joining" : "Join the waitlist" }}
               </button>
@@ -652,6 +652,42 @@ const canContinue = computed(() => {
   return launchReady.value
 })
 
+const dailyCallsSelection = computed({
+  get: () => form.value.dailyCalls[0] || "",
+  set: (value) => {
+    form.value.dailyCalls = value ? [value] : []
+  }
+})
+
+const waitlistMissingFields = computed(() => {
+  const missing = []
+
+  if (stepIndex.value === 0) {
+    if (!form.value.firstName) missing.push("first name")
+    if (!form.value.lastName) missing.push("last name")
+    if (!emailReady.value) missing.push("a valid email address")
+    if (!phoneReady.value) missing.push("a valid phone number")
+    if (!form.value.company) missing.push("company name")
+    if (!form.value.role) missing.push("your role")
+    if (!form.value.industry) missing.push("industry")
+    if (!form.value.companySize) missing.push("company size")
+  } else if (stepIndex.value === 1) {
+    if (!form.value.helpWith.length) missing.push("what Woxza can help with")
+    if (!form.value.biggestChallenges.length) missing.push("your biggest challenge")
+    if (!form.value.callHandlings.length) missing.push("how calls are handled today")
+    if (!form.value.software.length) missing.push("the software you use")
+    if (!form.value.dailyCalls.length) missing.push("daily call volume")
+  } else {
+    if (!form.value.onePerfectThing) missing.push("what Woxza should do perfectly")
+    if (!form.value.features.length) missing.push("the capabilities that matter most")
+    if (!form.value.adoptionTimeline) missing.push("your implementation timeline")
+    if (!form.value.pricing) missing.push("your priority level")
+    if (!form.value.referralSource) missing.push("how you heard about Woxza")
+  }
+
+  return missing
+})
+
 const salesReady = computed(() =>
   Boolean(
     form.value.firstName &&
@@ -778,6 +814,10 @@ const featureDisabled = (value) =>
 
 const goNext = () => {
   submitError.value = ""
+  if (!canContinue.value) {
+    submitError.value = `Please complete: ${waitlistMissingFields.value.join(", ")}.`
+    return
+  }
   stepIndex.value += 1
   nextTick(() => document.querySelector(".modal-content")?.scrollTo({ top:0, behavior:"auto" }))
 }
@@ -826,6 +866,11 @@ const handleSubmit = async () => {
   if (isSubmitting.value) return
 
   submitError.value = ""
+
+  if (props.mode === "waitlist" && !canContinue.value) {
+    submitError.value = `Please complete: ${waitlistMissingFields.value.join(", ")}.`
+    return
+  }
 
   if (props.mode === "sales" && !salesReady.value) {
     submitError.value = `Please complete: ${salesMissingFields.value.join(", ")}`
@@ -926,6 +971,7 @@ onBeforeUnmount(unlockPageScroll)
   margin-bottom:30px;
   max-width:620px;
   color:#64748b;
+  font-size:18px;
   line-height:1.7;
 }
 
@@ -1024,14 +1070,14 @@ label.wide,
 label > span,
 .field-title{
   color:#475569;
-  font-size:13px;
+  font-size:16px;
   font-weight:800;
 }
 
 .field-hint{
   margin-top:-3px;
   color:#7b8799;
-  font-size:11px;
+  font-size:13px;
   font-weight:500;
 }
 
@@ -1062,7 +1108,7 @@ label > span em{
   border:1px solid rgba(15,23,42,.10);
   color:var(--woxza-blue);
   font:inherit;
-  font-size:14px;
+  font-size:17px;
   font-weight:400;
   outline:none;
 }
@@ -1537,6 +1583,7 @@ label > span em{
   padding:0 24px;
   border-radius:999px;
   border:none;
+  font-size:17px;
   font-weight:800;
   cursor:pointer;
   transition:.25s ease;
@@ -1981,6 +2028,11 @@ label > span em{
   color:#b8c7dd;
   font-size:12px;
   font-weight:600;
+}
+.modal .error-message{
+  border-color:rgba(252,165,165,.72);
+  color:#fecaca;
+  background:rgba(127,29,29,.42);
 }
 .form-actions{ border-top-color:rgba(255,255,255,.12); background:rgba(6,20,42,.96); }
 .btn-secondary{ border-color:rgba(147,197,253,.28); color:var(--woxza-white); background:rgba(255,255,255,.07); }
