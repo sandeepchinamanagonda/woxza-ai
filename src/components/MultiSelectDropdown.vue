@@ -48,8 +48,9 @@ const toggle = (value) => {
     ? draftValues.value.filter((item) => item !== value)
     : [...draftValues.value, value]
   draftValues.value = selected
-  // Persist each click immediately so switching to another dropdown never loses it.
+  // Persist the choice and close like a standard select; users can reopen it to add or remove choices.
   emit("update:modelValue", selected)
+  isOpen.value = false
 }
 
 const openMenu = () => {
