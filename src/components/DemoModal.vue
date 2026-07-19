@@ -6,7 +6,12 @@
         class="overlay"
         @click.self="closeModal"
       >
-        <div class="modal">
+        <WaitlistConfirmation
+          v-if="successMessage && props.mode === 'waitlist'"
+          @close="closeModal"
+        />
+
+        <div v-else class="modal">
           <button
             class="close"
             type="button"
@@ -304,6 +309,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue"
 import FormDropdown from "./FormDropdown.vue"
 import MultiSelectDropdown from "./MultiSelectDropdown.vue"
+import WaitlistConfirmation from "./WaitlistConfirmation.vue"
 
 const props = defineProps({
   isOpen: Boolean,
@@ -2017,16 +2023,19 @@ label > span em{
 }
 .question-heading{
   display:flex;
-  align-items:baseline;
+  align-items:center;
   flex-wrap:wrap;
   column-gap:10px;
-  row-gap:2px;
+  row-gap:4px;
+  line-height:1.35;
 }
 .question-heading .field-hint{
   margin:0;
   color:#b8c7dd;
   font-size:12px;
   font-weight:600;
+  line-height:1.35;
+  white-space:nowrap;
 }
 .validation-summary{
   margin:0;
