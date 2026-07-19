@@ -1,8 +1,8 @@
 <template>
-  <section class="integration-marquee" aria-labelledby="integration-marquee-title">
+  <section class="integration-marquee landing-section" aria-labelledby="integration-marquee-title">
     <div class="marquee-heading">
       <span></span>
-      <p id="integration-marquee-title">Connects with the tools your team already uses</p>
+      <p id="integration-marquee-title">Connect Woxza to the tools your team already uses.</p>
       <span></span>
     </div>
 
@@ -62,7 +62,6 @@ const bottomRow = [
   position:relative;
   z-index:3;
   overflow:hidden;
-  padding:38px 0 44px;
   border-top:1px solid rgba(24,65,125,.08);
   border-bottom:1px solid rgba(24,65,125,.1);
   background:#fff;
@@ -126,7 +125,6 @@ const bottomRow = [
 }
 
 @media(max-width:640px) {
-  .integration-marquee { padding:30px 0 34px; }
   .marquee-heading { grid-template-columns:24px auto 24px; gap:10px; margin-bottom:20px; }
   .marquee-heading p { font-size:8px; letter-spacing:.13em; }
   .marquee-group { gap:46px; padding-right:46px; }

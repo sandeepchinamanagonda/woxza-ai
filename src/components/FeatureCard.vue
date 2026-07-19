@@ -9,18 +9,7 @@
 
       <div class="feature-icon">
 
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.6"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            :d="icon"
-          />
-        </svg>
+        <component :is="icon" aria-hidden="true" />
 
       </div>
 
@@ -41,7 +30,7 @@
 const props = defineProps({
   title: String,
   description: String,
-  icon: String,
+  icon: [Object, Function],
   number: {
     type: Number,
     default: 1
@@ -89,7 +78,7 @@ margin-bottom:36px;
 
 .feature-number{
 
-font-family:"IBM Plex Sans";
+font-family:var(--font-primary);
 
 font-size:12px;
 
@@ -101,11 +90,11 @@ color:#9C8168;
 
 .feature-icon{
 
-width:52px;
+width:46px;
 
-height:52px;
+height:46px;
 
-border-radius:50%;
+border-radius:14px;
 
 display:flex;
 
@@ -121,9 +110,11 @@ border:1px solid #E7E2DA;
 
 .feature-icon svg{
 
-width:22px;
+width:20px;
 
-height:22px;
+height:20px;
+
+stroke-width:2;
 
 color:#232323;
 
@@ -131,7 +122,7 @@ color:#232323;
 
 h3{
 
-font-family:"Source Serif 4",serif;
+font-family:var(--font-primary);
 
 font-size:30px;
 

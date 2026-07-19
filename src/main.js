@@ -19,8 +19,22 @@ const routes = [
       title: 'Woxza | Enterprise AI Voice Platform'
     }
   },
-  { path:'/admin/features', name:'AdminFeatures', component:AdminFeatures, meta:{ title:'Woxza | Feature Management' } },
-  { path:'/admin/prompts', name:'AdminPrompts', component:AdminPrompts, meta:{ title:'Woxza | Prompt Templates' } },
+  {
+    path: '/admin/features',
+    name: 'AdminFeatures',
+    component: AdminFeatures,
+    meta: {
+      title: 'Woxza | Feature Management'
+    }
+  },
+  {
+    path: '/admin/prompts',
+    name: 'AdminPrompts',
+    component: AdminPrompts,
+    meta: {
+      title: 'Woxza | Prompt Templates'
+    }
+  },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',

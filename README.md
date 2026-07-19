@@ -20,13 +20,15 @@ In Terminal, from this project folder:
 ./setup.sh --install-dependencies
 ```
 
-This is safe to re-run. It will:
+This is safe to re-run, including after switching branches. It will:
 
 1. Install missing Docker Desktop/Engine, ngrok, and Python 3 (macOS or Debian/Ubuntu Linux).
 2. Create a local `.env` file if one does not exist.
 3. Build all frontend and backend dependencies inside Docker.
 4. Start the database, Redis, API, and website.
 5. Wait until the backend health check succeeds.
+
+Every local run is automatically in **local-admin mode**. Use the printed Admin URL (or open `http://localhost:3456/admin/features`) to manage features and prompts without entering a token. The setup command generates a private local token so that this access is not exposed through the public voice tunnel. Production uses its separate `.env.production` configuration and keeps admin authentication enabled.
 
 Then open [http://localhost:3456](http://localhost:3456). Leave the Terminal window open only while the setup command is working; after it prints “Woxza is running”, Docker keeps the app running in the background.
 
@@ -43,6 +45,8 @@ Actual phone calls need a Google Gemini key, Plivo credentials, and an ngrok acc
 ```
 
 The script opens an ngrok tunnel automatically, records its public URL, then starts the voice-ready stack. It does not make any changes in Plivo, Twilio, Google, or ngrok beyond configuring the ngrok token on your own computer.
+
+After creating or switching to a branch, start it with `./setup.sh` (or `npm run local`) instead of `docker compose up`. That refreshes the local voice callback URL before the API starts, so phone calls do not inherit a stale tunnel URL.
 
 ## Start, check, and stop
 

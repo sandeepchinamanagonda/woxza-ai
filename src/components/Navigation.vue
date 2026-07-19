@@ -2,7 +2,7 @@
 
 <header
 class="navbar"
-:class="{ scrolled: isScrolled, scrolling: isScrolling }"
+:class="{ scrolled: isScrolled, scrolling: isScrolling, 'on-dark': isDarkBackground }"
 >
 
 <div class="navbar-inner">
@@ -62,7 +62,7 @@ href="#why-voxa"
 :class="{active:activeSection==='why-voxa'}"
 >
 
-Why Voxa
+Why Woxza
 
 </a>
 
@@ -109,7 +109,7 @@ class="cta"
 @click="openLeadModal('waitlist')"
 >
 
-Join Waitlist
+Join the waitlist
 
 </button>
 
@@ -165,7 +165,7 @@ About
 
 <a @click="scrollTo('why-voxa')">
 
-Why Voxa
+Why Woxza
 
 </a>
 
@@ -192,7 +192,7 @@ class="cta mobile-btn"
 @click="openLeadModal('waitlist')"
 >
 
-Join Waitlist
+Join the waitlist
 
 </button>
 
@@ -215,7 +215,7 @@ Get a Demo
 
 <script setup>
 
-import { ref, onMounted, onUnmounted, watch } from "vue"
+import { computed, ref, onMounted, onUnmounted, watch } from "vue"
 import { Menu, X } from "lucide-vue-next"
 import { RouterLink } from "vue-router"
 import { scrollSectionIntoView } from "@/utils/sectionScroll"
@@ -243,6 +243,10 @@ const isScrolling = ref(false)
 
 const activeSection = ref("")
 
+const isDarkBackground = computed(() =>
+  ["solutions", "demo", "approach", "contact"].includes(activeSection.value)
+)
+
 let scrollFrame = 0
 let scrollStopTimer = 0
 
@@ -258,7 +262,9 @@ const sections = [
 
   "approach",
 
-  "faq"
+  "faq",
+
+  "contact"
 
 ]
 
@@ -280,13 +286,16 @@ const openLeadModal = (intent) => {
 const scrollTo = (id) => {
 
   mobile.value = false
+  // Release the mobile scroll lock before calculating and moving to the target.
+  // Without this, mobile browsers can ignore the smooth scroll while the menu closes.
+  syncMobileMenuScrollLock(false)
 
   const section = document.getElementById(id)
 
   if (!section) return
 
   window.history.replaceState(null, "", `#${id}`)
-  scrollSectionIntoView(section)
+  window.requestAnimationFrame(() => scrollSectionIntoView(section))
 
 }
 
@@ -521,7 +530,7 @@ user-select:none;
 
 .brand-name{
 
-font-family:"Plus Jakarta Sans",sans-serif;
+font-family:var(--font-primary);
 
 font-size:42px;
 
@@ -532,6 +541,12 @@ letter-spacing:-.05em;
 line-height:1;
 
 transition:.35s;
+
+}
+
+.navbar.on-dark .brand{
+
+color:#ffffff;
 
 }
 
@@ -579,6 +594,18 @@ opacity:.9;
 
 }
 
+.navbar.on-dark .wave{
+
+background:
+
+radial-gradient(circle at center,#ffffff 18%,transparent 20%),
+
+radial-gradient(circle,#ffffff 1px,transparent 1px);
+
+background-size:100% 100%,6px 6px;
+
+}
+
 /* ==========================================================
 NAVIGATION
 ========================================================== */
@@ -613,7 +640,7 @@ position:relative;
 
 text-decoration:none;
 
-font-family:"Plus Jakarta Sans",sans-serif;
+font-family:var(--font-primary);
 
 font-size:15px;
 
@@ -622,6 +649,12 @@ font-weight:500;
 color:#14264D;
 
 transition:.3s;
+
+}
+
+.navbar.on-dark .nav-links a{
+
+color:#ffffff;
 
 }
 
@@ -658,6 +691,12 @@ border-radius:999px;
 transform:translateX(-50%);
 
 transition:.3s;
+
+}
+
+.navbar.on-dark .nav-links a::after{
+
+background:#ffffff;
 
 }
 
@@ -703,7 +742,7 @@ background:#14264D;
 
 color:white;
 
-font-family:"Plus Jakarta Sans",sans-serif;
+font-family:var(--font-primary);
 
 font-size:14px;
 
@@ -749,6 +788,35 @@ background:#1d3568;
 
 box-shadow:0 18px 42px rgba(20,38,77,.22);
 
+}
+
+.navbar.on-dark .cta{
+
+color:#14264D;
+
+background:#ffffff;
+
+box-shadow:0 10px 28px rgba(0,0,0,.18);
+
+}
+
+.navbar.on-dark .cta-secondary{
+
+border-color:#ffffff;
+
+}
+
+.navbar.on-dark .cta:hover{
+
+background:#eaf1ff;
+
+}
+
+/* Keep language selection compact so it never competes with primary actions. */
+.actions .language-selector{
+flex:0 0 112px;
+width:112px;
+margin:0;
 }
 
 /* ==========================================================
@@ -913,7 +981,7 @@ box-shadow:
 
 text-decoration:none;
 
-font-family:"Plus Jakarta Sans",sans-serif;
+font-family:var(--font-primary);
 
 font-size:17px;
 
@@ -1392,6 +1460,24 @@ padding:0 24px;
 
 }
 
+/* Override the legacy wide navigation grid for the language control. */
+.navbar-inner,
+.navbar.scrolled .navbar-inner{
+grid-template-columns:270px minmax(0,1fr) auto;
+gap:18px;
+padding-left:32px;
+padding-right:32px;
+}
+
+.actions{
+gap:10px;
+}
+
+.actions .cta{
+padding:13px 20px;
+white-space:nowrap;
+}
+
 .actions{ gap:10px; }
 
 .cta{ padding:13px 20px; font-size:13px; }
@@ -1462,6 +1548,15 @@ font-size:24px;
 min-width:46px;
 }
 
+.language-selector-nav{
+display:none;
+}
+
+.language-selector-mobile{
+display:inline-flex;
+margin:4px 0 12px;
+}
+
 .mobile-toggle{
 display:flex;
 flex:0 0 46px;
@@ -1478,4 +1573,111 @@ display:block;
 }
 
 }
+
+/* Use the opposite surface color from the section behind the navigation. */
+.navbar-inner,
+.navbar.scrolled .navbar-inner{
+background:#14264D!important;
+border:1px solid rgba(255,255,255,.14);
+border-radius:24px;
+box-shadow:0 18px 60px rgba(15,23,42,.18);
+}
+
+.brand,
+.brand-name,
+.nav-links a{
+color:#ffffff!important;
+}
+
+.wave{
+background:
+radial-gradient(circle at center,#ffffff 18%,transparent 20%),
+radial-gradient(circle,#ffffff 1px,transparent 1px);
+background-size:100% 100%,6px 6px;
+}
+
+.nav-links a::after{
+background:#ffffff;
+}
+
+.cta,
+.cta-secondary{
+border-color:#ffffff;
+color:#14264D;
+background:#ffffff;
+box-shadow:0 10px 28px rgba(0,0,0,.18);
+}
+
+.cta:hover,
+.cta-secondary:hover{
+background:#eaf1ff;
+}
+
+/* The dark-blue Solutions and contact sections receive the white version. */
+.navbar.on-dark .navbar-inner,
+.navbar.on-dark.scrolled .navbar-inner{
+background:#ffffff!important;
+border-color:rgba(20,38,77,.08);
+box-shadow:0 18px 60px rgba(15,23,42,.10);
+}
+
+.navbar.on-dark .brand,
+.navbar.on-dark .brand-name,
+.navbar.on-dark .nav-links a{
+color:#14264D!important;
+}
+
+.navbar.on-dark .wave{
+background:
+radial-gradient(circle at center,#3B82F6 18%,transparent 20%),
+radial-gradient(circle,#3B82F6 1px,transparent 1px);
+background-size:100% 100%,6px 6px;
+}
+
+.navbar.on-dark .nav-links a::after{
+background:#14264D;
+}
+
+.navbar.on-dark .cta,
+.navbar.on-dark .cta-secondary{
+border-color:#14264D;
+color:#ffffff;
+background:#14264D;
+box-shadow:0 10px 28px rgba(20,38,77,.12);
+}
+
+.navbar.on-dark .cta:hover,
+.navbar.on-dark .cta-secondary:hover{
+background:#1d3568;
+}
+
+/* Final desktop proportions: brand, links, language selector, then actions. */
+@media (min-width:981px){
+.navbar-inner,
+.navbar.scrolled .navbar-inner{
+grid-template-columns:270px minmax(0,1fr) auto;
+gap:18px;
+padding-left:32px;
+padding-right:32px;
+}
+
+.actions{ gap:10px; }
+.actions .language-selector{ flex:0 0 42px; width:42px; margin:0; }
+.actions .cta{ padding:13px 20px; white-space:nowrap; }
+
+/* Match the language control to the CTA contrast in each navbar state. */
+.navbar.on-dark :deep(.language-selector){
+color:#ffffff!important;
+background:#14264D!important;
+}
+
+.navbar.on-dark :deep(.language-selector:hover),
+.navbar.on-dark :deep(.language-selector:focus-visible){
+background:#1d3568!important;
+}
+
+}
+
+/* The language popover opens below the bar, so it must not be clipped by the scroll shine wrapper. */
+.navbar.scrolled .navbar-inner{ overflow:visible; }
 </style>

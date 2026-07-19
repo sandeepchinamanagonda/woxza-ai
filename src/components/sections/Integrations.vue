@@ -1,108 +1,43 @@
 <template>
   <section id="integrations" class="integrations">
-    <div class="container-custom">
+    <div class="integration-shell">
       <header class="section-heading">
-        <span class="eyebrow">CONNECTED ECOSYSTEM</span>
-        <h2>All the customer work, sorted into the systems your team already trusts</h2>
-        <p>
-          Woxza does not replace your CRM or workspace. It keeps them clean:
-          customer records, tasks, tickets, calendar events and team alerts stay
-          connected after every conversation.
-        </p>
+        <div class="eyebrow"><span>V</span>CONNECTED ECOSYSTEM</div>
+        <h2>
+          <span>One Voice Agent.</span>
+          <span>Connected to <b>everything that matters.</b></span>
+        </h2>
+        <p>Voxa integrates with the platforms you use every day—so your team stays aligned, conversations flow, and work gets done.</p>
       </header>
 
-      <div class="integration-layout">
-        <aside class="category-panel" aria-label="Integration categories">
-          <button
-            v-for="(flow, index) in flows"
-            :key="flow.id"
-            type="button"
-            :class="{ active: activeFlow === index }"
-            :aria-pressed="activeFlow === index"
-            @click="selectFlow(index)"
+      <div class="ecosystem-board">
+        <div class="category-grid">
+          <article
+            v-for="category in categories"
+            :key="category.title"
+            class="category"
+            :style="{ '--category-accent': category.accent, '--category-soft': category.soft }"
           >
-            <component :is="flow.icon" />
-            <span>
-              <strong>{{ flow.label }}</strong>
-              <small>{{ flow.short }}</small>
-            </span>
-          </button>
-        </aside>
-
-        <main :key="selectedFlow.id" class="system-board">
-          <div class="board-top">
-            <div>
-              <span>{{ selectedFlow.kicker }}</span>
-              <strong>{{ selectedFlow.title }}</strong>
+            <div class="category-icon"><component :is="category.icon" /></div>
+            <h3>{{ category.title }}</h3>
+            <div class="tool-list">
+              <div v-for="tool in category.tools" :key="tool.name" class="tool-item" :class="{ more: tool.more }">
+                <span class="tool-mark">
+                  <img v-if="tool.logo" :src="tool.logo" :alt="tool.name" />
+                  <component v-else-if="tool.icon" :is="tool.icon" />
+                  <b v-else>{{ tool.mark }}</b>
+                </span>
+                <strong>{{ tool.name }}</strong>
+              </div>
             </div>
-            <b><RefreshCcw /> Live sync</b>
-          </div>
-
-          <div class="board-grid">
-            <section class="primary-system">
-              <span class="system-label">Primary record</span>
-              <div class="system-head">
-                <span class="logo-box"><img :src="selectedFlow.primary.logo" :alt="selectedFlow.primary.name"></span>
-                <div>
-                  <strong>{{ selectedFlow.primary.name }}</strong>
-                  <small>{{ selectedFlow.primary.detail }}</small>
-                </div>
-              </div>
-
-              <div class="record-fields">
-                <div v-for="field in selectedFlow.fields" :key="field.label">
-                  <span>{{ field.label }}</span>
-                  <strong>{{ field.value }}</strong>
-                </div>
-              </div>
-            </section>
-
-            <section class="mapping-panel">
-              <span class="system-label">What gets written</span>
-              <article v-for="item in selectedFlow.mapping" :key="item.title">
-                <component :is="item.icon" />
-                <div>
-                  <strong>{{ item.title }}</strong>
-                  <p>{{ item.detail }}</p>
-                </div>
-              </article>
-            </section>
-
-            <section class="routing-panel">
-              <span class="system-label">Routing rules</span>
-              <ol>
-                <li v-for="(rule, index) in selectedFlow.rules" :key="rule">
-                  <span>{{ index + 1 }}</span>
-                  {{ rule }}
-                </li>
-              </ol>
-            </section>
-          </div>
-        </main>
-
-        <aside :key="`${selectedFlow.id}-apps`" class="app-panel">
-          <header>
-            <span>Connected apps</span>
-            <strong>{{ selectedFlow.appTitle }}</strong>
-          </header>
-
-          <div class="app-grid">
-            <article v-for="tool in selectedFlow.tools" :key="tool.name">
-              <span class="logo-box small"><img :src="tool.logo" :alt="tool.name"></span>
-              <strong>{{ tool.name }}</strong>
-              <small>{{ tool.detail }}</small>
-            </article>
-          </div>
-        </aside>
+          </article>
+        </div>
       </div>
 
-      <div class="governance-strip" aria-label="Integration assurances">
-        <article v-for="item in governance" :key="item.title">
-          <component :is="item.icon" />
-          <span>
-            <strong>{{ item.title }}</strong>
-            <small>{{ item.detail }}</small>
-          </span>
+      <div class="assurance-bar" aria-label="Integration assurances">
+        <article v-for="item in assurances" :key="item.title">
+          <span><component :is="item.icon" /></span>
+          <div><strong>{{ item.title }}</strong><small>{{ item.detail }}</small></div>
         </article>
       </div>
     </div>
@@ -110,683 +45,154 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from "vue"
-import {
-  BellRing,
-  CalendarCheck2,
-  CheckCircle2,
-  ClipboardList,
-  ContactRound,
-  FileText,
-  Layers3,
-  ListChecks,
-  LockKeyhole,
-  Mail,
-  MessagesSquare,
-  RefreshCcw,
-  Route,
-  ShieldCheck,
-  Sparkles,
-  Workflow
-} from "lucide-vue-next"
+import { CalendarDays, CheckCircle2, LockKeyhole, Mail, MessageSquareText, Network, RefreshCw, ShieldCheck, Target, Zap } from "lucide-vue-next"
 
 const asset = name => `/brand-logos/${name}.svg`
 
-const tools = {
-  salesforce: { name: "Salesforce", logo: asset("salesforce"), detail: "Accounts, leads and notes" },
-  hubspot: { name: "HubSpot", logo: asset("hubspot"), detail: "Deals and lifecycle stages" },
-  zoho: { name: "Zoho", logo: asset("zoho"), detail: "Tickets and service records" },
-  slack: { name: "Slack", logo: asset("slack"), detail: "Team alerts" },
-  teams: { name: "Microsoft Teams", logo: asset("microsoftteams"), detail: "Internal handoffs" },
-  calendar: { name: "Google Calendar", logo: asset("googlecalendar"), detail: "Bookings and callbacks" },
-  gmail: { name: "Gmail", logo: asset("gmail"), detail: "Email confirmations" },
-  whatsapp: { name: "WhatsApp", logo: asset("whatsapp"), detail: "Customer updates" },
-  notion: { name: "Notion", logo: asset("notion"), detail: "Knowledge and SOPs" },
-  odoo: { name: "Odoo", logo: asset("odoo"), detail: "Orders and operations" },
-  sap: { name: "SAP", logo: asset("sap"), detail: "Enterprise data" },
-  oracle: { name: "Oracle", logo: asset("oracle"), detail: "Business records" },
-  sendgrid: { name: "SendGrid", logo: asset("sendgrid"), detail: "Transactional email" },
-  mailchimp: { name: "Mailchimp", logo: asset("mailchimp"), detail: "Customer journeys" }
-}
-
-const flows = [
+const categories = [
   {
-    id: "crm",
-    label: "CRM",
-    short: "Records and follow-up",
-    icon: ContactRound,
-    kicker: "CUSTOMER RECORDS",
-    title: "Turn every call into a useful CRM record",
-    primary: tools.salesforce,
-    appTitle: "Sales and support stay aligned",
-    fields: [
-      { label: "Contact", value: "Avery Morgan" },
-      { label: "Intent", value: "Book appointment" },
-      { label: "Stage", value: "Qualified" },
-      { label: "Next action", value: "Send intake form" }
-    ],
-    mapping: [
-      { title: "Conversation summary", detail: "Short call notes attached to the customer record.", icon: FileText },
-      { title: "Owner and priority", detail: "Urgency and team ownership are set automatically.", icon: ClipboardList },
-      { title: "Follow-up task", detail: "The next step is created before the call disappears.", icon: CheckCircle2 }
-    ],
-    rules: ["If urgent, assign to live owner", "If booked, update calendar", "If unresolved, open follow-up task"],
-    tools: [tools.salesforce, tools.hubspot, tools.zoho, tools.gmail, tools.calendar, tools.slack]
+    title: "CRM",
+    icon: Target,
+    accent: "#22dff3",
+    soft: "#eaf2ff",
+    tools: [
+      { name: "Salesforce", logo: asset("salesforce") },
+      { name: "HubSpot", logo: asset("hubspot") },
+      { name: "Zoho CRM", logo: asset("zoho") },
+      { name: "Odoo", logo: asset("odoo") }
+    ]
   },
   {
-    id: "communication",
-    label: "Communication",
-    short: "Messages and alerts",
-    icon: MessagesSquare,
-    kicker: "TEAM COMMUNICATION",
-    title: "Send the right update to the right place",
-    primary: tools.slack,
-    appTitle: "No more status chasing",
-    fields: [
-      { label: "Channel", value: "Ops urgent" },
-      { label: "Summary", value: "Stock split needed" },
-      { label: "Owner", value: "Dispatch team" },
-      { label: "Customer update", value: "WhatsApp ready" }
-    ],
-    mapping: [
-      { title: "Internal alert", detail: "Teams receive the context, not just a notification.", icon: BellRing },
-      { title: "Customer message", detail: "Confirmations can be sent through email or WhatsApp.", icon: Mail },
-      { title: "Shared thread", detail: "Updates stay visible for everyone responsible.", icon: MessagesSquare }
-    ],
-    rules: ["Urgent requests go to team channel", "Customer confirmations use preferred channel", "Unanswered items stay pinned"],
-    tools: [tools.slack, tools.teams, tools.whatsapp, tools.gmail, tools.sendgrid, tools.mailchimp]
+    title: "Communication",
+    icon: MessageSquareText,
+    accent: "#2f8cff",
+    soft: "#edf4ff",
+    tools: [
+      { name: "Slack", logo: asset("slack") },
+      { name: "Microsoft Teams", logo: asset("microsoftteams") },
+      { name: "Google Chat", logo: asset("google") },
+      { name: "Zoom", logo: asset("zoom") }
+    ]
   },
   {
-    id: "operations",
-    label: "Operations",
-    short: "Orders, tickets, systems",
-    icon: Workflow,
-    kicker: "BUSINESS OPERATIONS",
-    title: "Route work into the system that actually completes it",
-    primary: tools.odoo,
-    appTitle: "Operations gets structured requests",
-    fields: [
-      { label: "Request", value: "Split shipment" },
-      { label: "SLA", value: "Urgent" },
-      { label: "System", value: "Odoo order" },
-      { label: "Status", value: "In progress" }
-    ],
-    mapping: [
-      { title: "Ticket or order update", detail: "Structured records are created with required fields.", icon: ListChecks },
-      { title: "System lookup", detail: "Existing records and inventory can be checked first.", icon: Layers3 },
-      { title: "Completion route", detail: "The task is closed only when the outcome is clear.", icon: Route }
-    ],
-    rules: ["Validate required fields before routing", "Escalate exceptions to a human", "Write outcome back to source record"],
-    tools: [tools.odoo, tools.sap, tools.oracle, tools.salesforce, tools.slack, tools.notion]
+    title: "Messaging",
+    icon: MessageSquareText,
+    accent: "#ff4fb7",
+    soft: "#eef5ff",
+    tools: [
+      { name: "WhatsApp", logo: asset("whatsapp") },
+      { name: "SMS", icon: MessageSquareText },
+      { name: "Email", icon: Mail },
+      { name: "SendGrid", logo: asset("sendgrid") }
+    ]
+  },
+  {
+    title: "Productivity & Scheduling",
+    icon: CalendarDays,
+    accent: "#c04eff",
+    soft: "#eff7ff",
+    tools: [
+      { name: "Google Calendar", logo: asset("googlecalendar") },
+      { name: "Gmail", logo: asset("gmail") },
+      { name: "Calendly", logo: asset("calendly") },
+      { name: "Microsoft 365", logo: asset("microsoft") }
+    ]
+  },
+  {
+    title: "Other Integrations",
+    icon: Network,
+    accent: "#28e2ef",
+    soft: "#edf1f7",
+    tools: [
+      { name: "Zendesk", mark: "Z" },
+      { name: "Notion", logo: asset("notion") },
+      { name: "Zapier", logo: asset("zapier") },
+      { name: "GitHub", logo: asset("github") }
+    ]
   }
 ]
 
-const governance = [
-  { title: "Field-level control", detail: "Write only what each workflow needs", icon: LockKeyhole },
-  { title: "Human handoff", detail: "Escalate sensitive requests cleanly", icon: ShieldCheck },
-  { title: "Calendar-safe", detail: "Bookings respect availability and ownership", icon: CalendarCheck2 },
-  { title: "Workflow-ready", detail: "Built around your existing stack", icon: Sparkles }
+const assurances = [
+  { title: "Secure & Compliant", detail: "Enterprise-grade security you can trust", icon: ShieldCheck },
+  { title: "Real-time Sync", detail: "Always in the loop across every platform", icon: RefreshCw },
+  { title: "Scalable", detail: "Built for growing teams and complex workflows", icon: Zap },
+  { title: "Reliable", detail: "99.9% uptime for uninterrupted operations", icon: CheckCircle2 },
+  { title: "Enterprise Ready", detail: "Built for the highest standards", icon: LockKeyhole }
 ]
 
-const activeFlow = ref(0)
-const selectedFlow = computed(() => flows[activeFlow.value])
-let rotationTimer
-
-function selectFlow(index) {
-  activeFlow.value = index
-  startRotation()
-}
-
-function startRotation() {
-  window.clearInterval(rotationTimer)
-  rotationTimer = window.setInterval(() => {
-    activeFlow.value = (activeFlow.value + 1) % flows.length
-  }, 7000)
-}
-
-onMounted(startRotation)
-onBeforeUnmount(() => window.clearInterval(rotationTimer))
 </script>
 
 <style scoped>
 .integrations {
-  position: relative;
-  padding: 136px 0 124px;
-  overflow: hidden;
+  position:relative;
+  padding:clamp(100px,8vw,130px) 0 80px;
+  overflow:hidden;
+  color:#fff;
   background:
-    radial-gradient(circle at 14% 18%, rgba(37, 99, 235, .08), transparent 30%),
-    linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%);
-  color: #14264d;
-  isolation: isolate;
+    linear-gradient(rgba(147,197,253,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(147,197,253,.035) 1px,transparent 1px),
+    radial-gradient(circle at 14% 12%,rgba(47,140,255,.16),transparent 31%),
+    radial-gradient(circle at 78% 24%,rgba(192,78,255,.08),transparent 24%),
+    radial-gradient(circle at 88% 82%,rgba(34,223,243,.1),transparent 33%),
+    linear-gradient(180deg,#07172f 0%,#06142a 100%);
+  background-size:64px 64px,64px 64px,auto,auto,auto,auto;
 }
 
-.container-custom {
-  position: relative;
-  z-index: 1;
+.integration-shell { width:min(1680px,calc(100% - 80px)); margin:auto; }
+.section-heading { display:flex; flex-direction:column; align-items:center; text-align:center; }
+.eyebrow { display:inline-flex; align-items:center; gap:10px; margin-bottom:22px; color:#dbeafe; font-size:10px; font-weight:850; letter-spacing:.22em; }
+.eyebrow::after { content:""; width:44px; height:1px; margin-left:5px; background:rgba(191,219,254,.65); }
+.eyebrow>span { display:grid; width:20px; height:20px; place-items:center; border-radius:7px; color:#14264d; background:#fff; box-shadow:0 7px 18px rgba(0,0,0,.18); font-size:9px; letter-spacing:0; }
+.section-heading h2 { margin:0; color:#fff; font-size:clamp(44px,4vw,68px); font-weight:730; line-height:.98; letter-spacing:-.05em; text-wrap:balance; }
+.section-heading h2>span { display:block; }
+.section-heading h2 b { color:#ff4fb7; background:linear-gradient(90deg,#ff4fb7,#c04eff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-weight:inherit; }
+.section-heading p { max-width:760px; margin:20px 0 0; color:rgba(219,234,254,.68); font-size:clamp(14px,1.1vw,17px); line-height:1.65; }
+
+.ecosystem-board { position:relative; min-height:0; margin:50px auto 0; }
+.category-grid { position:relative; z-index:3; display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(24px,3vw,58px); }
+.category { position:relative; min-width:0; text-align:center; }
+.category:nth-child(1) { transform:translateY(10px); }
+.category:nth-child(2) { transform:translateY(5px); }
+.category:nth-child(3) { transform:translateY(0); }
+.category:nth-child(4) { transform:translateY(-5px); }
+.category:nth-child(5) { transform:translateY(-10px); }
+.category-icon { position:relative; display:grid; width:46px; height:46px; margin:0 auto 16px; place-items:center; border:1px solid color-mix(in srgb,var(--category-accent) 66%,transparent); border-radius:14px; color:var(--category-accent); background:color-mix(in srgb,var(--category-accent) 16%,#07172f); box-shadow:0 0 0 7px color-mix(in srgb,var(--category-accent) 6%,transparent),0 0 32px color-mix(in srgb,var(--category-accent) 28%,transparent); }
+.category-icon::after { content:""; position:absolute; inset:6px; border:1px solid color-mix(in srgb,var(--category-accent) 32%,transparent); border-radius:9px; }
+.category-icon svg { width:20px; height:20px; stroke-width:2; }
+.category h3 { min-height:38px; margin:0; color:var(--category-accent); font-size:14px; font-weight:800; line-height:1.25; letter-spacing:-.02em; }
+.tool-list { position:relative; display:grid; gap:8px; min-height:300px; margin-top:16px; padding:14px 0 34px 28px; border:0; border-radius:0; background:transparent; box-shadow:none; text-align:left; }
+.tool-list::before { content:""; position:absolute; left:11px; top:14px; bottom:18px; width:1px; background:linear-gradient(to bottom,var(--category-accent),color-mix(in srgb,var(--category-accent) 8%,transparent)); opacity:.82; }
+.tool-list::after { content:""; position:absolute; left:9px; top:39.5px; width:5px; height:5px; border-radius:50%; background:var(--category-accent); box-shadow:0 64px 0 color-mix(in srgb,var(--category-accent) 76%,white),0 128px 0 color-mix(in srgb,var(--category-accent) 54%,white),0 192px 0 color-mix(in srgb,var(--category-accent) 34%,white),0 0 12px var(--category-accent); }
+.tool-item { display:grid; grid-template-columns:44px 1fr; gap:12px; align-items:center; min-height:56px; padding:7px 12px; border:1px solid color-mix(in srgb,var(--category-accent) 16%,transparent); border-radius:15px; background:linear-gradient(135deg,color-mix(in srgb,var(--category-accent) 9%,#0a1c38),rgba(255,255,255,.045)); box-shadow:0 9px 24px rgba(0,0,0,.09); }
+.tool-mark { display:grid; width:44px; height:44px; place-items:center; border-radius:11px; background:transparent; }
+.tool-mark img { width:32px; height:32px; object-fit:contain; }
+.tool-mark svg { width:28px; height:28px; color:var(--category-accent); }
+.tool-mark b { color:var(--category-accent); font-size:14px; }
+.tool-item strong { overflow:hidden; color:#f8fbff; font-size:12px; font-weight:750; text-overflow:ellipsis; white-space:nowrap; }
+.tool-item.more { background:color-mix(in srgb,var(--category-accent) 6%,rgba(7,22,46,.55)); border-color:color-mix(in srgb,var(--category-accent) 13%,transparent); box-shadow:none; }
+.tool-item.more .tool-mark { background:rgba(255,255,255,.12); }
+.tool-item.more strong { color:var(--category-accent); }
+.assurance-bar { position:relative; z-index:5; display:grid; grid-template-columns:repeat(5,1fr); gap:14px; width:100%; margin:20px auto 0; padding:0; }
+.assurance-bar article { display:grid; grid-template-columns:46px 1fr; gap:12px; align-items:center; min-height:82px; padding:12px 14px; border:1px solid rgba(34,211,238,.24); border-radius:17px; background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(8,26,52,.82)); box-shadow:0 14px 34px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.05); text-align:left; backdrop-filter:blur(14px); }
+.assurance-bar article:nth-child(2) { border-color:rgba(59,130,246,.28); background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(8,26,52,.82)); }
+.assurance-bar article:nth-child(3) { border-color:rgba(236,72,153,.28); background:linear-gradient(135deg,rgba(236,72,153,.1),rgba(8,26,52,.82)); }
+.assurance-bar article:nth-child(4) { border-color:rgba(168,85,247,.28); background:linear-gradient(135deg,rgba(168,85,247,.1),rgba(8,26,52,.82)); }
+.assurance-bar article:nth-child(5) { border-color:rgba(34,211,238,.24); background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(8,26,52,.82)); }
+.assurance-bar article>span { display:grid; width:42px; height:42px; place-items:center; border-radius:13px; background:rgba(255,255,255,.08); }
+.assurance-bar article:nth-child(1)>span { color:#22d3ee; background:rgba(34,211,238,.14); }
+.assurance-bar article:nth-child(2)>span { color:#3b82f6; background:rgba(59,130,246,.14); }
+.assurance-bar article:nth-child(3)>span { color:#ec4899; background:rgba(236,72,153,.14); }
+.assurance-bar article:nth-child(4)>span { color:#a855f7; background:rgba(168,85,247,.14); }
+.assurance-bar article:nth-child(5)>span { color:#22d3ee; background:rgba(34,211,238,.14); }
+.assurance-bar svg { width:20px; height:20px; }
+.assurance-bar strong { display:block; color:#fff; font-size:11px; }
+.assurance-bar small { display:block; max-width:170px; margin-top:4px; color:rgba(255,255,255,.56); font-size:9px; line-height:1.35; }
+
+@media(max-width:1080px){
+  .category-grid{grid-template-columns:repeat(2,1fr);max-width:760px;margin:auto}.category,.category:nth-child(n){padding:22px;border:1px solid rgba(255,255,255,.1);border-radius:24px;background:rgba(255,255,255,.055);box-shadow:0 18px 48px rgba(0,0,0,.12);transform:none}.category:last-child{grid-column:1/-1;width:calc(50% - 10px);justify-self:center}.tool-list{min-height:0}.ecosystem-board{min-height:0}.assurance-bar{grid-template-columns:repeat(2,1fr);margin-top:28px}
 }
 
-.section-heading {
-  max-width: 980px;
-  margin: 0 auto 40px;
-  text-align: center;
-  animation: section-rise .72s cubic-bezier(.22, 1, .36, 1) both;
-}
-
-.eyebrow {
-  display: inline-flex;
-  margin-bottom: 18px;
-  color: #2563eb;
-  font-size: 10px;
-  font-weight: 850;
-  letter-spacing: .28em;
-}
-
-.section-heading h2 {
-  margin: 0;
-  color: #11152b;
-  font-size: clamp(44px, 4.8vw, 70px);
-  line-height: 1;
-  letter-spacing: -.055em;
-  text-wrap: balance;
-}
-
-.section-heading p {
-  max-width: 760px;
-  margin: 22px auto 0;
-  color: #68758e;
-  font-size: 16px;
-  line-height: 1.75;
-}
-
-.integration-layout {
-  display: grid;
-  grid-template-columns: 270px minmax(0, 1fr) 285px;
-  gap: 16px;
-  align-items: stretch;
-  animation: board-in .66s .08s cubic-bezier(.22, 1, .36, 1) both;
-}
-
-.category-panel,
-.system-board,
-.app-panel {
-  border: 1px solid rgba(20, 38, 77, .09);
-  border-radius: 30px;
-  background: rgba(255, 255, 255, .88);
-  box-shadow: 0 28px 86px rgba(20, 38, 77, .09);
-}
-
-.category-panel {
-  display: grid;
-  gap: 10px;
-  align-content: start;
-  padding: 14px;
-}
-
-.category-panel button {
-  display: grid;
-  grid-template-columns: 44px 1fr;
-  gap: 12px;
-  align-items: center;
-  min-height: 78px;
-  padding: 13px;
-  border: 1px solid transparent;
-  border-radius: 20px;
-  color: #60708d;
-  background: transparent;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: .26s cubic-bezier(.22, 1, .36, 1);
-}
-
-.category-panel button:hover,
-.category-panel button.active {
-  border-color: rgba(20, 38, 77, .16);
-  color: #14264d;
-  background: #f7faff;
-  transform: translateY(-3px);
-  box-shadow: 0 16px 36px rgba(20, 38, 77, .08);
-}
-
-.category-panel svg {
-  width: 44px;
-  height: 44px;
-  padding: 11px;
-  border-radius: 15px;
-  color: #2563eb;
-  background: #eaf2ff;
-  box-sizing: border-box;
-}
-
-.category-panel button.active svg {
-  color: #fff;
-  background: #14264d;
-  animation: icon-pop .42s cubic-bezier(.22, 1, .36, 1) both;
-}
-
-.category-panel strong,
-.app-panel strong,
-.system-head strong {
-  display: block;
-  color: inherit;
-  font-size: 14px;
-}
-
-.category-panel small,
-.app-panel small,
-.system-head small {
-  display: block;
-  margin-top: 4px;
-  color: #8a95a8;
-  font-size: 11px;
-}
-
-.system-board {
-  overflow: hidden;
-  animation: board-in .5s cubic-bezier(.22, 1, .36, 1) both;
-}
-
-.board-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  align-items: center;
-  min-height: 86px;
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(20, 38, 77, .08);
-  background: linear-gradient(180deg, #fff, #f9fbff);
-}
-
-.board-top span,
-.system-label,
-.app-panel header span {
-  color: #7b879d;
-  font-size: 10px;
-  font-weight: 850;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-}
-
-.board-top strong {
-  display: block;
-  margin-top: 6px;
-  color: #14264d;
-  font-size: 20px;
-  line-height: 1.2;
-}
-
-.board-top b {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex: 0 0 auto;
-  padding: 9px 12px;
-  border-radius: 999px;
-  color: #15803d;
-  background: #effdf4;
-  font-size: 11px;
-}
-
-.board-top b svg {
-  width: 14px;
-  height: 14px;
-  animation: sync-spin 2.8s linear infinite;
-}
-
-.board-grid {
-  display: grid;
-  grid-template-columns: .92fr 1.08fr;
-  gap: 14px;
-  padding: 18px;
-}
-
-.primary-system,
-.mapping-panel,
-.routing-panel {
-  border: 1px solid rgba(20, 38, 77, .08);
-  border-radius: 22px;
-  background: #fff;
-}
-
-.primary-system {
-  padding: 18px;
-}
-
-.system-head {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  margin-top: 18px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(20, 38, 77, .08);
-}
-
-.logo-box {
-  display: grid;
-  width: 52px;
-  height: 52px;
-  place-items: center;
-  border: 1px solid rgba(20, 38, 77, .08);
-  border-radius: 16px;
-  background: #fff;
-}
-
-.logo-box.small {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-}
-
-.logo-box img {
-  width: auto;
-  max-width: 34px;
-  height: 31px;
-  object-fit: contain;
-}
-
-.record-fields {
-  display: grid;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.record-fields div {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 11px;
-  border-radius: 14px;
-  background: #f7f9fd;
-  animation: item-pop .42s cubic-bezier(.22, 1, .36, 1) both;
-}
-
-.record-fields div:nth-child(2) { animation-delay: .06s; }
-.record-fields div:nth-child(3) { animation-delay: .12s; }
-.record-fields div:nth-child(4) { animation-delay: .18s; }
-
-.record-fields span {
-  color: #8793a7;
-  font-size: 11px;
-  font-weight: 750;
-}
-
-.record-fields strong {
-  color: #14264d;
-  font-size: 11px;
-  text-align: right;
-}
-
-.mapping-panel {
-  display: grid;
-  gap: 10px;
-  padding: 18px;
-}
-
-.mapping-panel article {
-  display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: 12px;
-  align-items: start;
-  padding: 13px;
-  border: 1px solid rgba(20, 38, 77, .07);
-  border-radius: 17px;
-  background: #fbfcff;
-  animation: item-pop .42s cubic-bezier(.22, 1, .36, 1) both;
-  transition: .24s cubic-bezier(.22, 1, .36, 1);
-}
-
-.mapping-panel article:nth-of-type(2) { animation-delay: .08s; }
-.mapping-panel article:nth-of-type(3) { animation-delay: .16s; }
-
-.mapping-panel article:hover,
-.routing-panel li:hover,
-.app-grid article:hover,
-.governance-strip article:hover {
-  border-color: rgba(37, 99, 235, .16);
-  box-shadow: 0 16px 38px rgba(20, 38, 77, .08);
-  transform: translateY(-4px);
-}
-
-.mapping-panel svg {
-  width: 42px;
-  height: 42px;
-  padding: 10px;
-  border-radius: 14px;
-  color: #2563eb;
-  background: #eaf2ff;
-  box-sizing: border-box;
-}
-
-.mapping-panel strong {
-  color: #14264d;
-  font-size: 13px;
-}
-
-.mapping-panel p {
-  margin: 5px 0 0;
-  color: #6f7b91;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.routing-panel {
-  grid-column: 1 / -1;
-  padding: 18px;
-}
-
-.routing-panel ol {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin: 15px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.routing-panel li {
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 9px;
-  align-items: center;
-  min-height: 58px;
-  padding: 12px;
-  border: 1px solid rgba(20, 38, 77, .07);
-  border-radius: 16px;
-  color: #3d4961;
-  background: #fbfcff;
-  font-size: 12px;
-  font-weight: 720;
-  line-height: 1.35;
-  animation: item-pop .42s cubic-bezier(.22, 1, .36, 1) both;
-  transition: .24s cubic-bezier(.22, 1, .36, 1);
-}
-
-.routing-panel li:nth-child(2) { animation-delay: .08s; }
-.routing-panel li:nth-child(3) { animation-delay: .16s; }
-
-.routing-panel li span {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  border-radius: 50%;
-  color: #2563eb;
-  background: #eaf2ff;
-  font-size: 10px;
-  font-weight: 850;
-}
-
-.app-panel {
-  padding: 20px;
-}
-
-.app-panel header strong {
-  margin-top: 8px;
-  color: #14264d;
-  font-size: 20px;
-  line-height: 1.18;
-  letter-spacing: -.02em;
-}
-
-.app-grid {
-  display: grid;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.app-grid article {
-  display: grid;
-  grid-template-columns: 42px 1fr;
-  column-gap: 11px;
-  align-items: center;
-  min-height: 74px;
-  padding: 11px;
-  border: 1px solid rgba(20, 38, 77, .07);
-  border-radius: 17px;
-  background: #fff;
-  animation: item-pop .42s cubic-bezier(.22, 1, .36, 1) both;
-  transition: .24s cubic-bezier(.22, 1, .36, 1);
-}
-
-.app-grid article:nth-child(2) { animation-delay: .05s; }
-.app-grid article:nth-child(3) { animation-delay: .1s; }
-.app-grid article:nth-child(4) { animation-delay: .15s; }
-.app-grid article:nth-child(5) { animation-delay: .2s; }
-.app-grid article:nth-child(6) { animation-delay: .25s; }
-
-.app-grid article strong {
-  align-self: end;
-  color: #14264d;
-  font-size: 12px;
-}
-
-.app-grid article small {
-  align-self: start;
-}
-
-.governance-strip {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.governance-strip article {
-  display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: 12px;
-  align-items: center;
-  min-height: 82px;
-  padding: 15px;
-  border: 1px solid rgba(20, 38, 77, .08);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, .8);
-  animation: item-pop .45s cubic-bezier(.22, 1, .36, 1) both;
-  transition: .24s cubic-bezier(.22, 1, .36, 1);
-}
-
-.governance-strip article:nth-child(2) { animation-delay: .06s; }
-.governance-strip article:nth-child(3) { animation-delay: .12s; }
-.governance-strip article:nth-child(4) { animation-delay: .18s; }
-
-.governance-strip svg {
-  width: 42px;
-  height: 42px;
-  padding: 10px;
-  border-radius: 14px;
-  color: #2563eb;
-  background: #eaf2ff;
-  box-sizing: border-box;
-}
-
-.governance-strip strong {
-  display: block;
-  color: #14264d;
-  font-size: 13px;
-}
-
-.governance-strip small {
-  display: block;
-  margin-top: 3px;
-  color: #7b879d;
-  font-size: 11px;
-}
-
-@keyframes section-rise {
-  from { transform: translateY(22px); }
-  to { transform: translateY(0); }
-}
-
-@keyframes board-in {
-  from { transform: translateY(16px) scale(.99); }
-  to { transform: translateY(0) scale(1); }
-}
-
-@keyframes item-pop {
-  from { transform: translateY(12px) scale(.97); }
-  to { transform: translateY(0) scale(1); }
-}
-
-@keyframes icon-pop {
-  0% { transform: scale(.88) rotate(-7deg); }
-  58% { transform: scale(1.1) rotate(4deg); }
-  100% { transform: scale(1) rotate(0); }
-}
-
-@keyframes sync-spin {
-  to { transform: rotate(360deg); }
-}
-
-@media (max-width: 1180px) {
-  .integration-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .category-panel {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .app-grid,
-  .governance-strip {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 780px) {
-  .integrations {
-    padding: 98px 0 86px;
-  }
-
-  .section-heading h2 {
-    font-size: 42px;
-  }
-
-  .category-panel,
-  .board-grid,
-  .routing-panel ol,
-  .app-grid,
-  .governance-strip {
-    grid-template-columns: 1fr;
-  }
-
-  .board-top {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
-
-@media (max-width: 520px) {
-  .category-panel,
-  .app-panel,
-  .board-grid {
-    padding: 12px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition: none !important;
-  }
+@media(max-width:640px){
+  .integrations{padding:90px 0 76px}.integration-shell{width:calc(100% - 32px)}.section-heading h2{font-size:40px}.section-heading p{font-size:14px}.eyebrow{font-size:9px;letter-spacing:.16em}.eyebrow::after{display:none}.ecosystem-board{margin-top:42px}.category-grid{grid-template-columns:1fr}.category:last-child{grid-column:auto;width:auto}.category{padding:20px}.assurance-bar{grid-template-columns:1fr;padding:0}
 }
 </style>

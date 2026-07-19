@@ -4,6 +4,24 @@ import { listFeatures, listTags, normalizeTags } from "./features.js";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
+// Questionnaire answers belong in the typed registration and preference columns.
+// Keeping another copy in metadata made lead exports show the same answer twice.
+const LEAD_METADATA_FIELDS_STORED_IN_COLUMNS = new Set([
+  "role", "businessTypeLabel", "companySizeLabel", "helpWith", "biggestChallenge",
+  "biggestChallenges", "callHandling", "callHandlings", "software", "dailyCalls",
+  "onePerfectThing", "selectedCapabilities", "selectedFeatures", "implementationTimeline",
+  "investmentPriority", "pricingLabel", "referralSource", "message"
+]);
+
+function leadMetadata(metadata) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return {};
+  return Object.fromEntries(
+    Object.entries(metadata).filter(([key, value]) =>
+      !LEAD_METADATA_FIELDS_STORED_IN_COLUMNS.has(key) && value !== undefined
+    )
+  );
+}
+
 function sendJson(res, status, body, headers = {}) {
   res.writeHead(status, { ...JSON_HEADERS, ...headers });
   res.end(JSON.stringify(body));
@@ -49,7 +67,11 @@ async function readForm(req) {
 }
 
 const csvCell = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
-const isAdmin = (req, adminToken) => Boolean(adminToken && req.headers.authorization === `Bearer ${adminToken}`);
+const hasAdminAccess = (req, adminToken, localAdminMode, localAdminToken) =>
+  Boolean(
+    (adminToken && req.headers.authorization === `Bearer ${adminToken}`) ||
+    (localAdminMode && localAdminToken && req.headers.authorization === `Bearer ${localAdminToken}`)
+  );
 
 function validateFeature(input) {
   const errors = [];
@@ -61,7 +83,14 @@ function validateFeature(input) {
   return errors;
 }
 
-export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_TOKEN, allowedOrigins = ["http://localhost:3456"] }) {
+export function createApp({
+  db,
+  demoService,
+  adminToken = process.env.ADMIN_API_TOKEN,
+  localAdminMode = process.env.LOCAL_ADMIN_MODE === "true",
+  localAdminToken = process.env.LOCAL_ADMIN_TOKEN,
+  allowedOrigins = ["http://localhost:3456"]
+}) {
   return async function app(req, res) {
     const cors = corsHeaders(req, allowedOrigins);
     if (req.method === "OPTIONS") {
@@ -139,7 +168,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
       }
 
       if (req.method === "GET" && url.pathname === "/api/leads") {
-        if (!adminToken || req.headers.authorization !== `Bearer ${adminToken}`) return sendJson(res, 401, { error: "Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error: "Unauthorized" }, cors);
         const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10));
         const pageSize = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("pageSize") || "25", 10)));
         const filters = [url.searchParams.get("use_case"), url.searchParams.get("contact_status"), url.searchParams.get("from"), url.searchParams.get("to")];
@@ -158,18 +187,18 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
       }
 
       if (url.pathname === "/api/admin/features" && req.method === "GET") {
-        if (!isAdmin(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const items = await listFeatures(db, { tag:url.searchParams.get("tag"), search:url.searchParams.get("search"), includeInactive:url.searchParams.get("includeInactive") === "true" });
         return sendJson(res, 200, { items }, cors);
       }
 
       if (url.pathname === "/api/admin/feature-tags" && req.method === "GET") {
-        if (!isAdmin(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         return sendJson(res, 200, { items:await listTags(db) }, cors);
       }
 
       if (url.pathname === "/api/admin/features" && req.method === "POST") {
-        if (!isAdmin(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const input = await readJson(req); const errors = validateFeature(input);
         if (errors.length) return sendJson(res, 422, { error:"Validation failed", details:errors }, cors);
         const result = await db.query(`INSERT INTO features (id,title,description,business_tags,priority,status,active) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`, [randomUUID(), input.title.trim(), input.description.trim(), normalizeTags(input.businessTags), Number(input.priority), input.status, input.active !== false]);
@@ -178,14 +207,14 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
 
       const featurePath = url.pathname.match(/^\/api\/admin\/features\/([0-9a-f-]+)$/i);
       if (featurePath && req.method === "PATCH") {
-        if (!isAdmin(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const input = await readJson(req); const errors = validateFeature(input);
         if (errors.length) return sendJson(res, 422, { error:"Validation failed", details:errors }, cors);
         const result = await db.query(`UPDATE features SET title=$2,description=$3,business_tags=$4,priority=$5,status=$6,active=$7,updated_at=NOW() WHERE id=$1 RETURNING *`, [featurePath[1], input.title.trim(), input.description.trim(), normalizeTags(input.businessTags), Number(input.priority), input.status, input.active !== false]);
         return result.rowCount ? sendJson(res, 200, result.rows[0], cors) : sendJson(res, 404, { error:"Feature not found" }, cors);
       }
       if (featurePath && req.method === "DELETE") {
-        if (!isAdmin(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         if (url.searchParams.get("hard") === "true") {
           const result = await db.query("DELETE FROM features WHERE id=$1 RETURNING id", [featurePath[1]]);
           return result.rowCount ? sendJson(res, 200, { deleted:true, hard:true }, cors) : sendJson(res, 404, { error:"Feature not found" }, cors);
@@ -196,12 +225,12 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
 
       const promptPath = url.pathname.match(/^\/api\/admin\/prompt-templates\/([a-z0-9_-]+)$/i);
       if (promptPath && req.method === "GET") {
-        if (!isAdmin(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const result = await db.query("SELECT key,title,body,active,created_at,updated_at FROM agent_prompt_templates WHERE key=$1", [promptPath[1]]);
         return result.rowCount ? sendJson(res, 200, result.rows[0], cors) : sendJson(res, 404, { error:"Prompt not found" }, cors);
       }
       if (promptPath && req.method === "PATCH") {
-        if (!isAdmin(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const input = await readJson(req);
         if (typeof input.body !== "string" || !input.body.trim() || input.body.length > 6000) return sendJson(res, 422, { error:"body is required and must be 6000 characters or fewer" }, cors);
         const result = await db.query("UPDATE agent_prompt_templates SET body=$2,active=$3,updated_at=NOW() WHERE key=$1 RETURNING key,title,body,active,created_at,updated_at", [promptPath[1], input.body.trim(), input.active !== false]);
@@ -228,7 +257,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
             FROM registration`,
             [id, input.firstName.trim(), input.lastName.trim(), input.email.trim().toLowerCase(),
               input.countryCode.trim(), input.phoneNumber.trim(), input.businessName?.trim() || null,
-              input.businessType, input.role, JSON.stringify(input.metadata ?? {}), input.priceRange,
+              input.businessType, input.role, JSON.stringify(leadMetadata(input.metadata)), input.priceRange,
               JSON.stringify([...new Set(input.desiredFeatures)]), input.primaryChallenge.trim(), input.adoptionTimeline,
               input.teamSize, JSON.stringify([...new Set(input.helpWith)]), input.biggestChallenges[0],
               JSON.stringify([...new Set(input.biggestChallenges)]), input.callHandlings[0],
@@ -255,7 +284,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)`,
             [id, input.firstName.trim(), input.lastName.trim(), input.email.trim().toLowerCase(),
               input.countryCode.trim(), input.phoneNumber.trim(), input.businessName?.trim() || null,
-              input.businessType, JSON.stringify(input.metadata ?? {})]
+              input.businessType, JSON.stringify(leadMetadata(input.metadata))]
           );
         } catch (error) {
           if (error.code === "23505") {
@@ -277,7 +306,7 @@ export function createApp({ db, demoService, adminToken = process.env.ADMIN_API_
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)`,
           [id, input.firstName.trim(), input.lastName.trim(), input.email.trim().toLowerCase(),
             input.countryCode.trim(), input.phoneNumber.trim(), input.businessName?.trim() || null,
-            input.businessType, input.message.trim(), JSON.stringify(input.metadata ?? {})]
+            input.businessType, input.message.trim(), JSON.stringify(leadMetadata(input.metadata))]
         );
         return sendJson(res, 201, { inquiryId: id, status: "received" }, cors);
       }

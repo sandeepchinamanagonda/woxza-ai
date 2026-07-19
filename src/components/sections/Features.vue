@@ -46,38 +46,39 @@ v-for="(feature,index) in features"
 
 <script setup>
 import { ref } from "vue"
+import { Bot, ChartNoAxesCombined, Network, ShieldCheck, TrendingUp, Workflow } from "lucide-vue-next"
 import FeatureCard from "@/components/FeatureCard.vue"
 
 const features=ref([
 {
 title:"AI Employees",
 description:"Digital employees capable of handling conversations, operations and repetitive business tasks.",
-icon:"M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+icon:Bot
 },
 {
 title:"Enterprise Security",
 description:"Privacy-first architecture with enterprise compliance and governance.",
-icon:"M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+icon:ShieldCheck
 },
 {
 title:"Workflow Automation",
 description:"Connect AI with existing workflows and eliminate repetitive manual work.",
-icon:"M13 10V3L4 14h7v7l9-11h-7z"
+icon:Workflow
 },
 {
 title:"Business Analytics",
 description:"Transform every interaction into measurable business intelligence.",
-icon:"M9 17v-6m4 6V7m4 10V4"
+icon:ChartNoAxesCombined
 },
 {
 title:"Omnichannel AI",
 description:"Deploy across voice, chat, CRM, email and messaging platforms.",
-icon:"M3 5a2 2 0 012-2h3l2 5-2 1a11 11 0 005 5l1-2 5 2v3a2 2 0 01-2 2h-1"
+icon:Network
 },
 {
 title:"Scale Infinitely",
 description:"Grow your AI workforce without increasing operational complexity.",
-icon:"M5 12l5 5L20 7"
+icon:TrendingUp
 }
 ])
 </script>

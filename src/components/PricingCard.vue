@@ -143,7 +143,7 @@ const solutions = ref([
   font-size:12px;
   letter-spacing:.28em;
   color:#9C8168;
-  font-family:"IBM Plex Sans";
+  font-family:var(--font-primary);
 }
 
 .section-header h2{

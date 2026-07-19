@@ -8,6 +8,7 @@ const TERMINAL = new Set(["completed", "no_answer", "failed"])
 export const DEMO_WARNING_MS = 105_000
 export const DEMO_CUTOFF_MS = 120_000
 export const DEMO_CUTOFF_SECONDS = DEMO_CUTOFF_MS / 1_000
+export const DEMO_RING_TIMEOUT_MS = 75_000
 const xmlEscape = value => String(value).replace(/[<>&'\"]/g, c => ({ "<":"&lt;", ">":"&gt;", "&":"&amp;", "'":"&apos;", '"':"&quot;" })[c])
 const normalizePlivoStatus = value => {
   const status = String(value || "").toLowerCase().replaceAll("-", "_")
@@ -39,6 +40,9 @@ export function createDemoService({ db, limiter, plivo, twilio, followupQueue, b
       const suppliedPhone = input.phone_number ? `${input.country_code || ""}${input.phone_number}` : input.phone
       const parsed = parsePhoneNumberFromString(String(suppliedPhone || ""))
       if (!parsed?.isValid()) return { error:"Enter a valid phone number including country code", status:400 }
+      if (process.env.NODE_ENV === "production" && parsed.countryCallingCode !== "91") {
+        return { error:"Live demo calls are currently available in India only.", status:403 }
+      }
       if (input.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) return { error:"Enter a valid email address", status:400 }
       const phone = parsed.number
       const submissionId = randomUUID()
@@ -88,6 +92,16 @@ export function createDemoService({ db, limiter, plivo, twilio, followupQueue, b
       return { status:"calling", callId:id, httpStatus:202 }
     },
     async status(id) {
+      const expired = await db.query(
+        `UPDATE demo_calls
+         SET status='no_answer',end_reason='callback_timeout',ended_at=NOW(),updated_at=NOW()
+         WHERE id=$1
+           AND status IN ('initiating','ringing')
+           AND created_at < NOW() - ($2 * INTERVAL '1 millisecond')
+         RETURNING id`,
+        [id,DEMO_RING_TIMEOUT_MS]
+      )
+      if (expired.rowCount) await this.finalize(id)
       const result = await db.query(`SELECT id,status FROM demo_calls WHERE id=$1`, [id])
       return result.rows[0] ? { callId:result.rows[0].id, status:result.rows[0].status } : null
     },
@@ -106,7 +120,7 @@ export function createDemoService({ db, limiter, plivo, twilio, followupQueue, b
       })
       // Plivo's current docs disallow audioTrack="both" for bidirectional streams;
       // inbound is the valid caller-audio track while model audio is sent via playAudio.
-      return `<?xml version="1.0" encoding="UTF-8"?><Response><Stream bidirectional="true" audioTrack="inbound" keepCallAlive="true" contentType="audio/x-mulaw;rate=8000">${xmlEscape(stream.toString())}</Stream><Wait length="120"/><Hangup/></Response>`
+      return `<?xml version="1.0" encoding="UTF-8"?><Response><Stream bidirectional="true" audioTrack="inbound" keepCallAlive="true" contentType="audio/x-l16;rate=16000">${xmlEscape(stream.toString())}</Stream><Wait length="95"/><Hangup/></Response>`
     },
     async twilioAnswer(id, fields = {}) {
       const result = await db.query(`UPDATE demo_calls SET status='connected',answered_at=COALESCE(answered_at,NOW()),provider_call_id=COALESCE($2,provider_call_id),updated_at=NOW() WHERE id=$1 RETURNING language`, [id,fields.CallSid || null])

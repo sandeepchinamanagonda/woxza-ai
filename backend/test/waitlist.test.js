@@ -147,6 +147,36 @@ test("saves every waitlist answer in one atomic submission", async () => {
   assert.deepEqual(JSON.parse(values[20]), ["hubspot", "slack"]);
   assert.deepEqual(JSON.parse(values[22]), ["50-100", "100-300"]);
   assert.equal(values[23], "linkedin");
+  assert.deepEqual(JSON.parse(values[9]), { source: "homepage" });
+});
+
+test("does not store questionnaire answers a second time in metadata", async () => {
+  const completed = await request("/api/waitlist/registrations/complete", {
+    ...registration,
+    email: "deduplicated@example.com",
+    role: "ceo",
+    priceRange: "300-999",
+    desiredFeatures: ["appointment-booking"],
+    primaryChallenge: "Avoid repetitive questions.",
+    adoptionTimeline: "within-30-days",
+    teamSize: "26-50",
+    helpWith: ["customer-support"],
+    biggestChallenges: ["spending-too-much-time-answering-repetitive-questions"],
+    callHandlings: ["receptionist"],
+    software: ["freshworks-crm"],
+    dailyCalls: ["1000-plus"],
+    referralSource: "youtube",
+    metadata: {
+      source: "website-modal",
+      intent: "waitlist",
+      role: "CEO",
+      biggestChallenge: "Spending too much time answering repetitive questions",
+      implementationTimeline: "Within the next 30 days"
+    }
+  });
+
+  const values = db.state.completedSubmissions.get(completed.body.registrationId);
+  assert.deepEqual(JSON.parse(values[9]), { source: "website-modal", intent: "waitlist" });
 });
 
 test("rejects duplicate emails", async () => {

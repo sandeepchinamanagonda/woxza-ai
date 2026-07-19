@@ -5,6 +5,7 @@
   "description": "Woxza - Enterprise AI Voice Platform",
   "scripts": {
     "dev": "vite",
+    "local": "./setup.sh",
     "api:dev": "node --watch backend/src/server.js",
     "api:start": "node backend/src/server.js",
     "api:test": "node --test backend/test/*.test.js",

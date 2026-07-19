@@ -1,7 +1,9 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-ARG VITE_DEMO_ADMIN_MODE=false
-ENV VITE_DEMO_ADMIN_MODE=$VITE_DEMO_ADMIN_MODE
+ARG VITE_LOCAL_ADMIN_MODE=false
+ARG VITE_LOCAL_ADMIN_TOKEN
+ENV VITE_LOCAL_ADMIN_MODE=$VITE_LOCAL_ADMIN_MODE
+ENV VITE_LOCAL_ADMIN_TOKEN=$VITE_LOCAL_ADMIN_TOKEN
 COPY package.json ./
 RUN npm install --no-audit --no-fund
 COPY index.html vite.config.js postcss.config.js tailwind.config.js ./

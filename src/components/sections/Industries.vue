@@ -16,23 +16,21 @@
 
 <div class="eyebrow">
 
-INDUSTRIES
+{{ t("INDUSTRIES") }}
 
 </div>
 
 <h2>
 
-AI built for
+{{ t("AI built for") }}
 
-<span>every industry.</span>
+<span>{{ t("every industry.") }}</span>
 
 </h2>
 
 <p>
 
-Woxza adapts to the way your industry works.
-automating workflows, enhancing customer
-experiences and driving real business impact.
+{{ t("Woxza adapts to the way your industry works, automating workflows, enhancing customer experiences and driving real business impact.") }}
 
 </p>
 
@@ -44,23 +42,19 @@ experiences and driving real business impact.
 
 <div class="feature">
 
-<div class="feature-icon">
-
-🤖
-
-</div>
+<div class="feature-icon"><Bot aria-hidden="true" /></div>
 
 <div>
 
 <strong>
 
-Purpose-built AI
+{{ t("Purpose-built AI") }}
 
 </strong>
 
 <small>
 
-Tailored to industry needs
+{{ t("Tailored to industry needs") }}
 
 </small>
 
@@ -70,23 +64,19 @@ Tailored to industry needs
 
 <div class="feature">
 
-<div class="feature-icon">
-
-📈
-
-</div>
+<div class="feature-icon"><ChartNoAxesCombined aria-hidden="true" /></div>
 
 <div>
 
 <strong>
 
-Proven impact
+{{ t("Proven impact") }}
 
 </strong>
 
 <small>
 
-Measurable business results
+{{ t("Measurable business results") }}
 
 </small>
 
@@ -96,23 +86,19 @@ Measurable business results
 
 <div class="feature">
 
-<div class="feature-icon">
-
-🛡️
-
-</div>
+<div class="feature-icon"><ShieldCheck aria-hidden="true" /></div>
 
 <div>
 
 <strong>
 
-Enterprise ready
+{{ t("Enterprise ready") }}
 
 </strong>
 
 <small>
 
-Secure, reliable & scalable
+{{ t("Secure, reliable & scalable") }}
 
 </small>
 
@@ -156,21 +142,17 @@ active:index===3
 
 >
 
-<div class="icon">
-
-{{ industry.icon }}
-
-</div>
+<div class="icon"><component :is="industry.icon" aria-hidden="true" /></div>
 
 <h3>
 
-{{ industry.title }}
+{{ t(industry.title) }}
 
 </h3>
 
 <p class="headline">
 
-{{ industry.headline }}
+{{ t(industry.headline) }}
 
 </p>
 
@@ -190,7 +172,7 @@ v-for="item in industry.features"
 
 </span>
 
-{{ item }}
+{{ t(item) }}
 
 </li>
 
@@ -198,7 +180,7 @@ v-for="item in industry.features"
 
 <div class="tag">
 
-{{ industry.tag }}
+{{ t(industry.tag) }}
 
 </div>
 
@@ -244,7 +226,7 @@ active:i===current
 
 <div class="bottom">
 
-🏢 Trusted by businesses across 20+ industries worldwide
+{{ t("Trusted by businesses across 20+ industries worldwide") }}
 
 </div>
 
@@ -257,8 +239,11 @@ active:i===current
 <script setup>
 
 import { computed, ref } from "vue"
+import { useI18n } from "@/composables/useI18n"
+import { Banknote, Bot, BriefcaseBusiness, Building2, ChartNoAxesCombined, Factory, GraduationCap, HeartPulse, Plane, ShieldCheck, ShoppingBag } from "lucide-vue-next"
 
 const current = ref(3)
+const { t } = useI18n()
 
 /* ===========================
 INDUSTRIES
@@ -267,7 +252,7 @@ INDUSTRIES
 const industries = [
 
 {
-icon:"✈️",
+icon:Plane,
 title:"Travel",
 headline:"Deliver seamless journeys from booking to arrival.",
 
@@ -282,7 +267,7 @@ tag:"BOOKING & SUPPORT"
 },
 
 {
-icon:"💼",
+icon:BriefcaseBusiness,
 title:"Professional Services",
 headline:"Convert more enquiries into clients.",
 
@@ -297,7 +282,7 @@ tag:"CLIENT ENGAGEMENT"
 },
 
 {
-icon:"🏥",
+icon:HeartPulse,
 title:"Healthcare",
 headline:"Never miss a patient call.",
 
@@ -312,7 +297,7 @@ tag:"PATIENT ACCESS"
 },
 
 {
-icon:"🎓",
+icon:GraduationCap,
 title:"Education",
 headline:"Support every learner from enquiry to enrollment.",
 
@@ -327,7 +312,7 @@ tag:"STUDENT ENROLLMENT"
 },
 
 {
-icon:"🛍️",
+icon:ShoppingBag,
 title:"Retail",
 headline:"Turn every shopper into a returning customer.",
 
@@ -342,7 +327,7 @@ tag:"CUSTOMER SUPPORT"
 },
 
 {
-icon:"🏭",
+icon:Factory,
 title:"Manufacturing",
 headline:"Keep operations moving without missed calls.",
 
@@ -357,7 +342,7 @@ tag:"OPERATIONS SUPPORT"
 },
 
 {
-icon:"🏢",
+icon:Building2,
 title:"Enterprise",
 headline:"Automate conversations across every department.",
 
@@ -372,7 +357,7 @@ tag:"BUSINESS OPERATIONS"
 },
 
 {
-icon:"🏦",
+icon:Banknote,
 title:"Finance",
 headline:"Deliver secure banking conversations 24/7.",
 
@@ -686,9 +671,9 @@ border-color:#2563EB;
 
 .feature-icon{
 
-width:58px;
+width:46px;
 
-height:58px;
+height:46px;
 
 display:flex;
 
@@ -696,7 +681,7 @@ align-items:center;
 
 justify-content:center;
 
-border-radius:18px;
+border-radius:14px;
 
 background:#2563EB;
 
@@ -705,6 +690,8 @@ font-size:24px;
 flex-shrink:0;
 
 }
+
+.feature-icon svg{ width:20px; height:20px; stroke:#fff; stroke-width:2; }
 
 .feature strong{
 
@@ -812,7 +799,8 @@ border-radius:24px;
 
 padding:24px;
 
-height:390px;
+min-height:390px;
+height:auto;
 
 border:1px solid #E7ECF4;
 
@@ -824,7 +812,7 @@ transition:
 
 all .35s cubic-bezier(.22,1,.36,1);
 
-overflow:hidden;
+overflow:visible;
 
 }
 
@@ -926,6 +914,8 @@ transition:.35s;
 
 }
 
+.icon svg{ width:24px; height:24px; stroke:currentColor; stroke-width:1.9; }
+
 .card.active .icon,
 
 .card:hover .icon{
@@ -974,7 +964,7 @@ color:#667085;
 
 margin:0 0 22px;
 
-min-height:54px;
+min-height:0;
 
 }
 

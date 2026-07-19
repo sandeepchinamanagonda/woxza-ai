@@ -1,68 +1,336 @@
 <template>
-  <section id="faq" class="faq">
+  <section id="faq" class="faq landing-section">
     <div class="container-custom">
       <div class="heading">
-        <span>FREQUENTLY ASKED QUESTIONS</span>
-        <h2>Everything you<br>need to know</h2>
-        <p>Answers to the questions we hear most before launching a Woxza Voice AI solution.</p>
+        <span>{{ t("FREQUENTLY ASKED QUESTIONS") }}</span>
+        <h2 class="display-heading">{{ t("Everything you need to know") }}</h2>
+        <p>{{ t("Answers to the questions businesses ask before launching a Woxza voice AI solution.") }}</p>
       </div>
 
       <div class="faq-list">
-        <details v-for="(item, index) in faqs" :key="item.question" class="faq-item">
-          <summary>
-            <span>{{ String(index + 1).padStart(2, "0") }}</span>
-            <h3>{{ item.question }}</h3>
-            <i aria-hidden="true"></i>
-          </summary>
-          <p>{{ item.answer }}</p>
-        </details>
+        <TransitionGroup name="faq-reveal">
+          <article v-for="item in visibleFaqs" :key="item.question" class="faq-item">
+            <div class="question">
+              <h3>{{ t(item.question) }}</h3>
+            </div>
+            <div class="answer">
+              <p>{{ t(item.answer) }}</p>
+            </div>
+          </article>
+        </TransitionGroup>
+
+        <button
+          v-if="faqs.length > initialCount"
+          class="more-button"
+          type="button"
+          :aria-expanded="showAll"
+          aria-controls="faq"
+          @click="toggleAll"
+        >
+          {{ t(showAll ? "Less" : "More...") }}
+        </button>
       </div>
     </div>
   </section>
 </template>
 
 <script setup>
+import { computed, onBeforeUnmount, onMounted, ref } from "vue"
+import { useI18n } from "@/composables/useI18n"
+
+const { t } = useI18n()
+
+const initialCount = 3
+const showAll = ref(false)
+const featuredStart = ref(0)
+
 const faqs = [
-  { question:"What services does Woxza provide?", answer:"We build Voice AI agents, workflow automations, enterprise knowledge systems, and custom AI integrations tailored to your business." },
-  { question:"Which industries do you work with?", answer:"We build Voice AI solutions for healthcare, real estate, logistics, retail, finance, hospitality, home services, education, and more." },
-  { question:"Can the AI handle both inbound and outbound calls?", answer:"Absolutely. Our AI agents can answer incoming calls, make outbound calls, qualify leads, schedule appointments, and follow up with customers." },
-  { question:"Can AI integrate with our existing software?", answer:"Yes. We integrate with CRMs, ERPs, telephony providers, APIs, databases, calendars, and other business tools." },
-  { question:"Can the AI answer questions about my business?", answer:"Yes. We train the AI using your website, documents, FAQs, SOPs, and internal knowledge so it can provide accurate, business-specific answers." },
-  { question:"Can the AI book appointments and update my CRM?", answer:"Yes. The AI can schedule appointments, update your CRM, capture customer information, trigger workflows, and perform actions in real time." },
-  { question:"Can the AI speak multiple languages?", answer:"Yes. Our Voice AI agents support multiple languages and accents, allowing you to serve customers across different regions." },
-  { question:"Does the AI sound natural?", answer:"Yes. We use advanced conversational AI with realistic voices, natural interruptions, and human-like responses for seamless conversations." },
-  { question:"What happens if the AI can't answer a question?", answer:"The AI can seamlessly transfer the call to your team, schedule a callback, or collect customer information for follow-up." },
-  { question:"How long does implementation take?", answer:"Most Voice AI solutions are deployed within a few days to 2 weeks, depending on the complexity and integrations required." },
-  { question:"How much does a Voice AI solution cost?", answer:"Pricing depends on your use case, integrations, and expected call volume. Contact us for a tailored proposal." },
-  { question:"Is customer data secure?", answer:"Yes. We follow industry best practices for data security, encrypted communications, and secure integrations to protect your business information." },
-  { question:"Can the solution scale as my business grows?", answer:"Absolutely. Whether you receive dozens or thousands of calls each day, your Voice AI scales effortlessly with demand." },
-  { question:"Will I get analytics and call recordings?", answer:"Yes. You'll have access to call recordings, transcripts, conversation summaries, performance insights, and other analytics to continuously improve your AI." },
-  { question:"Do you provide ongoing support?", answer:"Yes. We continuously monitor, optimize, and improve your AI systems after deployment." },
-  { question:"Can I customize the AI's voice and personality?", answer:"Absolutely. We tailor the AI's voice, tone, conversation style, and behavior to match your brand and customer experience." }
+  {
+    question: "What services does Woxza provide?",
+    answer: "Woxza lets you build and launch AI voice agents yourself—without code or a developer—and go live the same day. Need separate agents for wholesale and retail, each with its own pricing? Build both. You are billed per call, not per agent, so running five agents costs the same as running one. You can customise each agent's voice, tone, behaviour, and data at any time, without tickets or vendor delays."
+  },
+  {
+    question: "Which industries do you work with?",
+    answer: "Woxza is not limited to one industry. The platform adapts to your business, whether you are a restaurant that cannot miss a booking during rush hour or a hospital checking in patients without a front-desk queue. We work across restaurants, healthcare, education, distribution, and enterprise. Our platform already handles live pharmaceutical and wholesale orders across more than 1,500 products in real time."
+  },
+  {
+    question: "Can the AI handle both inbound and outbound calls?",
+    answer: "Yes. Woxza agents answer incoming calls instantly, helping you avoid hold music and missed calls during busy periods. They can also make outbound calls to follow up on abandoned orders, confirm appointments, and re-engage inactive leads whenever a workflow calls for it."
+  },
+  {
+    question: "Can the AI integrate with our existing software?",
+    answer: "Yes. Woxza connects to the CRM, calendars, and databases you already use, with no need to replace your existing tools. You control your agent's information directly. For example, if a restaurant special sells out at 3 p.m., update its availability and the agent will stop offering it on the next call."
+  },
+  {
+    question: "Can the AI answer questions about my business?",
+    answer: "Yes. Your agent is trained on your real business information, not a generic script. Connect it to live systems or upload your catalogue, pricing, and FAQs. You can also customise its messages, tone, and behaviour. When customers ask about stock or availability, the agent uses your current information rather than guessing."
+  },
+  {
+    question: "Can the AI book appointments and update my CRM?",
+    answer: "Yes. Your agent can book appointments directly in your calendar, update your CRM with customer details, and move workflows forward during the call. Your team does not need to enter the information again afterwards."
+  },
+  {
+    question: "Can the AI speak multiple languages?",
+    answer: "Yes. Woxza supports English, Hindi, Telugu, Tamil, Kannada, and more. It can follow customers as they naturally switch languages during a conversation, including mixed-language conversations such as Telugu and English."
+  },
+  {
+    question: "Does the AI sound natural?",
+    answer: "Yes. Woxza agents are designed to sound natural, respond to tone, and handle interruptions mid-sentence. Conversations feel responsive and human rather than like a script being read aloud."
+  },
+  {
+    question: "What happens if the AI can't answer a question?",
+    answer: "When an agent cannot answer a question, it does not guess. It can transfer the call to your team, schedule a callback, or collect the customer's details for follow-up. Unanswered questions are flagged so you can fill the knowledge gap and improve future conversations."
+  },
+  {
+    question: "How long does implementation take?",
+    answer: "Woxza can get you live in minutes, not weeks. Sign up, choose a plan, upload your data, and create your agent yourself—without waiting for a vendor team or working around someone else's schedule."
+  },
+  {
+    question: "How much does a Voice AI solution cost?",
+    answer: "Woxza uses pay-as-you-go pricing. You are charged per call, not per agent, so you can create as many voice agents as you need without an extra charge for each one. Your cost scales with usage rather than the number of agents you build. Join the waitlist for pricing based on your expected call volume."
+  },
+  {
+    question: "Is customer data secure?",
+    answer: "Yes. Woxza is designed with India's data-protection standards in mind. Calls, transcripts, and business data are encrypted in transit and at rest; customer data is isolated at the platform level; and access controls limit information to authorised team members."
+  },
+  {
+    question: "Can the solution scale as my business grows?",
+    answer: "Yes. Woxza is built to scale with your business. Agents can handle multiple calls at the same time, helping you manage seasonal spikes, outbound campaigns, and sudden surges without callers waiting on hold. Complex or high-value calls can be handed to your team with full context."
+  },
+  {
+    question: "Will I get analytics and call recordings?",
+    answer: "Yes. Every call can be recorded and transcribed, with a summary of the customer's request, the outcome, and any required follow-up. Recordings, transcripts, and summaries are available in your Woxza dashboard. APIs and webhooks can also send call data to your CRM, spreadsheets, or other tools."
+  },
+  {
+    question: "Do you provide ongoing support?",
+    answer: "Yes. We continue to support your agent as your business changes. Contact us at support@woxza.com, join the Woxza community on Discord or in our forums, or work with a dedicated solutions engineer on an Enterprise plan. We also monitor system health around the clock."
+  }
 ]
+
+const visibleFaqs = computed(() => {
+  if (showAll.value) return faqs
+
+  return Array.from({ length: initialCount }, (_, offset) =>
+    faqs[(featuredStart.value + offset) % faqs.length]
+  )
+})
+
+const toggleAll = () => {
+  showAll.value = !showAll.value
+}
+
+let rotationTimer
+
+onMounted(() => {
+  rotationTimer = window.setInterval(() => {
+    if (!showAll.value) featuredStart.value = (featuredStart.value + initialCount) % faqs.length
+  }, 60_000)
+})
+
+onBeforeUnmount(() => window.clearInterval(rotationTimer))
 </script>
 
 <style scoped>
-.faq{position:relative;padding:180px 0;background:radial-gradient(circle at 12% 18%,rgba(var(--woxza-accent-rgb),.08),transparent 32%),#fff;overflow:hidden}
-.faq::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:900px;height:900px;border-radius:50%;background:radial-gradient(circle,rgba(91,140,255,.08),transparent 72%);filter:blur(90px);pointer-events:none}
-.container-custom{position:relative;z-index:1}
-.heading{max-width:760px;margin:0 auto 80px;text-align:center}
-.heading span{display:inline-block;margin-bottom:18px;font-size:12px;font-weight:700;letter-spacing:.35em;color:#5b8cff}
-.heading h2{font-size:clamp(54px,6vw,86px);line-height:.94;letter-spacing:-.05em;margin-bottom:26px;color:#101828}
-.heading p{max-width:650px;margin:auto;font-size:20px;line-height:1.75;color:#667085}
-.faq-list{max-width:1000px;margin:auto;display:grid;gap:16px}
-.faq-item{position:relative;background:#fff;border:1px solid #e5ecf6;border-radius:22px;box-shadow:0 18px 55px rgba(59,130,246,.055);transition:transform .3s ease,border-color .3s ease,box-shadow .3s ease;overflow:hidden}
-.faq-item:hover,.faq-item[open]{border-color:#8fb0ff;box-shadow:0 24px 64px rgba(59,130,246,.1)}
-summary{display:grid;grid-template-columns:48px 1fr 24px;align-items:center;gap:18px;padding:27px 32px;cursor:pointer;list-style:none}
-summary::-webkit-details-marker{display:none}
-summary span{font-size:12px;font-weight:800;letter-spacing:.22em;color:#5b8cff}
-summary h3{font-size:23px;line-height:1.25;color:#101828;margin:0;transition:color .3s ease}
-summary i{position:relative;width:18px;height:18px}
-summary i::before,summary i::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:2px;background:#5b8cff;transform:translate(-50%,-50%);border-radius:2px;transition:transform .25s ease}
-summary i::after{transform:translate(-50%,-50%) rotate(90deg)}
-.faq-item[open] summary i::after{transform:translate(-50%,-50%) rotate(0)}
-.faq-item[open] summary h3{color:#3b82f6}
-.faq-item p{margin:0;padding:0 74px 28px 98px;font-size:17px;line-height:1.75;color:#667085}
-@media(max-width:768px){.faq{padding:110px 0}.heading{margin-bottom:56px}.heading h2{font-size:44px}.heading p{font-size:17px}summary{grid-template-columns:36px 1fr 20px;gap:12px;padding:22px 20px}summary h3{font-size:19px}.faq-item p{padding:0 20px 23px 68px;font-size:16px}}
-@media(max-width:480px){.heading h2{font-size:36px}.faq-item p{padding-left:20px}summary span{display:none}summary{grid-template-columns:1fr 20px}}
+.faq {
+  position: relative;
+  background: #fff;
+}
+
+.container-custom,
+.heading,
+.faq-list {
+  position: relative;
+  z-index: 2;
+}
+
+.heading {
+  max-width: 760px;
+  margin: 0 auto 72px;
+  text-align: center;
+}
+
+.heading span {
+  display: inline-block;
+  margin-bottom: 18px;
+  color: #5b8cff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .35em;
+}
+
+.heading h2 {
+  margin-bottom: 26px;
+  color: #101828;
+  font-size: clamp(60px, 6vw, 90px);
+  line-height: .94;
+  letter-spacing: -.05em;
+  text-wrap: balance;
+}
+
+.heading p {
+  max-width: 620px;
+  margin: auto;
+  color: #667085;
+  font-size: 20px;
+  line-height: 1.9;
+  text-wrap: pretty;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1000px;
+  margin: auto;
+}
+
+.faq-item {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 30px;
+  border: 1px solid #e5ecf6;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 18px 55px rgba(59, 130, 246, .06);
+  backface-visibility: hidden;
+  transition:
+    transform .4s cubic-bezier(.22, 1, .36, 1),
+    box-shadow .35s ease,
+    border-color .35s ease;
+}
+
+.faq-item:hover {
+  border-color: #5b8cff;
+  box-shadow: 0 28px 70px rgba(59, 130, 246, .12);
+  transform: translateY(-8px);
+}
+
+.question {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.question h3 {
+  flex: 1;
+  margin: 0;
+  color: #101828;
+  font-size: 22px;
+  transition: color .35s ease;
+}
+
+.faq-item:hover h3 {
+  color: #3b82f6;
+}
+
+.answer {
+  padding-top: 12px;
+}
+
+.faq-item p {
+  margin: 0;
+  color: #667085;
+  font-size: 15px;
+  line-height: 1.7;
+  transition: color .35s ease;
+}
+
+.faq-item:hover p {
+  color: #475467;
+}
+
+.more-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px auto 0;
+  padding: 8px 12px;
+  border: 0;
+  color: #1f5fd4;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color .25s ease;
+}
+
+.more-button:hover {
+  color: #3b82f6;
+}
+
+.faq-reveal-enter-active,
+.faq-reveal-leave-active {
+  transition: opacity .35s ease, transform .35s ease;
+}
+
+@media (max-width: 640px) {
+
+  .heading {
+    margin-bottom: 44px;
+  }
+
+  .heading h2 {
+    font-size: clamp(46px, 14vw, 60px);
+  }
+
+  .heading p {
+    font-size: 17px;
+    line-height: 1.6;
+  }
+
+  .faq-item {
+    padding: 22px 20px;
+  }
+
+  .question {
+    gap: 12px;
+  }
+
+  .question h3 {
+    font-size: 18px;
+    line-height: 1.3;
+  }
+
+  .answer {
+    padding-top: 14px;
+  }
+}
+
+.faq-reveal-enter-from,
+.faq-reveal-leave-to {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+@media (max-width: 1100px) {
+  .heading { margin-bottom: 64px; }
+  .question h3 { font-size: 21px; }
+  .faq-item { padding: 24px 26px; }
+}
+
+@media (max-width: 768px) {
+  .heading h2 { font-size: 44px; line-height: 1; }
+  .heading p { font-size: 17px; }
+  .question { align-items: flex-start; gap: 16px; }
+  .question h3 { font-size: 18px; }
+  .faq-item { padding: 20px; border-radius: 18px; }
+  .faq-item p { font-size: 14px; line-height: 1.7; }
+}
+
+@media (max-width: 480px) {
+  .heading h2 { font-size: 36px; }
+  .heading p { font-size: 15px; }
+  .question h3 { font-size: 17px; }
+  .faq-item { padding: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-item,
+  .more-button,
+  .faq-reveal-enter-active,
+  .faq-reveal-leave-active {
+    transition: none;
+  }
+}
 </style>
