@@ -52,13 +52,6 @@
             <strong>{{ successMessage }}</strong>
             <span>{{ successDetail }}</span>
 
-            <button
-              class="btn-primary"
-              type="button"
-              @click="closeModal"
-            >
-              Done
-            </button>
           </div>
 
           <form
@@ -2074,9 +2067,13 @@ label > span em{
 .success-card{
   align-content:center;
   min-height:480px;
-  padding:0;
-  border:0;
-  background:#fff;
+  padding:36px;
+  border:1px solid rgba(147,197,253,.35);
+  background:var(--woxza-accent);
+}
+.success-card strong,
+.success-card span{
+  color:var(--woxza-white);
 }
 
 @media(max-width:820px){
