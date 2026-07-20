@@ -49,7 +49,7 @@ test("caller energy detection reacts to speech but ignores carrier silence", () 
   assert.equal(detector.push(Buffer.alloc(320)), false)
 })
 
-test("starts the caller-first welcome only after a short standalone greeting", () => {
+test("recognizes a short standalone greeting without treating business context as a greeting", () => {
   assert.equal(isSimpleGreeting("Hello."), true)
   assert.equal(isSimpleGreeting("నమస్కారం"), true)
   assert.equal(isSimpleGreeting("Hello, I run a saree shop"), false)

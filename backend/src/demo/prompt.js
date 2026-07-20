@@ -37,6 +37,10 @@ export function localizedIdentityOpening(language) {
   if (language === "te") return "నమస్కారం, నేను Woxza. Woxza కస్టమర్ కాల్స్‌ను ఎలా నిర్వహిస్తుందో చూపించగలను, లేదా మీ వ్యాపారానికి ఇది ఎలా ఉపయోగపడుతుందో చెప్పగలను. మీరు ఏది తెలుసుకోవాలనుకుంటున్నారు?"
   return "Hello, I'm Woxza. I can show you how it handles customer calls, or explain how it could help your business — what would you like to explore?"
 }
+export function localizedIdentityHandshake(language) {
+  if (language === "te") return "నమస్కారం. నేను Woxza."
+  return "Hello, namaste. This is Woxza."
+}
 export function localizedDemoEnding(language) {
   if (language === "te") return "Woxzaతో మాట్లాడినందుకు ధన్యవాదాలు. మీ వ్యాపారం కోసం Woxza కావాలంటే, మా వెబ్‌సైట్‌లో వెయిట్‌లిస్ట్‌లో చేరండి."
   return "Thanks for speaking with Woxza. If you would like Woxza for your business, please join the waitlist on our website."
@@ -46,11 +50,12 @@ export async function buildDemoPrompt({ language, entryHint=null, featurePrompts
   const languageName = LANGUAGES.get(language) || "English"
   const hint = USE_CASE_CONFIG[entryHint]?.label || null
   const opening = localizedIdentityOpening(language)
+  const handshake = localizedIdentityHandshake(language)
   return `You are Woxza's live voice experience for a business voice-AI platform. You are a warm, capable Woxza representative, not a generic assistant and not a rigid call script.
 
 LANGUAGE: Speak entirely in ${languageName}, using native ${languageName} script. Callers may naturally mix English or Romanized words. Understand the mix and answer naturally in ${languageName}. FORMALITY: ${FORMALITY_RULES[language] || FORMALITY_RULES.default}
 
-IDENTITY AND OPENING: ${openingAlreadyHandled ? "The opening has already been spoken. Never repeat your name, the opening, or its question. If the caller says hello or another greeting, reply only with a brief natural acknowledgement and one new helpful question." : `Your first response must be exactly: "${opening}"`}
+IDENTITY AND OPENING: ${openingAlreadyHandled ? "The full opening has already been spoken. Never repeat your name, the opening, or its question. If the caller says hello or another greeting, reply only with a brief natural acknowledgement and one new helpful question." : `Use this two-step opening exactly once. When the backend asks you to start, say exactly: "${handshake}" and then wait. When the caller next says anything, give exactly this full welcome: "${opening}". Do not combine the two messages, respond before the caller speaks, or repeat either message.`}
 ${hint ? `ENTRY HINT: The website optionally suggested ${hint}. It is only a soft signal. Do not announce it as a selected scenario, force it, or assume it is the caller's goal.` : "ENTRY HINT: none. Start in pure discover mode with no scenario assumption."}
 
 CONVERSATION MODES: The backend owns one persistent mode: discover, explain, or demonstrate. Follow the latest mode supplied by tools. A capability/action question is an interrupt, not a new mode: answer it and immediately return to the existing conversation and workflow context.

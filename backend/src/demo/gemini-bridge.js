@@ -659,10 +659,6 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
             if (isAppointmentBooking()) appointmentToolRequired = true
             persistTranscript(db, demoCallId, "caller", callerText)
             onCallerActivity?.()
-            if (!openingPending && isSimpleGreeting(callerText)) {
-              promptLiveAgent(liveSession, "[POST-OPENING GREETING: The full Woxza opening has already been played. Reply with exactly one brief acknowledgement and one new question about the caller's business needs. Never repeat your name, the opening, or its original question.]")
-              return
-            }
             if (!callerRequestedEnd && isConversationEndRequest(callerText)) {
               callerRequestedEnd = true
               persistTranscript(db, demoCallId, "system", "Caller requested to end the conversation")
@@ -1098,7 +1094,7 @@ export function attachDemoGeminiBridge(server, { db }) {
         } catch (error) { console.warn("Invalid Plivo demo stream event", { demoCallId, error:error.message }) }
       })
       logTiming("gemini_session_ready")
-      promptLiveAgent(session, "Start the demo now. Speak the configured OPENING greeting exactly, then wait for the caller.")
+      promptLiveAgent(session, "Start the demo now. Speak the configured short HANDSHAKE exactly, then wait for the caller.")
       logTiming("opening_turn_dispatched")
       console.info("Gemini Live Plivo demo bridge connected", { demoCallId, language })
     } catch (error) { console.error("Gemini Live Plivo bridge setup failed", { demoCallId, error:error.message }); close() }
@@ -1191,7 +1187,7 @@ export function attachDemoGeminiBridge(server, { db }) {
           onClosed:() => close()
         })
         for (const payload of queuedAudio.splice(0)) forwardAudio(payload)
-        promptLiveAgent(session, "Start the demo now. Speak the configured OPENING greeting exactly, then wait for the caller.")
+        promptLiveAgent(session, "Start the demo now. Speak the configured short HANDSHAKE exactly, then wait for the caller.")
         console.info("Gemini Live Twilio demo bridge connected", { demoCallId, language })
       } catch (error) { console.error("Gemini Live Twilio bridge setup failed", { demoCallId, error:error.message }); close() }
     }

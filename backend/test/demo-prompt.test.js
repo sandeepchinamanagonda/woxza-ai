@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { buildDemoPrompt, LANGUAGES, USE_CASES, localizedIdentityOpening, localizedPostOrderActionCapability } from "../src/demo/prompt.js"
+import { buildDemoPrompt, LANGUAGES, USE_CASES, localizedIdentityHandshake, localizedIdentityOpening, localizedPostOrderActionCapability } from "../src/demo/prompt.js"
 
 test("an unset entry hint starts a pure discover conversation", async () => {
   const prompt = await buildDemoPrompt({ language:"en" })
@@ -38,6 +38,13 @@ test("FAQ claims remain in the feature catalog rather than bloating the live sys
 
 test("identity opening and callback explanation are localized for Telugu", () => {
   assert.match(localizedIdentityOpening("te"), /కస్టమర్ కాల్స్‌ను ఎలా నిర్వహిస్తుందో/)
+  assert.equal(localizedIdentityHandshake("te"), "నమస్కారం. నేను Woxza.")
   assert.match(localizedPostOrderActionCapability("te"), /లైవ్ ధరను చెక్ చేయలేను/)
   for (const language of LANGUAGES.keys()) assert.ok(localizedPostOrderActionCapability(language).includes("Woxza") || language === "te")
+})
+
+test("the opening uses a short handshake before the full welcome", async () => {
+  const prompt = await buildDemoPrompt({ language:"en" })
+  assert.match(prompt, /Hello, namaste\. This is Woxza\./)
+  assert.match(prompt, /When the caller next says anything, give exactly this full welcome/)
 })
