@@ -165,8 +165,18 @@ async function submitDemo() {
   try {
     const response = await fetch(`${apiBaseUrl}/api/demo/call`, { method:"POST", headers:{ "content-type":"application/json" }, body:JSON.stringify({ entry_hint:form.useCase || null, language:form.language, name:form.name, country_code:form.countryCode, phone_number:form.phone, consent:form.consent, website:form.website }) })
     const body = await response.json().catch(() => ({}))
-    if (response.status === 429) limitReached.value = true
-    if (!response.ok) throw new Error(body.error || "We could not start the demo call")
+    if (!response.ok) {
+      // Validation, availability, and rate-limit errors are actionable before
+      // a provider call is attempted. Keep the form visible so the caller sees
+      // the backend's exact explanation instead of a misleading call failure.
+      if (response.status >= 400 && response.status < 500) {
+        status.value = "idle"
+        limitReached.value = response.status === 429
+        error.value = body.error || "We could not start the demo call"
+        return
+      }
+      throw new Error(body.error || "We could not start the demo call")
+    }
     status.value = "ringing"; poll(body.callId)
   } catch (caught) { status.value = "failed"; error.value = caught.message }
 }
