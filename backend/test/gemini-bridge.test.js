@@ -2,7 +2,9 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
 import { createPcmSpeechDetector, createStreamingPcmResampler, resamplePcm, swapPcm16Endianness } from "../src/demo/audio-codec.js"
-import { advanceScopeRedirect, containsOrderConfirmation, createCallerSilenceMonitor, createDemoOrderState, createPacedMuLawWriter, createScopeRedirectState, decodePlivoInboundAudio, describeGeminiLiveError, geminiCapacityRetryDelay, isConversationEndRequest, isGeminiCapacityClose, isOrderAffirmative, isOrderCorrection, isPostOrderActionQuestion, isSimpleGreeting, looksLikeOrderConfirmationQuestion, openGeminiSessionWithRetry } from "../src/demo/gemini-bridge.js"
+import { createOpeningController } from "../src/demo/opening-controller.js"
+import { beginContextualDemo, completeContextualDemo, createContextualDemoState, prepareContextualDemoResponse } from "../src/demo/contextual-demo-state.js"
+import { advanceScopeRedirect, containsOrderConfirmation, createCallerSilenceMonitor, createDemoOrderState, createPacedMuLawWriter, createScopeRedirectState, decodePlivoInboundAudio, describeGeminiLiveError, geminiCapacityRetryDelay, isConversationEndRequest, isGeminiCapacityClose, isOrderAffirmative, isOrderCorrection, isPostOrderActionQuestion, looksLikeOrderConfirmationQuestion, missingOrderDetails, openGeminiSessionWithRetry, resolveNumericOpeningChoice } from "../src/demo/gemini-bridge.js"
 
 test("converts PCM samples between little-endian and L16 network byte order", () => {
   const littleEndian = Buffer.from([0x34, 0x12, 0xfe, 0xff, 0x00, 0x80])
@@ -49,11 +51,45 @@ test("caller energy detection reacts to speech but ignores carrier silence", () 
   assert.equal(detector.push(Buffer.alloc(320)), false)
 })
 
-test("recognizes a short standalone greeting without treating business context as a greeting", () => {
-  assert.equal(isSimpleGreeting("Hello."), true)
-  assert.equal(isSimpleGreeting("నమస్కారం"), true)
-  assert.equal(isSimpleGreeting("Hello, I run a saree shop"), false)
-  assert.equal(isSimpleGreeting("హలో, మా షాపులో స్టాక్ ఉందా అని అడుగుతారు"), false)
+test("opening controller gives the caller a short first-speech window", () => {
+  let timer
+  const events = []
+  const controller = createOpeningController({
+    callerFirstWindowMs:200,
+    schedule:callback => (timer = { callback, unref() {} }),
+    cancel:() => { timer = undefined },
+    onCallerFirst:() => events.push("caller"),
+    onWoxzaFirst:() => events.push("woxza")
+  })
+  controller.start()
+  assert.equal(controller.noteCallerSpeech(), true)
+  assert.deepEqual(events, ["caller"])
+  assert.equal(controller.noteCallerSpeech(), false)
+
+  const secondEvents = []
+  const second = createOpeningController({
+    schedule:callback => (timer = { callback, unref() {} }),
+    cancel:() => {},
+    onWoxzaFirst:() => secondEvents.push("woxza")
+  })
+  second.start()
+  timer.callback()
+  assert.deepEqual(secondEvents, ["woxza"])
+})
+
+test("opening treats speech-to-text clock values as the two menu choices", () => {
+  assert.equal(resolveNumericOpeningChoice("1:00"), "demo")
+  assert.equal(resolveNumericOpeningChoice("2:00"), "business")
+  assert.equal(resolveNumericOpeningChoice("tomorrow at 2:00"), null)
+})
+
+test("contextual demo keeps the caller's business and never requires a canned workflow", () => {
+  const state = createContextualDemoState()
+  assert.equal(beginContextualDemo(state, { business:"tile shop", currentProcess:"WhatsApp replies", primaryPain:"repeated questions", scale:"20 calls", topic:"tile availability" }).ok, true)
+  assert.deepEqual({ business:state.business, topic:state.topic, status:state.status }, { business:"tile shop", topic:"tile availability", status:"collecting" })
+  assert.equal(prepareContextualDemoResponse(state, { customerRequest:"tile availability", details:"design and quantity", simulatedResult:"check product data" }).ok, true)
+  assert.equal(completeContextualDemo(state).ok, true)
+  assert.equal(state.status, "completed")
 })
 
 test("caller silence starts after the agent's latest output activity", () => {
@@ -127,7 +163,7 @@ test("recognizes callback and price follow-up questions after a confirmed order"
 })
 
 test("detects explicit caller farewells without treating a simple thank-you as a hangup", () => {
-  for (const farewell of ["Bye", "Goodbye, that's all", "Please end the call", "No thanks, I'm done", "Adiós", "వీడ్కోలు", "बस इतना", "விடைபெறுகிறேன்"]) {
+  for (const farewell of ["Bye", "Goodbye, that's all", "Please end the call", "No thanks, I'm done", "Adiós", "వీడ్కోలు", "chalo untanu", "చలో ఉంటాను", "inka vaddu", "ఇంకా వద్దు", "बस इतना", "விடைபெறுகிறேன்"]) {
     assert.equal(isConversationEndRequest(farewell), true, farewell)
   }
   for (const continuing of ["Thanks, can you tell me more?", "Can you disconnect the feature from my account?", "I need nothing more than an appointment tomorrow"]) {
@@ -135,10 +171,18 @@ test("detects explicit caller farewells without treating a simple thank-you as a
   }
 })
 
+test("requires the complete restaurant order before confirmation", () => {
+  assert.deepEqual(missingOrderDetails({ restaurant:"Viceroy", item:"biryani", variant:"chicken", quantity:"" }), ["quantity"])
+  assert.deepEqual(missingOrderDetails({ restaurant:"Viceroy", item:"biryani", variant:"", quantity:"2" }), ["vegetarian or non-vegetarian choice"])
+  assert.deepEqual(missingOrderDetails({ restaurant:"Viceroy", item:"biryani", variant:"chicken", quantity:"2" }), [])
+})
+
 test("legacy scope helper remains isolated from the conversational prompt", async () => {
   const state = createScopeRedirectState()
   const result = advanceScopeRedirect(state, { language:"en", currentUseCase:"order_taking", category:"general", ending:"ENDING" })
   assert.equal(result.action, "set_boundary")
+  const discoverResult = advanceScopeRedirect(createScopeRedirectState(), { language:"te", currentUseCase:"discover", category:"general", ending:"ENDING" })
+  assert.doesNotMatch(discoverResult.sayExactly, /undefined/i)
   const source = await readFile(new URL("../src/demo/prompt.js", import.meta.url), "utf8")
   assert.doesNotMatch(source, /OUT-OF-SCOPE HANDLING/)
   assert.match(source, /never redirect or penalize them/)

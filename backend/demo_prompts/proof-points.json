@@ -90,6 +90,36 @@
     "tags": ["inventory", "catalog", "accuracy"],
     "status": "approved"
   },
+  "stock_aware_order_receiving": {
+    "claim": "Once connected to the business's stock rules, Woxza can receive customer orders using the available quantity, so customers are not promised items the business cannot fulfil.",
+    "truth_level": "live",
+    "tags": ["inventory", "orders", "availability", "retail", "distribution"],
+    "status": "approved"
+  },
+  "configured_prices_and_discounts": {
+    "claim": "A business can configure its own prices, discount rules, and minimum-to-maximum order limits, including different terms for different customers or suppliers; Woxza then follows those rules during the call.",
+    "truth_level": "live",
+    "tags": ["pricing", "discounts", "orders", "suppliers", "retail", "distribution"],
+    "status": "approved"
+  },
+  "proactive_customer_supplier_touchpoints": {
+    "claim": "Woxza can be set up to call customers, clients, or suppliers for follow-ups, reorder reminders, confirmations, updates, and information collection, so important conversations do not depend on someone remembering to make each call.",
+    "truth_level": "live",
+    "tags": ["follow-up", "customers", "suppliers", "reorders", "proactive"],
+    "status": "approved"
+  },
+  "configure_once_business_rules": {
+    "claim": "After the business sets the information, rules, and handoff choices it wants, Woxza can handle those routine conversations consistently while the team focuses on the work that needs people.",
+    "truth_level": "live",
+    "tags": ["configuration", "business-rules", "consistency", "automation"],
+    "status": "approved"
+  },
+  "automated_touchpoint_stock_discount_workflow": {
+    "claim": "Woxza can automatically touch base with a business's customers, clients, or suppliers, receive orders based on live stock quantity, and apply the prices and discount rules that have been configured — including different minimum-to-maximum order terms for different customers or suppliers — so once the rules are designed once, Woxza keeps running that workflow without manual follow-up.",
+    "truth_level": "live",
+    "tags": ["proactive", "stock-aware", "pricing", "discounts", "customers", "suppliers", "automation", "pitch-highlight"],
+    "status": "approved"
+  },
   "appointments_and_crm_actions": {
     "claim": "With a connected calendar and CRM, Woxza can be configured to book appointments and record customer details during the call.",
     "truth_level": "live",

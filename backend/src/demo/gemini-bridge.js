@@ -1,15 +1,18 @@
 import { GoogleGenAI } from "@google/genai"
 import { WebSocketServer } from "ws"
-import { buildDemoPrompt, LANGUAGES, LOCALIZED_DEMO_NAMES, USE_CASE_CONFIG, localizedDemoEnding, localizedPitchThinkingAcknowledgement, localizedPostCompletionOffer, localizedPostOrderActionCapability, localizedRedirect, localizedScopeBoundary } from "./prompt.js"
+import { buildDemoPrompt, LANGUAGES, LOCALIZED_DEMO_NAMES, USE_CASE_CONFIG, localizedDemoEnding, localizedIdentityOpening, localizedPitchThinkingAcknowledgement, localizedPostCompletionOffer, localizedPostOrderActionCapability, localizedRedirect, localizedScopeBoundary } from "./prompt.js"
 import { getCallMessages } from "./messages.js"
 import { createPcmSpeechDetector, resamplePcm, swapPcm16Endianness } from "./audio-codec.js"
 import { createStreamingOutputSafetyGuard, findUnsafeOutput } from "./output-guardrail.js"
 import { getFeaturePrompts, logFeatureMention, resolveFeatureContext } from "../features.js"
 import { createAppointmentBookingState, transitionAppointmentBooking } from "./appointment-state.js"
 import { getProofPoints } from "./proof-points.js"
+import { createOpeningController } from "./opening-controller.js"
+import { beginContextualDemo, completeContextualDemo, createContextualDemoState, prepareContextualDemoResponse } from "./contextual-demo-state.js"
 
 const EXPIRY_MINUTES = 10
 export const GEMINI_CAPACITY_MAX_RETRIES = 3
+const INITIAL_CALLER_FIRST_WINDOW_MS = 200
 
 // Gemini closes a Live session with 1011 when its serving pool is temporarily
 // exhausted. Spread reconnects out so a busy pool has time to recover and a
@@ -183,6 +186,15 @@ export function createDemoOrderState(demoCallId) {
   }
 }
 
+export function missingOrderDetails({ restaurant, item, variant, quantity }) {
+  const missing = []
+  if (!String(restaurant || "").trim()) missing.push("restaurant or branch")
+  if (!String(item || "").trim()) missing.push("item")
+  if (/biryani|బిర్యానీ/iu.test(String(item || "")) && !String(variant || "").trim()) missing.push("vegetarian or non-vegetarian choice")
+  if (!String(quantity || "").trim()) missing.push("quantity")
+  return missing
+}
+
 export function createScopeRedirectState() {
   return { consecutive:0 }
 }
@@ -230,12 +242,18 @@ export function containsOrderConfirmation(text, reference) {
 export function isConversationEndRequest(text) {
   const value = String(text || "").trim().toLowerCase()
   if (!value) return false
+  if (/(?:చలో\s*(?:ఉంటాను|untanu)|chalo\s*untanu|ఇంకా\s*(?:వద్దు|వదdu)|inka\s*(?:vaddu|vaddhu|vadhu|vadu)|అక్కర్లేదు|akkarledu|లేదు\s*(?:అండి|andi)?\s*చాలు|not needed|no need|that will do)/iu.test(value)) return true
   return /(?:\b(?:bye(?:\s+bye)?|good\s*bye|good night|see you(?: later)?|talk to you later|that'?s all|that is all|nothing else|nothing more(?!\s+than)|no (?:thanks|thank you),?\s*(?:that'?s all|nothing (?:else|more)|i'?m done)|i(?: am|'m) (?:done|finished)|end (?:the )?(?:call|conversation)|hang up|disconnect (?:the )?(?:call|conversation))\b|अलविदा|बाय\b|बस इतना|यही है|धन्यवाद,?\s*बस|వీడ్కోలు|బై\b|ఇంతే|చాలు|ధన్యవాదాలు,?\s*చాలు|adiós|hasta luego|eso es todo|nada más|gracias,?\s*(?:eso es todo|nada más)|விடைபெறுகிறேன்|பை\b|அவ்வளவுதான்|போதும்|ವಿದಾಯ|ಬೈ\b|ಅಷ್ಟೇ|ಸಾಕು|വിട|ബൈ\b|അത്ര മതി|മതി|निरोप|बाय\b|इतकेच|बस झाले|અલવિદા|બાય\b|બસ એટલું|થૅન્ક યુ,?\s*બસ|বিদায়|বাই\b|এই পর্যন্ত|আর কিছু নেই|ਅਲવિદા|ਬਾਇ\b|ਬਸ ਇੰਨਾ|الوداع|بائے\b|بس اتنا)/iu.test(value)
 }
 
-export function isSimpleGreeting(text) {
+// Speech-to-text commonly writes a spoken menu choice as a clock value (for
+// example, “second” becomes “2:00”). These only apply while the two-choice
+// welcome is active, never in an ordinary conversation.
+export function resolveNumericOpeningChoice(text) {
   const value = String(text || "").trim().toLowerCase().replace(/[.!?,]+$/u, "")
-  return /^(?:hello|hi|hey|namaste|నమస్కారం|హలో|नमस्ते|हाय|वणक्कम|வணக்கம்|ஹலோ|ನಮಸ್ಕಾರ|ಹಲೋ)$/iu.test(value)
+  if (/^(?:1|1:00|01:00)$/u.test(value)) return "demo"
+  if (/^(?:2|2:00|02:00)$/u.test(value)) return "business"
+  return null
 }
 
 function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, onOutputBlocked, onInterrupted, onClosed, onCallerActivity, onConversationEndRequested, onAgentActivity, onOpeningComplete, onAgentTurnComplete, onClosingComplete, onTurnTiming, openingAlreadyHandled=false }) {
@@ -247,11 +265,15 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
     const ai = new GoogleGenAI({ apiKey:process.env.GEMINI_API_KEY })
     let liveSession
     let openingPending = !openingAlreadyHandled
-    const conversation = { mode:"discover", activeDemo:null, business:"", demoOffered:false, askedAbout:[] }
+    let openingChoicePending = false
+    let openingPhase = openingAlreadyHandled ? "complete" : "handshake"
+    const conversation = { mode:"discover", activeDemo:null, business:"", demoOffered:false, askedAbout:[], discovery:null }
     const isOrderTaking = () => conversation.mode === "demonstrate" && conversation.activeDemo === "order_taking"
     const isAppointmentBooking = () => conversation.mode === "demonstrate" && conversation.activeDemo === "appointment_booking"
+    const isContextualDemo = () => conversation.mode === "demonstrate" && conversation.activeDemo === "contextual_business_demo"
     const orderState = createDemoOrderState(demoCallId)
     const appointmentState = createAppointmentBookingState()
+    const contextualDemo = createContextualDemoState()
     const featureState = { businessTag:"", mentionedIds:new Set(), productRevealDelivered:false }
     const scopeState = createScopeRedirectState()
     let latestCallerText = ""
@@ -302,12 +324,33 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       for (const toolCall of calls || []) {
         if (toolCall.name !== "update_order_state") continue
         const args = toolCall.args || toolCall.arguments || {}
-        if (args.summary) orderState.summary = String(args.summary).trim()
-        if (args.total) orderState.total = String(args.total).trim()
+        const details = {
+          restaurant:String(args.restaurant || orderState.restaurant || "").trim(),
+          item:String(args.item || orderState.item || "").trim(),
+          variant:String(args.variant || orderState.variant || "").trim(),
+          quantity:String(args.quantity || orderState.quantity || "").trim(),
+          extras:String(args.extras || orderState.extras || "").trim()
+        }
         if (args.action === "set_pending") {
+          const missing = missingOrderDetails(details)
+          if (missing.length) {
+            responses.push({ id:toolCall.id, name:toolCall.name, response:{
+              status:"collecting",
+              missing,
+              instruction:`Do not confirm or read back the order. In the configured language, ask exactly one short question for the next missing detail: ${missing[0]}.`
+            } })
+            continue
+          }
+          Object.assign(orderState, details)
+          orderState.summary = String(args.summary || [details.restaurant, details.quantity, details.variant, details.item, details.extras].filter(Boolean).join(", ")).trim()
+          if (args.total) orderState.total = String(args.total).trim()
           orderState.status = "pending_confirmation"
           responses.push({ id:toolCall.id, name:toolCall.name, response:{ status:orderState.status, summary:orderState.summary, total:orderState.total || null, reference:orderState.reference, instruction:"Read back the complete order now, then ask for confirmation. Do not close." } })
         } else if (args.action === "confirm") {
+          if (orderState.status !== "pending_confirmation") {
+            responses.push({ id:toolCall.id, name:toolCall.name, response:{ status:"collecting", instruction:"Do not confirm yet. Collect the missing order details, then read the complete order back and ask for the caller's explicit confirmation." } })
+            continue
+          }
           orderState.status = "confirmed"
           orderState.awaitingConfirmationTurn = true
           responses.push({ id:toolCall.id, name:toolCall.name, response:{ status:orderState.status, summary:orderState.summary, total:orderState.total || null, reference:orderState.reference, instruction:"Speak only the explicit confirmation, complete summary, available total, and reference. Do not include the closing." } })
@@ -363,11 +406,12 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
         if (isAppointmentBooking()) appointmentToolRequired = false
         const args = toolCall.args || toolCall.arguments || {}
         const intent = args.intent || "recommend"
+        const proofPoints = await getProofPoints()
         if (intent === "highlight_feature") {
           responses.push({ id:toolCall.id, name:toolCall.name, response:{
             intent,
-            feature:{ title:"AI phone agent that talks to customers in real time", description:"A natural voice agent that handles customer conversations as they happen.", status:"live" },
-            instruction:"Answer in the configured language with one concise sentence. Do not say this is your personal preference. Say this is a particularly useful Woxza feature and explain its practical benefit. Do not ask a follow-up question."
+            proof_points:proofPoints,
+            instruction:"Use the FEATURE LIBRARY rules in the live prompt. Select one approved point that is distinct from earlier features and useful for the caller's stated business or question. Explain its practical benefit in one concise sentence. Do not say this is your personal preference or mention internal tags."
           } })
           continue
         }
@@ -375,12 +419,8 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
           featureState.productRevealDelivered = true
           responses.push({ id:toolCall.id, name:toolCall.name, response:{
             intent,
-            pillars:[
-              "Woxza handles inbound and outbound customer calls naturally, around the clock, in the customer's preferred language.",
-              "A business owner can configure what each agent knows and does without code, using business information and connected workflows.",
-              "Every conversation creates a transcript and next step, while complex cases can be handed to a person with context."
-            ],
-            instruction:"This is an explicit feature question. In the configured language, deliver all three pillars as three short, connected sentences. Do not repeat the opening, dilute this into one generic sentence, or claim any connected action happened in this public demo. Then ask which pillar matters most to the caller's business."
+            proof_points:proofPoints,
+            instruction:"This is an explicit feature question. Use the FEATURE LIBRARY rules in the live prompt. Give a compact, varied three-point answer from the approved library, in plain everyday language for a non-technical 60-year-old business owner. Do not repeat the opening, read a generic list, or claim a connected action happened in this public demo. Then ask which practical help would matter most to their business."
           } })
           continue
         }
@@ -447,16 +487,55 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
             conversation.business = String(args.business).trim().toLowerCase()
             if (changed) conversation.demoOffered = false
           }
-          if (["discover", "explain", "demonstrate"].includes(args.mode)) conversation.mode = args.mode
+          if (["discover", "explain", "demonstrate"].includes(args.mode)) {
+            conversation.mode = args.mode
+            if (args.mode === "explain" || args.mode === "demonstrate") openingChoicePending = false
+          }
           responses.push({ id:toolCall.id, name:toolCall.name, response:{ mode:conversation.mode, business:conversation.business || null, demo_offered:conversation.demoOffered, instruction:"Continue naturally. Do not mention internal modes or tools." } })
         } else if (toolCall.name === "start_workflow" && USE_CASE_CONFIG[args.workflow]) {
+          if (openingChoicePending) {
+            responses.push({ id:toolCall.id, name:toolCall.name, response:{
+              mode:"discover",
+              active_demo:null,
+              instruction:"Do not start a workflow. The caller is still answering the two opening choices. Treat a bare 1 or 1:00 as demo, and a bare 2 or 2:00 as business explanation. Ask only for the intended path if it is genuinely unclear."
+            } })
+            continue
+          }
           conversation.mode = "demonstrate"
           conversation.activeDemo = args.workflow
           responses.push({ id:toolCall.id, name:toolCall.name, response:{ mode:"demonstrate", active_demo:args.workflow, instruction:`Begin the ${USE_CASE_CONFIG[args.workflow].label} demonstration naturally. Do not claim any real-world action was completed.` } })
+        } else if (toolCall.name === "start_contextual_demo") {
+          const result = beginContextualDemo(contextualDemo, {
+            business:conversation.discovery?.business_description || conversation.business,
+            currentProcess:conversation.discovery?.current_process,
+            primaryPain:conversation.discovery?.primary_pain,
+            scale:conversation.discovery?.scale || conversation.discovery?.languages || conversation.discovery?.handoff,
+            topic:args.topic,
+            callerGoal:args.caller_goal
+          })
+          if (result.ok) {
+            conversation.mode = "demonstrate"
+            conversation.activeDemo = "contextual_business_demo"
+            openingChoicePending = false
+          }
+          responses.push({ id:toolCall.id, name:toolCall.name, response:result.ok
+            ? { ok:true, demo:result.details, instruction:"Start the contextual business simulation described by the live conversation prompt. Use the discovered business context and topic. The later answer may use believable sample stock, price, discount, delivery, or follow-up details to make the simulation feel real; keep those details consistent with what the caller said." }
+            : { ok:false, error:result.error, instruction:"Do not start a demo yet. Ask the caller what business they run." }
+          })
+        } else if (toolCall.name === "prepare_contextual_demo_response") {
+          const result = prepareContextualDemoResponse(contextualDemo, {
+            customerRequest:args.customer_request,
+            details:args.details,
+            simulatedResult:args.simulated_result
+          })
+          responses.push({ id:toolCall.id, name:toolCall.name, response:result.ok
+            ? { ok:true, demo:result.details, instruction:"Deliver the simulated customer answer now in the configured language. Give a concrete, believable example answer to the customer using the details collected: you may say an item is in stock, quote an example price or discount, describe delivery, or confirm a follow-up. Make it feel like a real customer call, but keep it clearly within this simulated demo rather than implying access to the caller's actual business data. Do not say you will check later, ask the caller to wait, or ask another question." }
+            : { ok:false, error:result.error, instruction:"Continue collecting one missing customer detail at a time." }
+          })
         } else if (toolCall.name === "offer_demo") {
           const allowed = Boolean(conversation.business) && !conversation.demoOffered
           if (allowed) conversation.demoOffered = true
-          responses.push({ id:toolCall.id, name:toolCall.name, response:{ allowed, instruction:allowed ? "Offer one short, gentle workflow demonstration relevant to the caller's business. Do not pressure them." : "Do not proactively offer a demo. Continue the current conversation naturally." } })
+          responses.push({ id:toolCall.id, name:toolCall.name, response:{ allowed, instruction:allowed ? "Offer one short, gentle contextual customer-call simulation based on the caller's business and pain. If they accept, call start_contextual_demo; do not call start_workflow unless they explicitly name an existing workflow." : "Do not proactively offer a demo. Continue the current conversation naturally." } })
         } else if (toolCall.name === "resolve_action_capability") {
           conversation.askedAbout.push(String(args.action || "follow_up"))
           responses.push({ id:toolCall.id, name:toolCall.name, response:{ capability_tier:"configurable", say_exactly:localizedPostOrderActionCapability(language), preserve_mode:conversation.mode, preserve_active_demo:conversation.activeDemo, instruction:"Speak say_exactly naturally and concisely. Do not say an action was scheduled. Then return to the prior conversation context." } })
@@ -485,13 +564,14 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
           } })
           continue
         }
+        conversation.discovery = discovery
         const proofPoints = await getProofPoints()
         responses.push({ id:toolCall.id, name:toolCall.name, response:{
           status:"ready",
           discovery,
           proof_points:proofPoints,
           instruction:proofPoints.length
-            ? `The caller has completed discovery. Start with one short acknowledgement in the configured language that conveys this meaning: "${localizedPitchThinkingAcknowledgement(language)}" Then create one confident 25-to-40 second tailored pitch. First reflect their specific current process and primary pain in one sentence. Then choose the two or three most relevant proof points and connect each to a concrete outcome for this exact business; respect each truth_level: live means available today, configurable means describe it as something a real Woxza deployment can be set up to do, and roadmap means say it is planned. Do not read a list, repeat the opening, invent a claim, or ask another discovery question. End by offering the one most relevant workflow to explore.`
+            ? `The caller has completed discovery. Start with one short acknowledgement in the configured language that conveys this meaning: "${localizedPitchThinkingAcknowledgement(language)}" Then follow the live conversation prompt when selecting and explaining the approved proof points. Avoid jargon, repeat neither the opening nor a list of features, and do not invent claims.`
             : "No proof-point file is available yet. Briefly reflect the caller's pain, use only the verified Woxza capabilities in the system instruction, and offer the most relevant workflow. Do not invent claims."
         } })
       }
@@ -535,6 +615,14 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
           queueMicrotask(() => promptLiveAgent(liveSession, `[APPOINTMENT CLOSING TURN: The simulated appointment details have been confirmed. Say exactly this configured closing and nothing else: "${messages.ending}"]`))
         }
       }
+      if (isContextualDemo() && contextualDemo.status === "responding" && text && !interrupted && !rejectedTurnReason) {
+        const result = completeContextualDemo(contextualDemo)
+        if (result.ok) {
+          conversation.mode = "explain"
+          conversation.activeDemo = null
+          queueMicrotask(() => promptLiveAgent(liveSession, `[CONTEXTUAL DEMO COMPLETED: In the configured language, say that this demo is complete. Then say in one short, plain-language sentence that this was one example and Woxza can be set up to handle many other customer questions and business tasks in the same way. Then ask exactly this feedback question: "${localizedPostCompletionOffer(language)}" Do not repeat the simulated customer answer or start another demo.]`))
+        }
+      }
       if (text && !scopeRedirectUsedThisTurn) scopeState.consecutive = 0
       scopeRedirectUsedThisTurn = false
       if (rejectedTurnReason && !interrupted && !handledOrderRetry) {
@@ -545,9 +633,23 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       rejectedTurnReason = null
       const completedAudioDurationMs = turnAudioDurationMs
       turnAudioDurationMs = 0
-      if (openingPending) {
+      const flowOpening = localizedIdentityOpening(language)
+      if (openingPhase === "handshake" && text.includes(flowOpening)) {
+        // The caller spoke inside the initial listen window, so the backend
+        // deliberately sent the flow message instead of the handshake. Treat
+        // that message as the completed opening; otherwise the next caller
+        // reply would trigger a duplicate welcome.
+        openingPhase = "complete"
+        openingPending = false
+        openingChoicePending = true
+        onOpeningComplete?.()
+      } else if (openingPhase === "handshake") {
+        openingPhase = "awaiting_reply"
         openingPending = false
         onOpeningComplete?.()
+      } else if (openingPhase === "awaiting_reply" || openingPhase === "welcome_in_progress") {
+        openingPhase = "complete"
+        openingChoicePending = true
       }
       if (!interrupted) {
         const isClosing = scopeClosingPending || text.includes(messages.ending)
@@ -565,12 +667,20 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       parameters:{ type:"OBJECT", properties:{ business:{ type:"STRING" }, mode:{ type:"STRING", enum:["discover", "explain", "demonstrate"] } } }
     }, {
       name:"offer_demo",
-      description:"Request the backend's one-time permission to gently offer a relevant workflow demonstration after explaining value for a known business.",
-      parameters:{ type:"OBJECT", properties:{ workflow:{ type:"STRING", enum:Object.keys(USE_CASE_CONFIG) } }, required:["workflow"] }
+      description:"Request the backend's one-time permission to gently offer a contextual business demonstration after explaining value for a known business.",
+      parameters:{ type:"OBJECT", properties:{} }
     }, {
       name:"start_workflow",
-      description:"Start a Woxza workflow demonstration only after the caller explicitly asks to try it.",
+      description:"Start one of the named example workflows only after the caller explicitly asks for that exact workflow. Never use this for a business-specific demonstration; use start_contextual_demo instead.",
       parameters:{ type:"OBJECT", properties:{ workflow:{ type:"STRING", enum:Object.keys(USE_CASE_CONFIG) } }, required:["workflow"] }
+    }, {
+      name:"start_contextual_demo",
+      description:"Start a simulated customer call based on the caller's discovered business, current process, and pain. Use after the caller explicitly accepts a relevant demo but has not named a specific existing workflow.",
+      parameters:{ type:"OBJECT", properties:{ topic:{ type:"STRING", description:"The caller-relevant customer need to demonstrate, such as product availability, pricing, delivery, appointment request, or follow-up." }, caller_goal:{ type:"STRING", description:"The practical outcome the caller wants to see in the simulation." } }, required:["topic"] }
+    }, {
+      name:"prepare_contextual_demo_response",
+      description:"Required in an active contextual business demo after the caller has supplied enough detail for a useful simulated customer answer. Prepare the answer before speaking it; never promise to check later or skip straight to feedback.",
+      parameters:{ type:"OBJECT", properties:{ customer_request:{ type:"STRING" }, details:{ type:"STRING" }, simulated_result:{ type:"STRING", description:"How Woxza would handle the request using the business's connected information, without inventing a real result." } }, required:["customer_request","details"] }
     }, {
       name:"resolve_action_capability",
       description:"Answer a question about a real Woxza operational action such as callback, follow-up, price/stock lookup, transfer, CRM update, or notification. This preserves the current mode and workflow.",
@@ -604,10 +714,15 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
     }]
     functionDeclarations.push({
       name:"update_order_state",
-      description:"Record the complete simulated order before confirmation, then mark it confirmed after the caller explicitly affirms.",
+      description:"Record the complete simulated order before confirmation, then mark it confirmed after the caller explicitly affirms. Do not set_pending until restaurant or branch, exact item details, and an explicit quantity are known. For biryani, exact item details include vegetarian or non-vegetarian, plus the non-vegetarian type when applicable. Never infer a quantity from an ambiguous word such as 'too'.",
       parameters:{ type:"OBJECT", properties:{
         action:{ type:"STRING", enum:["set_pending", "confirm"] },
         summary:{ type:"STRING", description:"Complete order summary with every item, quantity, and special request." },
+        restaurant:{ type:"STRING", description:"Restaurant name and branch stated by the caller." },
+        item:{ type:"STRING", description:"The exact ordered dish or item." },
+        variant:{ type:"STRING", description:"Required for biryani: vegetarian, chicken, mutton, or another exact variant." },
+        quantity:{ type:"STRING", description:"The caller's explicit quantity. Never infer this field." },
+        extras:{ type:"STRING", description:"Optional extras or special instructions." },
         total:{ type:"STRING", description:"Total price only when actually available; otherwise omit." }
       }, required:["action", "summary"] }
     })
@@ -659,6 +774,17 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
             if (isAppointmentBooking()) appointmentToolRequired = true
             persistTranscript(db, demoCallId, "caller", callerText)
             onCallerActivity?.()
+            if (openingChoicePending) {
+              const numericChoice = resolveNumericOpeningChoice(callerText)
+              if (numericChoice) {
+                openingChoicePending = false
+                const instruction = numericChoice === "demo"
+                  ? "The caller selected the demo. Ask what kind of customer conversation they want to see. Do not start a named workflow until they describe it."
+                  : "The caller selected the business explanation. Give two short, plain-language sentences about how Woxza helps, then ask what business they run."
+                promptLiveAgent(liveSession, `[OPENING NUMERIC CHOICE: ${instruction}]`)
+                return
+              }
+            }
             if (!callerRequestedEnd && isConversationEndRequest(callerText)) {
               callerRequestedEnd = true
               persistTranscript(db, demoCallId, "system", "Caller requested to end the conversation")
@@ -702,6 +828,11 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
             })
           }
           if (agentText) {
+            // Mark the full welcome as active while its carrier audio is
+            // playing; its caller reply is resolved by choose_opening_path.
+            if (openingPhase === "awaiting_reply") {
+              openingPhase = "welcome_in_progress"
+            }
             if (!modelTextSeen) {
               modelTextSeen = true
               logTurnTiming("first_model_text_received")
@@ -892,6 +1023,7 @@ export function attachDemoGeminiBridge(server, { db }) {
     let openLiveSession
     let closingTimer
     let callerFarewellTimer
+    let openingController
     let firstAudioSent = false
     let inboundMediaFrames = 0
     let inboundMediaBytes = 0
@@ -953,6 +1085,7 @@ export function attachDemoGeminiBridge(server, { db }) {
       closed = true
       clearTimeout(closingTimer)
       clearTimeout(callerFarewellTimer)
+      openingController?.stop()
       clearTimeout(capacityRetryTimer)
       console.info("voice-call-media-summary", { demoCallId, inboundMediaFrames, inboundMediaBytes, inboundSpeechFrames })
       silenceMonitor.stop()
@@ -1085,6 +1218,7 @@ export function attachDemoGeminiBridge(server, { db }) {
               inboundSpeechFrames += 1
               if (inboundSpeechFrames === 1) console.info("voice-call-timing", { demoCallId, event:"first_plivo_speech_detected" })
               silenceMonitor.noteCallerActivity()
+              openingController?.noteCallerSpeech()
                   // Do not cut an active workflow short just because the caller
                   // is still talking during the wrap-up window.
             }
@@ -1094,8 +1228,20 @@ export function attachDemoGeminiBridge(server, { db }) {
         } catch (error) { console.warn("Invalid Plivo demo stream event", { demoCallId, error:error.message }) }
       })
       logTiming("gemini_session_ready")
-      promptLiveAgent(session, "Start the demo now. Speak the configured short HANDSHAKE exactly, then wait for the caller.")
-      logTiming("opening_turn_dispatched")
+      openingController = createOpeningController({
+        callerFirstWindowMs:INITIAL_CALLER_FIRST_WINDOW_MS,
+        onCallerFirst:() => {
+          if (closed || !session) return
+          logTiming("caller_spoke_before_welcome")
+          promptLiveAgent(session, `[CALLER SPOKE FIRST: Do not say the short handshake. In the configured language, say exactly this flow message: "${localizedIdentityOpening(language)}" Then wait for the caller. Do not start a workflow or call a tool.]`)
+        },
+        onWoxzaFirst:() => {
+          if (closed || !session) return
+          promptLiveAgent(session, "Start the demo now. Speak the configured short HANDSHAKE exactly, then wait for the caller.")
+          logTiming("opening_turn_dispatched")
+        }
+      })
+      openingController.start()
       console.info("Gemini Live Plivo demo bridge connected", { demoCallId, language })
     } catch (error) { console.error("Gemini Live Plivo bridge setup failed", { demoCallId, error:error.message }); close() }
   })
