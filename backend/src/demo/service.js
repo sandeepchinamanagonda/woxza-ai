@@ -1,6 +1,7 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto"
 import { parsePhoneNumberFromString } from "libphonenumber-js"
 import { upsertLeadForTerminalCall } from "./lead.js"
+import { logCallEvent, maskPhoneNumber } from "../call-events.js"
 // USE_CASES is derived from USE_CASE_CONFIG in prompt.js; add scenarios there only.
 import { LANGUAGES, normalizeUseCase, USE_CASES } from "./prompt.js"
 
@@ -61,13 +62,17 @@ export function createDemoService({ db, plivo, twilio, followupQueue, bridgeUrl,
         `INSERT INTO demo_calls (id,use_case,entry_hint,language,name,phone,email,ip,consent_marketing,status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'initiating')`,
         [id,useCase,entryHint ? useCase : null,language,input.name.trim(),phone,input.email?.trim().toLowerCase() || null,ip,true]
       )
+      const providerName = parsed.countryCallingCode === "1" ? "twilio" : "plivo"
+      logCallEvent(db, { callId:id, demoCallId:id, eventType:"call_started", payload:{ language, useCase }, call:{ provider:providerName, phoneNumberMasked:maskPhoneNumber(phone) } })
       await updateSubmission("calling", null, id)
       try {
-        const providerClient = parsed.countryCallingCode === "1" ? twilio : plivo
+        const providerClient = providerName === "twilio" ? twilio : plivo
         const provider = await providerClient.call({ callId:id, to:phone })
         await db.query(`UPDATE demo_calls SET status='ringing',provider_call_id=$2,updated_at=NOW() WHERE id=$1`, [id,provider.providerCallId || null])
       } catch (error) {
         await db.query(`UPDATE demo_calls SET status='failed',updated_at=NOW() WHERE id=$1`, [id])
+        logCallEvent(db, { callId:id, demoCallId:id, eventType:"error", severity:"error", payload:{ message:error.message, exception_type:error.name, stack_trace:error.stack || null, component:"telephony", request_payload:{ provider:providerName }, response_payload:error.payload || null } })
+        logCallEvent(db, { callId:id, demoCallId:id, eventType:"call_ended", payload:{ status:"failed", reason:"provider_error" } })
         await updateSubmission("failed", "provider_error", id)
         await this.finalize(id)
         throw error
@@ -92,6 +97,7 @@ export function createDemoService({ db, plivo, twilio, followupQueue, bridgeUrl,
       const result = await db.query(`UPDATE demo_calls SET status='connected',answered_at=COALESCE(answered_at,NOW()),provider_call_id=COALESCE($2,provider_call_id),updated_at=NOW() WHERE id=$1 RETURNING use_case,language,name,provider_call_id`, [id,fields.CallUUID || fields.call_uuid || fields.CallSid || null])
       if (!result.rowCount) return null
       const call = result.rows[0]
+      logCallEvent(db, { callId:id, demoCallId:id, eventType:"warning", severity:"info", payload:{ component:"telephony", message:"Plivo call connected", providerCallId:call.provider_call_id } })
       const stream = new URL(publicUrl.replace(/^http/, "ws") + "/telephony/plivo/stream")
       stream.searchParams.set("demoCallId", id)
       stream.searchParams.set("lang", call.language)
@@ -109,6 +115,7 @@ export function createDemoService({ db, plivo, twilio, followupQueue, bridgeUrl,
     async twilioAnswer(id, fields = {}) {
       const result = await db.query(`UPDATE demo_calls SET status='connected',answered_at=COALESCE(answered_at,NOW()),provider_call_id=COALESCE($2,provider_call_id),updated_at=NOW() WHERE id=$1 RETURNING language`, [id,fields.CallSid || null])
       if (!result.rowCount) return null
+      logCallEvent(db, { callId:id, demoCallId:id, eventType:"warning", severity:"info", payload:{ component:"telephony", message:"Twilio call connected", providerCallId:fields.CallSid || null } })
       // Twilio does not preserve query parameters on a Media Stream URL.
       // Pass the short-lived demo identity as TwiML Parameters instead; Twilio
       // returns them in the WebSocket `start.customParameters` envelope.
@@ -133,6 +140,7 @@ export function createDemoService({ db, plivo, twilio, followupQueue, bridgeUrl,
       const endReason = status === "completed" ? "caller_hangup" : status === "no_answer" ? "no_answer" : status === "failed" ? "provider_failed" : null
       await db.query(`UPDATE demo_calls SET status=$2,call_duration_seconds=COALESCE($3,call_duration_seconds),provider_call_id=COALESCE($4,provider_call_id),end_reason=COALESCE(end_reason,$5),ended_at=CASE WHEN $6 THEN NOW() ELSE ended_at END,updated_at=NOW() WHERE id=$1`,
         [id,status,Number.isFinite(duration) ? duration : null,fields.CallUUID || fields.CallSid || fields.call_uuid || null,endReason,TERMINAL.has(status)])
+      if (TERMINAL.has(status)) logCallEvent(db, { callId:id, demoCallId:id, eventType:"call_ended", payload:{ status:status === "failed" || status === "no_answer" ? "failed" : "completed", reason:endReason }, latencyMs:Number.isFinite(duration) ? duration * 1000 : null })
       if (TERMINAL.has(status)) { clearTimers(id); await this.finalize(id) }
       return status
     },

@@ -12,7 +12,7 @@ const allowedOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:3456")
 
 const db = await createDatabase();
 const demoRuntime = createDemoRuntime(db);
-const server = createServer(createApp({ db, demoService: demoRuntime.service, allowedOrigins }));
+const server = createServer(createApp({ db, demoService: demoRuntime.service, debugRuntime:demoRuntime, allowedOrigins }));
 attachDemoGeminiBridge(server, { db });
 
 server.listen(port, () => {
