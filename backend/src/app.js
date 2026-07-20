@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { validatePreferences, validateRegistration, validateSalesInquiry, validateWaitlistSubmission } from "./validation.js";
 import { listFeatures, listTags, normalizeTags } from "./features.js";
+import { getDebugCall, growthMetrics, listDebugCalls, searchDebugCalls } from "./admin-debug.js";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
@@ -86,6 +87,7 @@ function validateFeature(input) {
 export function createApp({
   db,
   demoService,
+  debugRuntime,
   adminToken = process.env.ADMIN_API_TOKEN,
   localAdminMode = process.env.LOCAL_ADMIN_MODE === "true",
   localAdminToken = process.env.LOCAL_ADMIN_TOKEN,
@@ -104,6 +106,34 @@ export function createApp({
       if (req.method === "GET" && url.pathname === "/health") {
         await db.query("SELECT 1");
         return sendJson(res, 200, { status: "ok" }, cors);
+      }
+
+      if (url.pathname === "/api/admin/debug/calls" && req.method === "GET") {
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        return sendJson(res, 200, await listDebugCalls(db, url), cors);
+      }
+      if (url.pathname === "/api/admin/debug/errors" && req.method === "GET") {
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        return sendJson(res, 200, await listDebugCalls(db, url, { errorsOnly:true }), cors);
+      }
+      if (url.pathname === "/api/admin/debug/search" && req.method === "GET") {
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        return sendJson(res, 200, await searchDebugCalls(db, url.searchParams.get("q")), cors);
+      }
+      if (url.pathname === "/api/admin/debug/health" && req.method === "GET") {
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        const inProgress = await db.query("SELECT count(*)::int AS count FROM calls WHERE status='in_progress'");
+        return sendJson(res, 200, { inProgressCalls:inProgress.rows[0].count, postgres:{ total:db.totalCount, idle:db.idleCount, waiting:db.waitingCount }, ...(await debugRuntime?.health?.() || { redis:{ available:false }, queues:{} }) }, cors);
+      }
+      const debugCallPath = url.pathname.match(/^\/api\/admin\/debug\/calls\/([^/]+)$/);
+      if (debugCallPath && req.method === "GET") {
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        const call = await getDebugCall(db, decodeURIComponent(debugCallPath[1]));
+        return call ? sendJson(res, 200, call, cors) : sendJson(res, 404, { error:"Call not found" }, cors);
+      }
+      if (url.pathname === "/api/admin/growth" && req.method === "GET") {
+        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        return sendJson(res, 200, await growthMetrics(db), cors);
       }
 
       if (req.method === "POST" && (url.pathname === "/api/demo-call" || url.pathname === "/api/demo/call")) {

@@ -18,7 +18,8 @@ const schemaUrls = [
   new URL("../migrations/012_deduplicate_lead_metadata.sql", import.meta.url),
   new URL("../migrations/013_conversation_entry_hint.sql", import.meta.url),
   new URL("../migrations/014_faq_feature_catalog.sql", import.meta.url),
-  new URL("../migrations/015_demo_feature_story.sql", import.meta.url)
+  new URL("../migrations/015_demo_feature_story.sql", import.meta.url),
+  new URL("../migrations/017_call_debug_dashboard.sql", import.meta.url)
 ];
 
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));

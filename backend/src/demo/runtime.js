@@ -20,6 +20,7 @@ export function createDemoRuntime(db) {
   const publicUrl = (process.env.PUBLIC_API_URL || `http://localhost:${process.env.PORT || 8787}`).replace(/\/$/, "")
   const redisUrl = process.env.REDIS_URL
   redis ||= redisUrl ? new IORedis(redisUrl, { maxRetriesPerRequest:null }) : null
+  redis?.on("error", error => console.warn("Redis runtime error", { error:error.message }))
   const queue = redis ? new Queue("voxa-jobs", { connection:redis }) : { add:async () => {} }
   const plivo = createPlivoClient({
     authId:process.env.PLIVO_AUTH_ID, authToken:process.env.PLIVO_AUTH_TOKEN,
@@ -54,5 +55,13 @@ export function createDemoRuntime(db) {
     if (sent) await db.query(`UPDATE leads SET contact_status='emailed',last_contacted_at=NOW() WHERE id=$1 AND contact_status<>'unsubscribed'`, [lead.id])
   }, { connection:redis }) : null
 
-  return { service, close:async () => { await worker?.close(); await queue?.close?.(); await redis?.quit(); redis=null } }
+  const health = async () => {
+    const started = Date.now()
+    let redisHealth = { available:false }
+    try { if (redis) { await redis.ping(); redisHealth = { available:true, latencyMs:Date.now() - started } } } catch (error) { redisHealth = { available:false, error:error.message } }
+    let queues = {}
+    try { queues = queue?.getJobCounts ? await queue.getJobCounts("waiting", "active", "delayed", "failed") : {} } catch (error) { queues = { error:error.message } }
+    return { redis:redisHealth, queues }
+  }
+  return { service, health, close:async () => { await worker?.close(); await queue?.close?.(); await redis?.quit(); redis=null } }
 }

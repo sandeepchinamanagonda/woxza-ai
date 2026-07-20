@@ -9,8 +9,15 @@ import Home from './views/Home.vue'
 import NotFound from './views/NotFound.vue'
 import AdminFeatures from './views/AdminFeatures.vue'
 import AdminPrompts from './views/AdminPrompts.vue'
+import AdminDebug from './views/AdminDebug.vue'
 
 const routes = [
+  {
+    path: '/admin/debug',
+    name: 'AdminDebug',
+    component: AdminDebug,
+    meta: { title: 'Woxza | Production debug' }
+  },
   {
     path: '/',
     name: 'Home',

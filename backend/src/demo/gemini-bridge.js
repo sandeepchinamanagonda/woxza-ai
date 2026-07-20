@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai"
+import { logCallEvent } from "../call-events.js"
 import { WebSocketServer } from "ws"
 import { buildDemoPrompt, LANGUAGES, LOCALIZED_DEMO_NAMES, USE_CASE_CONFIG, localizedDemoEnding, localizedIdentityOpening, localizedPitchThinkingAcknowledgement, localizedPostCompletionOffer, localizedPostOrderActionCapability, localizedRedirect, localizedScopeBoundary } from "./prompt.js"
 import { getCallMessages } from "./messages.js"
@@ -140,8 +141,14 @@ async function findDemoCall(db, demoCallId) {
 function persistTranscript(db, demoCallId, speaker, text) {
   const value = String(text || "").trim()
   if (!value) return
-  void db.query("INSERT INTO call_transcript_turns (demo_call_id,speaker,text) VALUES ($1,$2,$3)", [demoCallId, speaker, value])
-    .catch(error => console.warn("Transcript persistence failed", { demoCallId, error:error.message }))
+  void db.query("INSERT INTO call_transcript_turns (demo_call_id,speaker,text) VALUES ($1,$2,$3) RETURNING id", [demoCallId, speaker, value])
+    .then(result => logCallEvent(db, {
+      callId:demoCallId, demoCallId, eventType:"turn_end", payload:{ speaker, transcript_row_id:result.rows?.[0]?.id || null }
+    }))
+    .catch(error => {
+      console.warn("Transcript persistence failed", { demoCallId, error:error.message })
+      logCallEvent(db, { callId:demoCallId, demoCallId, eventType:"error", severity:"error", payload:{ message:error.message, exception_type:error.name, stack_trace:error.stack || null, component:"db", request_payload:{ query:"INSERT call_transcript_turns" } } })
+    })
 }
 
 function isEscalationRequest(text) {
@@ -581,7 +588,10 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
     const finishAgentTurn = ({ interrupted=false } = {}) => {
       const text = agentTextChunks.filter(Boolean).join(" ").trim()
       let handledOrderRetry = false
-      if (text) persistTranscript(db, demoCallId, "agent", text)
+      if (text) {
+        persistTranscript(db, demoCallId, "agent", text)
+        logCallEvent(db, { callId:demoCallId, demoCallId, eventType:"llm_response", payload:{ component:"gemini", text_length:text.length, interrupted } })
+      }
       if (isOrderTaking() && text) {
         if (looksLikeOrderConfirmationQuestion(text) && orderState.status === "collecting") {
           orderState.status = "pending_confirmation"
@@ -771,6 +781,8 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
             modelTextSeen = false
             modelAudioSeen = false
             onTurnTiming?.("caller_transcription_received", { textLength:latestCallerText.length })
+            logCallEvent(db, { callId:demoCallId, demoCallId, eventType:"turn_start", payload:{ speaker:"caller" } })
+            logCallEvent(db, { callId:demoCallId, demoCallId, eventType:"stt_result", payload:{ provider:"gemini", text_length:latestCallerText.length } })
             if (isAppointmentBooking()) appointmentToolRequired = true
             persistTranscript(db, demoCallId, "caller", callerText)
             onCallerActivity?.()
@@ -816,6 +828,9 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
           }
           if (message.toolCall?.functionCalls) {
             logTurnTiming("tool_call_received")
+            for (const toolCall of message.toolCall.functionCalls) {
+              logCallEvent(db, { callId:demoCallId, demoCallId, eventType:"tool_call", payload:{ tool_name:toolCall.name, arguments:toolCall.args || toolCall.arguments || {}, tool_call_id:toolCall.id || null } })
+            }
             sendOrderToolResponse(message.toolCall.functionCalls)
             sendAppointmentToolResponse(message.toolCall.functionCalls)
             sendConversationToolResponse(message.toolCall.functionCalls)
@@ -881,6 +896,7 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
         onerror(error) {
           clearTimeout(turnCompleteTimer)
           console.error("Gemini Live demo bridge error", { demoCallId, ...describeGeminiLiveError(error) })
+          logCallEvent(db, { callId:demoCallId, demoCallId, eventType:"error", severity:"error", payload:{ message:error.message, exception_type:error.name, stack_trace:error.stack || null, component:"llm", response_payload:describeGeminiLiveError(error) } })
           // A Live API transport error is terminal for this call. Propagate it
           // to the provider-specific lifecycle owner without waiting for the
           // remote close callback, which is not guaranteed after a fault.
@@ -889,6 +905,7 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
         onclose(event) {
           clearTimeout(turnCompleteTimer)
           console.warn("Gemini Live demo bridge closed", { demoCallId, code:event?.code, reason:event?.reason || "no reason supplied" })
+          logCallEvent(db, { callId:demoCallId, demoCallId, eventType:"gemini_reconnect", severity:"warning", payload:{ reason:event?.reason || "closed", underlying_exception:event?.code || null } })
           onClosed?.(event)
         }
       }
@@ -945,6 +962,7 @@ export async function openGeminiSessionWithRetry(args, {
       lastError = error
       try { candidateSession?.close() } catch {}
       onAttemptFailure({ demoCallId:args.demoCallId, attempt, error })
+      logCallEvent(args.db, { callId:args.demoCallId, eventType:"gemini_reconnect", severity:"warning", payload:{ reason:error.message, underlying_exception:error.name, retry_attempt:attempt } })
       const delay = retryDelayMs === undefined ? geminiCapacityRetryDelay(attempt - 1) : retryDelayMs
       if (attempt < maxAttempts && delay > 0) await new Promise(resolve => setTimeout(resolve, delay))
     }
@@ -1059,7 +1077,11 @@ export function attachDemoGeminiBridge(server, { db }) {
     const audioWriter = {
       push(value) {
         if (!value?.length) return
-        if (!firstAudioSent) { firstAudioSent = true; logTiming("first_ai_audio_sent") }
+        if (!firstAudioSent) {
+          firstAudioSent = true
+          logTiming("first_ai_audio_sent")
+          logCallEvent(db, { callId:demoCallId, demoCallId, eventType:"tts_start", payload:{ provider:"gemini" } })
+        }
         plivoStream.playAudio(value)
       },
       flush() {},
