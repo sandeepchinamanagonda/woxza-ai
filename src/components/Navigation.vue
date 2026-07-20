@@ -1,8 +1,14 @@
 <template>
 
 <header
+ref="navbarRef"
 class="navbar"
-:class="{ scrolled: isScrolled, scrolling: isScrolling, 'on-dark': isDarkBackground }"
+:class="{ scrolled: isScrolled, 'is-nav-hidden': !isNavVisible, 'on-dark': isDarkBackground }"
+@mouseenter="onNavbarMouseEnter"
+@mouseleave="onNavbarMouseLeave"
+@focusin="onNavbarFocusIn"
+@focusout="onNavbarFocusOut"
+@click="showNavbar"
 >
 
 <div class="navbar-inner">
@@ -248,7 +254,15 @@ watch(mobile, syncMobileMenuScrollLock)
 
 const isScrolled = ref(false)
 
-const isScrolling = ref(false)
+const isNavVisible = ref(true)
+
+const isAutoHideEligible = ref(false)
+
+const navbarRef = ref(null)
+
+const isPointerOverNavbar = ref(false)
+
+const isNavbarFocused = ref(false)
 
 const activeSection = ref("")
 
@@ -257,7 +271,16 @@ const isDarkBackground = computed(() =>
 )
 
 let scrollFrame = 0
+let idleTimer = 0
 let scrollStopTimer = 0
+let mouseMoveFrame = 0
+let latestMouseY = 0
+let latestMouseTarget = null
+
+const idleTimeout = 5000
+const navbarRevealBand = 100
+
+const supportsHover = () => window.matchMedia("(hover: hover)").matches
 
 const sections = [
 
@@ -308,9 +331,21 @@ const scrollTo = (id) => {
 
 }
 
+const isPastHero = () => {
+
+  const solutionsSection = document.getElementById("solutions")
+
+  return Boolean(
+    solutionsSection && window.scrollY >= solutionsSection.offsetTop - 170
+  )
+
+}
+
 const updateNavbar = () => {
 
   isScrolled.value = window.scrollY > 40
+
+  let nextActiveSection = ""
 
   sections.forEach((id) => {
 
@@ -330,11 +365,15 @@ const updateNavbar = () => {
 
     ) {
 
-      activeSection.value = id
+      nextActiveSection = id
 
     }
 
   })
+
+  activeSection.value = nextActiveSection
+
+  isAutoHideEligible.value = isPastHero()
 
 }
 
@@ -352,19 +391,166 @@ const requestNavbarUpdate = () => {
 
 }
 
-const handleWindowScroll = () => {
+const clearIdleTimer = () => {
 
-  isScrolling.value = true
+  window.clearTimeout(idleTimer)
+
+  idleTimer = 0
+
+}
+
+const clearNavbarTimers = () => {
+
+  clearIdleTimer()
 
   window.clearTimeout(scrollStopTimer)
 
+  scrollStopTimer = 0
+
+}
+
+const scheduleIdleHide = () => {
+
+  window.clearTimeout(idleTimer)
+
+  if (!supportsHover() || !isAutoHideEligible.value) return
+
+  idleTimer = window.setTimeout(() => {
+
+    if (isPointerOverNavbar.value || isNavbarFocused.value) {
+
+      scheduleIdleHide()
+
+      return
+
+    }
+
+    hideNavbar()
+
+  }, idleTimeout)
+
+}
+
+const showNavbar = () => {
+
+  clearNavbarTimers()
+
+  // Recalculate the active section before making the bar visible, keeping its
+  // palette independent from the hide/reveal state.
+  updateNavbar()
+
+  isNavVisible.value = true
+
+  scheduleIdleHide()
+
+}
+
+const hideNavbar = () => {
+
+  updateNavbar()
+
+  if (!isAutoHideEligible.value) {
+
+    isNavVisible.value = true
+
+    return
+
+  }
+
+  clearNavbarTimers()
+
+  isNavVisible.value = false
+
+}
+
+const showHeroNavbar = () => {
+
+  clearNavbarTimers()
+
+  updateNavbar()
+
+  isNavVisible.value = true
+
+}
+
+const handleWindowScroll = () => {
+
+  requestNavbarUpdate()
+
+  if (!isPastHero()) {
+
+    showHeroNavbar()
+
+    return
+
+  }
+
+  hideNavbar()
+
   scrollStopTimer = window.setTimeout(() => {
 
-    isScrolling.value = false
+    showNavbar()
 
   }, 220)
 
-  requestNavbarUpdate()
+}
+
+const handleMouseMove = (event) => {
+
+  latestMouseY = event.clientY
+  latestMouseTarget = event.target
+
+  if (mouseMoveFrame) return
+
+  mouseMoveFrame = window.requestAnimationFrame(() => {
+
+    mouseMoveFrame = 0
+
+    isPointerOverNavbar.value = navbarRef.value?.contains(latestMouseTarget) ?? false
+
+    if (latestMouseY <= navbarRevealBand || isPointerOverNavbar.value) {
+
+      showNavbar()
+
+    }
+
+  })
+
+}
+
+const onNavbarMouseEnter = () => {
+
+  isPointerOverNavbar.value = true
+
+  showNavbar()
+
+}
+
+const onNavbarMouseLeave = () => {
+
+  isPointerOverNavbar.value = false
+
+  showNavbar()
+
+}
+
+const onNavbarFocusIn = () => {
+
+  isNavbarFocused.value = true
+
+  showNavbar()
+
+}
+
+const onNavbarFocusOut = () => {
+
+  window.requestAnimationFrame(() => {
+
+    isNavbarFocused.value = navbarRef.value?.contains(document.activeElement) ?? false
+
+    showNavbar()
+
+  })
 
 }
 
@@ -390,6 +576,10 @@ onMounted(() => {
 
   )
 
+  window.addEventListener("mousemove", handleMouseMove, { passive: true })
+
+  showNavbar()
+
 })
 
 onUnmounted(() => {
@@ -407,6 +597,8 @@ onUnmounted(() => {
 
   )
 
+  window.removeEventListener("mousemove", handleMouseMove)
+
   if (scrollFrame) {
 
     window.cancelAnimationFrame(scrollFrame)
@@ -415,7 +607,15 @@ onUnmounted(() => {
 
   }
 
-  window.clearTimeout(scrollStopTimer)
+  clearNavbarTimers()
+
+  if (mouseMoveFrame) {
+
+    window.cancelAnimationFrame(mouseMoveFrame)
+
+    mouseMoveFrame = 0
+
+  }
 
 })
 
@@ -443,7 +643,9 @@ justify-content:center;
 
 z-index:9999;
 
-transition:all .45s cubic-bezier(.22,1,.36,1);
+transition:top .3s ease-out,transform .3s ease-out,opacity .3s ease-out;
+
+will-change:transform,opacity;
 
 }
 
@@ -453,16 +655,13 @@ top:16px;
 
 }
 
-.navbar.scrolling{
+.navbar.is-nav-hidden{
 
-/* Keep the header usable and fully visible while the page is moving.  The
-   previous translate animation could leave it clipped at the top of the
-   viewport when a screenshot or scroll stopped mid-transition. */
-opacity:1;
+opacity:0;
 
-pointer-events:auto;
+pointer-events:none;
 
-transform:none;
+transform:translateY(calc(-100% - 16px));
 
 }
 
