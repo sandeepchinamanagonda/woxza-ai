@@ -13,7 +13,7 @@
 
 <div class="brand">
 
-<h2>Voxa</h2>
+<h2>Woxza</h2>
 
 <p>
 Building voice AI that answers calls, books appointments,
@@ -28,17 +28,17 @@ updates systems and keeps every customer conversation moving
 </div>
 
 <a href="tel:+918125869888">
-<span class="contact-icon"><Phone /></span>
-<span><small>Call us</small><b>081258 69888</b></span>
+<span class="contact-icon"><PhoneCall /></span>
+<span><small>Call us</small><b>+918125869888</b></span>
 </a>
 
 <a
-href="https://mail.google.com/mail/?view=cm&fs=1&to=nagarjunainnovations@gmail.com"
+href="mailto:support@woxza.io"
 target="_blank"
 rel="noopener noreferrer"
 >
 <span class="contact-icon"><Mail /></span>
-<span><small>Email us</small><b>nagarjunainnovations@gmail.com</b></span>
+<span><small>Email us</small><b>support@woxza.io</b></span>
 </a>
 
 </div>
@@ -52,8 +52,8 @@ rel="noopener noreferrer"
 <h4>Company</h4>
 
 <a href="#about">About</a>
-<a href="#services">Services</a>
-<a href="#programs">Programs</a>
+<a href="#solutions">Solutions</a>
+<a href="#approach">Approach</a>
 
 </div>
 
@@ -93,7 +93,7 @@ rel="noopener noreferrer"
 aria-label="Open Woxza India on Instagram"
 >Instagram</a>
 <a
-href="https://mail.google.com/mail/?view=cm&fs=1&to=nagarjunainnovations@gmail.com"
+href="mailto:support@woxza.io"
 target="_blank"
 rel="noopener noreferrer"
 >Email us</a>
@@ -108,7 +108,7 @@ rel="noopener noreferrer"
 
 <div class="bottom">
 
-<p>© 2026 Voxa, all rights reserved</p>
+<p>© 2026 Woxza. All rights reserved.</p>
 
 <p>Voice AI Platform • Waitlist Access • Customer Automation</p>
 
@@ -148,7 +148,7 @@ rel="noopener noreferrer"
 <p>You may ask to access, correct, or delete the personal information you have provided, or opt out of marketing messages, by contacting us.</p>
 
 <h3>Contact</h3>
-<p>Email <a href="mailto:nagarjunainnovations@gmail.com">nagarjunainnovations@gmail.com</a> or call <a href="tel:+918125869888">081258 69888</a> with privacy questions or requests.</p>
+<p>Email <a href="mailto:support@woxza.io">support@woxza.io</a> or call <a href="tel:+918125869888">+918125869888</a> with privacy questions or requests.</p>
 </div>
 </template>
 
@@ -176,7 +176,7 @@ rel="noopener noreferrer"
 <p>The website is provided on an “as available” basis. To the extent permitted by law, Woxza is not responsible for indirect loss arising from use of the website. We may update these terms and will publish the revised date here.</p>
 
 <h3>Contact</h3>
-<p>For questions about these terms, email <a href="mailto:nagarjunainnovations@gmail.com">nagarjunainnovations@gmail.com</a>.</p>
+<p>For questions about these terms, email <a href="mailto:support@woxza.io">support@woxza.io</a>.</p>
 </div>
 </template>
 </section>
@@ -186,7 +186,7 @@ rel="noopener noreferrer"
 
 <script setup>
 import { ref } from "vue"
-import { Mail, Phone, X } from "lucide-vue-next"
+import { Mail, PhoneCall, X } from "lucide-vue-next"
 
 const legalView = ref(null)
 </script>
@@ -196,7 +196,7 @@ const legalView = ref(null)
 .footer{
 position:relative;
 padding:140px 0 50px;
-background:var(--voxa-blue);
+background:var(--woxza-blue);
 overflow:hidden;
 }
 
@@ -221,7 +221,7 @@ width:520px;
 height:520px;
 left:-180px;
 top:-180px;
-background:rgba(var(--voxa-accent-rgb),.16);
+background:rgba(var(--woxza-accent-rgb),.16);
 }
 
 .glow-right{
@@ -229,7 +229,7 @@ width:620px;
 height:620px;
 right:-260px;
 bottom:-220px;
-background:rgba(var(--voxa-accent-rgb),.08);
+background:rgba(var(--woxza-accent-rgb),.08);
 }
 
 .footer-card{
@@ -237,7 +237,7 @@ position:relative;
 z-index:2;
 padding:70px;
 border-radius:34px;
-background:var(--voxa-blue-2);
+background:var(--woxza-blue-2);
 border:1px solid rgba(255,255,255,.08);
 }
 
@@ -302,17 +302,18 @@ border-top:1px solid rgba(255,255,255,.07);
 
 .contact-icon{
 display:grid;
-width:38px;
-height:38px;
+width:46px;
+height:46px;
 place-items:center;
-border-radius:12px;
+border-radius:14px;
 color:#93c5fd;
 background:rgba(59,130,246,.12);
 }
 
 .contact-icon svg{
-width:17px;
-height:17px;
+width:20px;
+height:20px;
+stroke-width:2;
 }
 
 .contact-card>a>span:last-child{

@@ -2,15 +2,15 @@
   <div class="voice-ribbon" :class="`is-${state}`" aria-hidden="true">
     <svg ref="svg" viewBox="0 0 1200 400" role="img">
       <defs>
-        <linearGradient id="voxa-ribbon-main" x1="0" x2="1">
-          <stop offset="0%" stop-color="var(--voxa-accent, #2563EB)" />
-          <stop offset="48%" stop-color="var(--voxa-accent-2, #3B82F6)" />
-          <stop offset="100%" stop-color="var(--voxa-accent-soft, #DBEAFE)" />
+        <linearGradient id="woxza-ribbon-main" x1="0" x2="1">
+          <stop offset="0%" stop-color="var(--woxza-accent, #2563EB)" />
+          <stop offset="48%" stop-color="var(--woxza-accent-2, #3B82F6)" />
+          <stop offset="100%" stop-color="var(--woxza-accent-soft, #DBEAFE)" />
         </linearGradient>
-        <linearGradient id="voxa-ribbon-depth" x1="1" x2="0">
-          <stop offset="0%" stop-color="var(--voxa-accent-soft, #DBEAFE)" />
-          <stop offset="55%" stop-color="var(--voxa-accent-2, #3B82F6)" />
-          <stop offset="100%" stop-color="var(--voxa-accent, #2563EB)" />
+        <linearGradient id="woxza-ribbon-depth" x1="1" x2="0">
+          <stop offset="0%" stop-color="var(--woxza-accent-soft, #DBEAFE)" />
+          <stop offset="55%" stop-color="var(--woxza-accent-2, #3B82F6)" />
+          <stop offset="100%" stop-color="var(--woxza-accent, #2563EB)" />
         </linearGradient>
       </defs>
       <g class="glow-layer"><path class="main-path" :d="mainPath" /></g>
@@ -80,8 +80,8 @@ svg { display:block; width:100%; overflow:visible; }
 .glow-layer { filter:blur(24px); opacity:.56; transform:translateZ(0); will-change:transform,filter; }
 .sharp-layer { filter:blur(1.5px); opacity:.86; transform:translateZ(0); }
 .depth-layer { filter:blur(8px); opacity:.4; transform:translate3d(0,22px,0); animation:ribbon-drift 4.8s ease-in-out infinite alternate; }
-.main-path { fill:url(#voxa-ribbon-main); }
-.depth-path { fill:url(#voxa-ribbon-depth); }
+.main-path { fill:url(#woxza-ribbon-main); }
+.depth-path { fill:url(#woxza-ribbon-depth); }
 stop { animation:gradient-cycle 8s ease-in-out infinite alternate; }
 stop:nth-child(2) { animation-delay:-2.6s; }
 stop:nth-child(3) { animation-delay:-5.2s; }

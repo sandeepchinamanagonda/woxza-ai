@@ -36,28 +36,20 @@ services:
       REDIS_URL: redis://redis:6379
       PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8787}
       WEBSITE_URL: ${WEBSITE_URL:-http://localhost}
-      TELEPHONY_PROVIDER: ${TELEPHONY_PROVIDER:-exotel}
-      EXOTEL_ACCOUNT_SID: ${EXOTEL_ACCOUNT_SID:-}
-      EXOTEL_API_KEY: ${EXOTEL_API_KEY:-}
-      EXOTEL_API_TOKEN: ${EXOTEL_API_TOKEN:-}
-      EXOTEL_SUBDOMAIN: ${EXOTEL_SUBDOMAIN:-api.exotel.com}
-      EXOTEL_EXOPHONE: ${EXOTEL_EXOPHONE:-}
-      EXOTEL_APP_ID: ${EXOTEL_APP_ID:-}
       PLIVO_AUTH_ID: ${PLIVO_AUTH_ID:-}
       PLIVO_AUTH_TOKEN: ${PLIVO_AUTH_TOKEN:-}
       PLIVO_FROM_NUMBER: ${PLIVO_FROM_NUMBER:-}
-      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
-      TWILIO_API_KEY_SID: ${TWILIO_API_KEY_SID:-}
-      TWILIO_API_KEY_SECRET: ${TWILIO_API_KEY_SECRET:-}
-      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
-      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+      PLIVO_STREAM_CONTENT_TYPE: ${PLIVO_STREAM_CONTENT_TYPE:-audio/x-l16;rate=16000}
+      PLIVO_L16_BYTE_ORDER: ${PLIVO_L16_BYTE_ORDER:-little}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_LIVE_MODEL: ${GEMINI_LIVE_MODEL:-gemini-3.1-flash-live-preview}
       GEMINI_DEMO_VOICE: ${GEMINI_DEMO_VOICE:-Kore}
       DEMO_TEST_PHONE: ${DEMO_TEST_PHONE:-}
       ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-}
+      LOCAL_ADMIN_MODE: ${LOCAL_ADMIN_MODE:-false}
+      LOCAL_ADMIN_TOKEN: ${LOCAL_ADMIN_TOKEN:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
-      DEMO_EMAIL_FROM: ${DEMO_EMAIL_FROM:-Voxa <demo@example.com>}
+      DEMO_EMAIL_FROM: ${DEMO_EMAIL_FROM:-Woxza <demo@example.com>}
       UNSUBSCRIBE_SIGNING_SECRET: ${UNSUBSCRIBE_SIGNING_SECRET:-development-only-change-me}
     depends_on:
       db:
@@ -89,7 +81,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_DEMO_ADMIN_MODE: ${VITE_DEMO_ADMIN_MODE:-false}
+        VITE_LOCAL_ADMIN_MODE: ${VITE_LOCAL_ADMIN_MODE:-false}
+        VITE_LOCAL_ADMIN_TOKEN: ${VITE_LOCAL_ADMIN_TOKEN:-}
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-3456}:80"

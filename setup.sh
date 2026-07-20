@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bring up the complete local Voxa demo stack. It intentionally does not modify
+# Bring up the complete local Woxza demo stack. It intentionally does not modify
 # external Plivo/Twilio console settings.
 set -Eeuo pipefail
 
@@ -58,6 +58,21 @@ set_env() {
   ' .env > "$temporary"
   mv "$temporary" .env
 }
+
+# This script is exclusively for a developer's local Docker stack. Keep the
+# browser and API in local-admin mode so every branch has the full feature set
+# without sharing a production admin token. A random local-only token protects
+# the admin endpoints from the public voice tunnel. Production uses
+# .env.production and does not run this script.
+LOCAL_ADMIN_TOKEN="$(env_value LOCAL_ADMIN_TOKEN)"
+if [[ ! "$LOCAL_ADMIN_TOKEN" =~ ^[A-Fa-f0-9]{64}$ ]]; then
+  command -v openssl >/dev/null 2>&1 || fail "Missing 'openssl', which is needed to create a local admin token."
+  LOCAL_ADMIN_TOKEN="$(openssl rand -hex 32)"
+  set_env LOCAL_ADMIN_TOKEN "$LOCAL_ADMIN_TOKEN"
+fi
+set_env VITE_LOCAL_ADMIN_MODE true
+set_env VITE_LOCAL_ADMIN_TOKEN "$LOCAL_ADMIN_TOKEN"
+set_env LOCAL_ADMIN_MODE true
 
 ngrok_url() {
   local ports="$(env_value NGROK_INSPECTOR_PORTS)" port body url
@@ -131,12 +146,13 @@ curl -fsS --max-time 5 "http://127.0.0.1:${API_PORT}/health" >/dev/null || fail 
 WEB_PORT="$(env_value WEB_PORT)"
 WEB_PORT="${WEB_PORT:-3456}"
 
-printf '\nVoxa is running.\n'
+printf '\nWoxza is running.\n'
 printf '  Frontend: http://localhost:%s\n' "$WEB_PORT"
 printf '  API:      http://localhost:%s/health\n' "$API_PORT"
+printf '  Admin:    http://localhost:%s/admin/features\n' "$WEB_PORT"
 if [[ -n "$PUBLIC_URL" ]]; then
   printf '  ngrok:    %s\n' "$PUBLIC_URL"
-  printf '\nOutbound demo calls need no Plivo Console Answer URL change: Voxa sends the per-call answer URL automatically.\n'
+  printf '\nOutbound demo calls need no Plivo Console Answer URL change: Woxza sends the per-call answer URL automatically.\n'
   printf 'For optional direct Twilio inbound tests, manually set: %s/webhooks/twilio/voice\n' "$PUBLIC_URL"
 else
   printf '\nTo enable real phone calls, add Gemini, Plivo, and NGROK_AUTHTOKEN values to .env, then run ./setup.sh again.\n'

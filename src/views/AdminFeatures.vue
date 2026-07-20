@@ -13,7 +13,8 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-const token = ref(sessionStorage.getItem('woxza_admin_token') || ''), tokenInput = ref(''), items = ref([]), tags = ref([]), tag = ref(''), search = ref(''), includeInactive = ref(false), editing = ref(null), tagDraft = ref(''), error = ref('')
+const localAdminToken = import.meta.env.VITE_LOCAL_ADMIN_MODE === 'true' ? import.meta.env.VITE_LOCAL_ADMIN_TOKEN : ''
+const token = ref(localAdminToken || sessionStorage.getItem('woxza_admin_token') || ''), tokenInput = ref(''), items = ref([]), tags = ref([]), tag = ref(''), search = ref(''), includeInactive = ref(false), editing = ref(null), tagDraft = ref(''), error = ref('')
 const headers = () => ({ 'content-type':'application/json', authorization:`Bearer ${token.value}` })
 async function api(url, options = {}) { const response = await fetch(url, { ...options, headers:{ ...headers(), ...options.headers } }); const body = await response.json(); if (!response.ok) throw new Error(body.details?.join(', ') || body.error || 'Request failed'); return body }
 async function load() { if (!token.value) return; try { error.value=''; const query = new URLSearchParams({ includeInactive:String(includeInactive.value) }); if (tag.value) query.set('tag', tag.value); if (search.value) query.set('search', search.value); const [features, allTags] = await Promise.all([api(`/api/admin/features?${query}`),api('/api/admin/feature-tags')]); items.value=features.items; tags.value=allTags.items } catch (err) { error.value=err.message } }

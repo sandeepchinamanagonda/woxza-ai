@@ -1,0 +1,10 @@
+ALTER TABLE waitlist_registrations
+  ADD COLUMN IF NOT EXISTS role VARCHAR(80);
+
+ALTER TABLE waitlist_preferences
+  ADD COLUMN IF NOT EXISTS help_with JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS biggest_challenge VARCHAR(120),
+  ADD COLUMN IF NOT EXISTS call_handling VARCHAR(120),
+  ADD COLUMN IF NOT EXISTS software JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS daily_calls VARCHAR(32),
+  ADD COLUMN IF NOT EXISTS referral_source VARCHAR(120);

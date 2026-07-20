@@ -1,0 +1,77 @@
+name: Terraform OCI
+
+on:
+  pull_request:
+    paths:
+      - "infrastructure/terraform/**"
+      - ".github/workflows/terraform.yml"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform operation"
+        required: true
+        type: choice
+        options: [plan, apply]
+        default: plan
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-production
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Format and validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false
+      - run: terraform validate
+
+  plan-or-apply:
+    name: ${{ inputs.action || 'validate only' }}
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
+    env:
+      TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
+      TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
+      TF_VAR_api_key_fingerprint: ${{ secrets.OCI_API_KEY_FINGERPRINT }}
+      TF_VAR_api_private_key: ${{ secrets.OCI_API_PRIVATE_KEY }}
+      TF_VAR_region: ${{ vars.OCI_REGION }}
+      TF_VAR_compartment_ocid: ${{ secrets.OCI_COMPARTMENT_OCID }}
+      TF_VAR_ssh_public_key: ${{ secrets.OCI_DEPLOY_SSH_PUBLIC_KEY }}
+      TF_VAR_ssh_ingress_cidr: ${{ vars.OCI_SSH_INGRESS_CIDR }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.OCI_OBJECT_STORAGE_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.OCI_OBJECT_STORAGE_SECRET_KEY }}
+      TF_IN_AUTOMATION: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Initialize remote state
+        run: >-
+          terraform init -input=false
+          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          -backend-config="key=production/terraform.tfstate"
+          -backend-config="region=${{ vars.OCI_REGION }}"
+          -backend-config="endpoint=${{ vars.OCI_OBJECT_STORAGE_S3_ENDPOINT }}"
+          -backend-config="skip_credentials_validation=true"
+          -backend-config="skip_region_validation=true"
+          -backend-config="skip_requesting_account_id=true"
+          -backend-config="use_path_style=true"
+      - name: Plan
+        run: terraform plan -input=false -out=tfplan
+      - name: Apply approved plan
+        if: inputs.action == 'apply'
+        run: terraform apply -input=false -auto-approve tfplan

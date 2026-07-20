@@ -74,7 +74,7 @@ margin-bottom:30px;
 
 .step-number{
 
-font-family:"IBM Plex Sans",sans-serif;
+font-family:var(--font-primary);
 
 font-size:12px;
 
@@ -98,7 +98,7 @@ background:#E7E2DA;
 
 h3{
 
-font-family:"Source Serif 4",serif;
+font-family:var(--font-primary);
 
 font-size:30px;
 

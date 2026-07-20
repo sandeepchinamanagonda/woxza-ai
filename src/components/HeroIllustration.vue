@@ -127,7 +127,7 @@
 
       <div class="core-inner">
 
-        <small>Voxa</small>
+        <small>Woxza</small>
 
         <h2>
           AI
@@ -272,7 +272,7 @@ text-align:center;
 
 display:block;
 
-font-family:"IBM Plex Sans";
+font-family:var(--font-primary);
 
 letter-spacing:.3em;
 
@@ -286,7 +286,7 @@ color:#9C8168;
 
 .core h2{
 
-font-family:"Source Serif 4",serif;
+font-family:var(--font-primary);
 
 font-size:82px;
 
@@ -330,7 +330,7 @@ letter-spacing:.28em;
 
 margin-bottom:10px;
 
-font-family:"IBM Plex Sans";
+font-family:var(--font-primary);
 
 color:#9C8168;
 
@@ -338,7 +338,7 @@ color:#9C8168;
 
 .glass h3{
 
-font-family:"Source Serif 4",serif;
+font-family:var(--font-primary);
 
 font-size:28px;
 
@@ -602,7 +602,7 @@ stroke-dashoffset:0;
 
 position:absolute;
 
-font-family:"IBM Plex Sans",sans-serif;
+font-family:var(--font-primary);
 
 font-size:11px;
 

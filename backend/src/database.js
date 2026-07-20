@@ -1,11 +1,24 @@
 import { readFile } from "node:fs/promises";
 import pg from "pg";
+import { seedFeatures } from "./features.js";
 
 const { Pool } = pg;
 const schemaUrls = [
   new URL("../migrations/001_initial.sql", import.meta.url),
   new URL("../migrations/002_demo_calls.sql", import.meta.url),
-  new URL("../migrations/003_demo_call_v2.sql", import.meta.url)
+  new URL("../migrations/003_demo_call_v2.sql", import.meta.url),
+  new URL("../migrations/004_call_transcripts.sql", import.meta.url),
+  new URL("../migrations/005_features.sql", import.meta.url),
+  new URL("../migrations/006_demo_call_use_cases.sql", import.meta.url),
+  new URL("../migrations/007_waitlist_questionnaire.sql", import.meta.url),
+  new URL("../migrations/008_waitlist_multi_challenges.sql", import.meta.url),
+  new URL("../migrations/009_lead_submission_questionnaire_view.sql", import.meta.url),
+  new URL("../migrations/010_waitlist_multi_selects.sql", import.meta.url),
+  new URL("../migrations/011_demo_submissions.sql", import.meta.url),
+  new URL("../migrations/012_deduplicate_lead_metadata.sql", import.meta.url),
+  new URL("../migrations/013_conversation_entry_hint.sql", import.meta.url),
+  new URL("../migrations/014_faq_feature_catalog.sql", import.meta.url),
+  new URL("../migrations/015_demo_feature_story.sql", import.meta.url)
 ];
 
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -43,6 +56,7 @@ export async function createDatabase({
         const schema = await readFile(schemaUrl, "utf8");
         await pool.query(schema);
       }
+      await seedFeatures(pool);
       return pool;
     } catch (error) {
       lastError = error;

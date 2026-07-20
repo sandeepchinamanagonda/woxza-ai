@@ -1,7 +1,8 @@
 <template><main class="admin-shell"><RouterLink to="/admin/features">← Features</RouterLink><h1>Prompt templates</h1><p>Edit the spoken feature pitch and response policy. Changes apply to new live-call sessions.</p><p v-if="error" class="error">{{ error }}</p><section v-for="prompt in prompts" :key="prompt.key" class="card"><h2>{{ prompt.title }}</h2><textarea v-model="prompt.body"></textarea><label><input v-model="prompt.active" type="checkbox"> Active</label><button @click="save(prompt)">Save</button></section></main></template>
 <script setup>
 import { onMounted, ref } from 'vue'; import { RouterLink } from 'vue-router';
-const token=sessionStorage.getItem('woxza_admin_token')||'', prompts=ref([]), error=ref(''); const keys=['feature_intro_pitch','feature_response_policy'];
+const localAdminToken = import.meta.env.VITE_LOCAL_ADMIN_MODE === 'true' ? import.meta.env.VITE_LOCAL_ADMIN_TOKEN : '';
+const token=localAdminToken || sessionStorage.getItem('woxza_admin_token')||'', prompts=ref([]), error=ref(''); const keys=['feature_intro_pitch','feature_response_policy'];
 async function load(){try{if(!token) throw new Error('Open Feature management and enter the admin token first.');prompts.value=await Promise.all(keys.map(async key=>{const r=await fetch(`/api/admin/prompt-templates/${key}`,{headers:{authorization:`Bearer ${token}`}});const b=await r.json();if(!r.ok)throw new Error(b.error);return b}))}catch(e){error.value=e.message}}
 async function save(prompt){try{const r=await fetch(`/api/admin/prompt-templates/${prompt.key}`,{method:'PATCH',headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify({body:prompt.body,active:prompt.active})});const b=await r.json();if(!r.ok)throw new Error(b.error);Object.assign(prompt,b)}catch(e){error.value=e.message}}
 onMounted(load)

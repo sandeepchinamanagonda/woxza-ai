@@ -29,7 +29,14 @@
 <DemoModal
 :is-open="showDemoModal"
 :mode="demoMode"
-@close="showDemoModal=false"
+:initial-email="prefilledEmail"
+@close="closeDemoModal"
+/>
+
+<WaitlistPopup
+:is-open="showWaitlistPopup"
+@close="closeWaitlistPopup"
+@join="openWaitlistFromPopup"
 />
 
 </main>
@@ -52,8 +59,13 @@ import FAQ from "@/components/sections/FAQ.vue"
 import CTA from "@/components/sections/CTA.vue"
 
 import DemoModal from "@/components/DemoModal.vue"
+import WaitlistPopup from "@/components/WaitlistPopup.vue"
 
 const showDemoModal=ref(false)
+const showWaitlistPopup=ref(false)
+const prefilledEmail=ref("")
+let waitlistPopupTimer
+const waitlistPopupSeenKey="woxza:waitlist-popup-seen"
 
 const demoMode=ref("waitlist")
 
@@ -70,6 +82,21 @@ demoMode.value=intent
 
 showDemoModal.value=true
 
+}
+
+const closeDemoModal=()=>{
+showDemoModal.value=false
+prefilledEmail.value=""
+}
+
+const closeWaitlistPopup=()=>{
+showWaitlistPopup.value=false
+}
+
+const openWaitlistFromPopup=(email)=>{
+prefilledEmail.value=email
+closeWaitlistPopup()
+openDemoModal("waitlist")
 }
 
 const scrollTo=(selector)=>{
@@ -90,13 +117,25 @@ behavior:"smooth"
 
 onMounted(()=>{
 
-window.addEventListener("voxa:open-demo",openDemoModal)
+window.addEventListener("woxza:open-demo",openDemoModal)
+
+if(!window.sessionStorage.getItem(waitlistPopupSeenKey)){
+
+waitlistPopupTimer=window.setTimeout(()=>{
+
+window.sessionStorage.setItem(waitlistPopupSeenKey,"true")
+showWaitlistPopup.value=true
+
+},15000)
+
+}
 
 })
 
 onUnmounted(()=>{
 
-window.removeEventListener("voxa:open-demo",openDemoModal)
+window.removeEventListener("woxza:open-demo",openDemoModal)
+window.clearTimeout(waitlistPopupTimer)
 
 })
 

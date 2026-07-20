@@ -2,7 +2,7 @@
 
 <header
 class="navbar"
-:class="{ scrolled: isScrolled, scrolling: isScrolling }"
+:class="{ scrolled: isScrolled, scrolling: isScrolling, 'on-dark': isDarkBackground }"
 >
 
 <div class="navbar-inner">
@@ -24,7 +24,7 @@ class="brand"
 
 <span class="brand-name">
 
-VOXA
+WOXZA
 
 </span>
 
@@ -62,7 +62,7 @@ href="#why-voxa"
 :class="{active:activeSection==='why-voxa'}"
 >
 
-Why Voxa
+Why Woxza
 
 </a>
 
@@ -104,12 +104,14 @@ RIGHT
 
 <div class="actions">
 
+<LanguageSelector v-if="showLanguageSelector" class="language-selector-nav" :dark-popover="isDarkBackground" />
+
 <button
 class="cta"
 @click="openLeadModal('waitlist')"
 >
 
-Join Waitlist
+Join the waitlist
 
 </button>
 
@@ -126,11 +128,13 @@ Get a Demo
 class="mobile-toggle"
 type="button"
 :aria-expanded="mobile"
-aria-label="Toggle navigation menu"
+ :aria-label="mobile ? 'Close navigation menu' : 'Open navigation menu'"
+ :class="{ 'is-open': mobile }"
 @click="mobile=!mobile"
 >
 
-☰
+<X v-if="mobile" aria-hidden="true" />
+<Menu v-else aria-hidden="true" />
 
 </button>
 
@@ -149,6 +153,8 @@ v-if="mobile"
 class="mobile-menu"
 >
 
+<LanguageSelector v-if="showLanguageSelector" class="language-selector-mobile" :dark-popover="isDarkBackground" />
+
 <a @click="scrollTo('solutions')">
 
 Solutions
@@ -163,7 +169,7 @@ About
 
 <a @click="scrollTo('why-voxa')">
 
-Why Voxa
+Why Woxza
 
 </a>
 
@@ -190,7 +196,7 @@ class="cta mobile-btn"
 @click="openLeadModal('waitlist')"
 >
 
-Join Waitlist
+Join the waitlist
 
 </button>
 
@@ -213,21 +219,42 @@ Get a Demo
 
 <script setup>
 
-import { ref, onMounted, onUnmounted } from "vue"
+import { computed, ref, onMounted, onUnmounted, watch } from "vue"
+import { Menu, X } from "lucide-vue-next"
 import { RouterLink } from "vue-router"
 import { scrollSectionIntoView } from "@/utils/sectionScroll"
+import LanguageSelector from "@/components/LanguageSelector.vue"
 
 const emit = defineEmits([
   "open-demo"
 ])
 
+// Keep language switching available while developing, but do not expose it on
+// the production marketing site until localized production content is ready.
+const showLanguageSelector = !import.meta.env.PROD
+
 const mobile = ref(false)
+
+const syncMobileMenuScrollLock = (isOpen) => {
+  document.body.classList.toggle("mobile-nav-open", isOpen)
+}
+
+const resetMobileNavigation = () => {
+  mobile.value = false
+  syncMobileMenuScrollLock(false)
+}
+
+watch(mobile, syncMobileMenuScrollLock)
 
 const isScrolled = ref(false)
 
 const isScrolling = ref(false)
 
 const activeSection = ref("")
+
+const isDarkBackground = computed(() =>
+  ["solutions", "demo", "approach", "contact"].includes(activeSection.value)
+)
 
 let scrollFrame = 0
 let scrollStopTimer = 0
@@ -244,7 +271,9 @@ const sections = [
 
   "approach",
 
-  "faq"
+  "faq",
+
+  "contact"
 
 ]
 
@@ -258,7 +287,7 @@ scrollTo("demo")
 
 const openLeadModal = (intent) => {
   mobile.value = false
-  window.dispatchEvent(new CustomEvent("voxa:open-demo", {
+  window.dispatchEvent(new CustomEvent("woxza:open-demo", {
     detail: { intent }
   }))
 }
@@ -266,13 +295,16 @@ const openLeadModal = (intent) => {
 const scrollTo = (id) => {
 
   mobile.value = false
+  // Release the mobile scroll lock before calculating and moving to the target.
+  // Without this, mobile browsers can ignore the smooth scroll while the menu closes.
+  syncMobileMenuScrollLock(false)
 
   const section = document.getElementById(id)
 
   if (!section) return
 
   window.history.replaceState(null, "", `#${id}`)
-  scrollSectionIntoView(section)
+  window.requestAnimationFrame(() => scrollSectionIntoView(section))
 
 }
 
@@ -338,7 +370,11 @@ const handleWindowScroll = () => {
 
 onMounted(() => {
 
+  resetMobileNavigation()
+
   updateNavbar()
+
+  window.addEventListener("pageshow", resetMobileNavigation)
 
   window.addEventListener(
 
@@ -357,6 +393,11 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+
+  window.removeEventListener("pageshow", resetMobileNavigation)
+
+  syncMobileMenuScrollLock(false)
+
 
   window.removeEventListener(
 
@@ -414,11 +455,14 @@ top:16px;
 
 .navbar.scrolling{
 
-opacity:0;
+/* Keep the header usable and fully visible while the page is moving.  The
+   previous translate animation could leave it clipped at the top of the
+   viewport when a screenshot or scroll stopped mid-transition. */
+opacity:1;
 
-pointer-events:none;
+pointer-events:auto;
 
-transform:translate3d(0,calc(-100% - 24px),0);
+transform:none;
 
 }
 
@@ -498,7 +542,7 @@ user-select:none;
 
 .brand-name{
 
-font-family:"Plus Jakarta Sans",sans-serif;
+font-family:var(--font-primary);
 
 font-size:42px;
 
@@ -509,6 +553,12 @@ letter-spacing:-.05em;
 line-height:1;
 
 transition:.35s;
+
+}
+
+.navbar.on-dark .brand{
+
+color:#ffffff;
 
 }
 
@@ -556,6 +606,18 @@ opacity:.9;
 
 }
 
+.navbar.on-dark .wave{
+
+background:
+
+radial-gradient(circle at center,#ffffff 18%,transparent 20%),
+
+radial-gradient(circle,#ffffff 1px,transparent 1px);
+
+background-size:100% 100%,6px 6px;
+
+}
+
 /* ==========================================================
 NAVIGATION
 ========================================================== */
@@ -590,7 +652,7 @@ position:relative;
 
 text-decoration:none;
 
-font-family:"Plus Jakarta Sans",sans-serif;
+font-family:var(--font-primary);
 
 font-size:15px;
 
@@ -599,6 +661,12 @@ font-weight:500;
 color:#14264D;
 
 transition:.3s;
+
+}
+
+.navbar.on-dark .nav-links a{
+
+color:#ffffff;
 
 }
 
@@ -635,6 +703,12 @@ border-radius:999px;
 transform:translateX(-50%);
 
 transition:.3s;
+
+}
+
+.navbar.on-dark .nav-links a::after{
+
+background:#ffffff;
 
 }
 
@@ -680,7 +754,7 @@ background:#14264D;
 
 color:white;
 
-font-family:"Plus Jakarta Sans",sans-serif;
+font-family:var(--font-primary);
 
 font-size:14px;
 
@@ -728,6 +802,35 @@ box-shadow:0 18px 42px rgba(20,38,77,.22);
 
 }
 
+.navbar.on-dark .cta{
+
+color:#14264D;
+
+background:#ffffff;
+
+box-shadow:0 10px 28px rgba(0,0,0,.18);
+
+}
+
+.navbar.on-dark .cta-secondary{
+
+border-color:#ffffff;
+
+}
+
+.navbar.on-dark .cta:hover{
+
+background:#eaf1ff;
+
+}
+
+/* Keep language selection compact so it never competes with primary actions. */
+.actions .language-selector{
+flex:0 0 112px;
+width:112px;
+margin:0;
+}
+
 /* ==========================================================
 MOBILE TOGGLE
 ========================================================== */
@@ -757,6 +860,14 @@ transition:.35s;
 .mobile-toggle:hover{
 
 transform:rotate(90deg);
+
+}
+
+.mobile-toggle svg{
+
+width:24px;
+height:24px;
+stroke-width:2.25;
 
 }
 
@@ -852,9 +963,15 @@ gap:18px;
 
 width:min(94%,700px);
 
+max-height:calc(100dvh - 88px);
+
 margin:14px auto 0;
 
 padding:26px;
+
+overflow-y:auto;
+
+overscroll-behavior:contain;
 
 background:rgba(255,255,255,.90);
 
@@ -876,7 +993,7 @@ box-shadow:
 
 text-decoration:none;
 
-font-family:"Plus Jakarta Sans",sans-serif;
+font-family:var(--font-primary);
 
 font-size:17px;
 
@@ -901,6 +1018,12 @@ padding-left:12px;
 margin-top:8px;
 
 width:100%;
+
+}
+
+:global(body.mobile-nav-open){
+
+overflow:hidden;
 
 }
 
@@ -1349,6 +1472,24 @@ padding:0 24px;
 
 }
 
+/* Override the legacy wide navigation grid for the language control. */
+.navbar-inner,
+.navbar.scrolled .navbar-inner{
+grid-template-columns:270px minmax(0,1fr) auto;
+gap:18px;
+padding-left:32px;
+padding-right:32px;
+}
+
+.actions{
+gap:10px;
+}
+
+.actions .cta{
+padding:13px 20px;
+white-space:nowrap;
+}
+
 .actions{ gap:10px; }
 
 .cta{ padding:13px 20px; font-size:13px; }
@@ -1419,6 +1560,15 @@ font-size:24px;
 min-width:46px;
 }
 
+.language-selector-nav{
+display:none;
+}
+
+.language-selector-mobile{
+display:inline-flex;
+margin:4px 0 12px;
+}
+
 .mobile-toggle{
 display:flex;
 flex:0 0 46px;
@@ -1435,4 +1585,122 @@ display:block;
 }
 
 }
+
+/* The navigation deliberately inverts with the section behind it: blue on
+   light surfaces, white on dark ones. */
+.navbar-inner,
+.navbar.scrolled .navbar-inner{
+background:linear-gradient(108deg,#0d2455 0%,#163b84 52%,#2869d9 100%)!important;
+border:1px solid rgba(255,255,255,.18);
+border-radius:24px;
+box-shadow:0 18px 60px rgba(9,25,66,.25);
+}
+
+.brand,
+.brand-name,
+.nav-links a{
+color:#ffffff!important;
+}
+
+.wave{
+background:
+radial-gradient(circle at center,#ffffff 18%,transparent 20%),
+radial-gradient(circle,#ffffff 1px,transparent 1px);
+background-size:100% 100%,6px 6px;
+}
+
+.nav-links a::after{
+background:#ffffff;
+}
+
+/* The compact menu control sits on the blue surface. */
+.mobile-toggle{
+color:#ffffff;
+}
+
+.cta,
+.cta-secondary{
+border-color:#ffffff;
+color:#14264D;
+background:#ffffff;
+box-shadow:0 10px 28px rgba(0,0,0,.18);
+}
+
+.cta:hover,
+.cta-secondary:hover{
+background:#eaf1ff;
+}
+
+/* Dark sections receive a white navigation surface with the blue brand
+   palette, so the bar remains distinct from its background. */
+.navbar.on-dark .navbar-inner,
+.navbar.on-dark.scrolled .navbar-inner{
+background:#ffffff!important;
+border-color:rgba(20,38,77,.10);
+box-shadow:0 18px 60px rgba(9,25,66,.20);
+}
+
+.navbar.on-dark .brand,
+.navbar.on-dark .brand-name,
+.navbar.on-dark .nav-links a{
+color:#14264D!important;
+}
+
+.navbar.on-dark .wave{
+background:
+radial-gradient(circle at center,#3B82F6 18%,transparent 20%),
+radial-gradient(circle,#3B82F6 1px,transparent 1px);
+background-size:100% 100%,6px 6px;
+}
+
+.navbar.on-dark .nav-links a::after{
+background:#14264D;
+}
+
+.navbar.on-dark .cta,
+.navbar.on-dark .cta-secondary{
+border-color:#14264D;
+color:#ffffff;
+background:#14264D;
+box-shadow:0 10px 28px rgba(20,38,77,.16);
+}
+
+.navbar.on-dark .cta:hover,
+.navbar.on-dark .cta-secondary:hover{
+background:#1d3568;
+}
+
+/* Final desktop proportions: brand, links, language selector, then actions. */
+@media (min-width:981px){
+.navbar-inner,
+.navbar.scrolled .navbar-inner{
+grid-template-columns:270px minmax(0,1fr) auto;
+gap:18px;
+padding-left:32px;
+padding-right:32px;
+}
+
+.actions{ gap:10px; }
+.actions .language-selector{ flex:0 0 42px; width:42px; margin:0; }
+.actions .cta{ padding:13px 20px; white-space:nowrap; }
+
+/* Match the language control to the dark calls-to-action on white. */
+.navbar.on-dark :deep(.language-selector){
+color:#ffffff!important;
+background:#14264D!important;
+}
+
+.navbar.on-dark :deep(.language-selector:hover),
+.navbar.on-dark :deep(.language-selector:focus-visible){
+background:#1d3568!important;
+}
+
+}
+
+/* The language popover opens below the bar, so it must not be clipped by the scroll shine wrapper. */
+.navbar.scrolled .navbar-inner{ overflow:visible; }
+
+/* Final mobile contrast override. */
+.mobile-toggle{ color:#ffffff!important; }
+.navbar.on-dark .mobile-toggle{ color:#14264D!important; }
 </style>

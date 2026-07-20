@@ -28,12 +28,13 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 const props = defineProps({
   label: { type: String, default: "Payment plan recorded" },
   duration: { type: Number, default: 2000 },
+  durationLabel: { type: String, default: "" },
   onComplete: { type: Function, default: undefined }
 })
 
 const ready = ref(false)
 const reducedMotion = ref(false)
-const durationLabel = computed(() => `${(props.duration / 1000).toFixed(1)}s to complete`)
+const durationLabel = computed(() => props.durationLabel || `${(props.duration / 1000).toFixed(1)}s to complete`)
 
 let firstFrame
 let secondFrame

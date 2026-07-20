@@ -21,7 +21,7 @@ Heading
 
 <div class="eyebrow">
 
-VOXA ECOSYSTEM
+WOXZA ECOSYSTEM
 
 </div>
 
@@ -82,7 +82,7 @@ AI CORE
 
 <h3>
 
-VOXA
+WOXZA
 
 </h3>
 
@@ -104,7 +104,7 @@ Connected Intelligence
 
 <div class="service-icon">
 
-👨‍💼
+<Bot aria-hidden="true" />
 
 </div>
 
@@ -128,7 +128,7 @@ qualify and execute tasks.
 
 <div class="service-icon">
 
-📊
+<ChartNoAxesCombined aria-hidden="true" />
 
 </div>
 
@@ -158,7 +158,7 @@ and conversation insights.
 
 <div class="service-icon">
 
-📁
+<ContactRound aria-hidden="true" />
 
 </div>
 
@@ -182,7 +182,7 @@ automatically.
 
 <div class="service-icon">
 
-📅
+<CalendarDays aria-hidden="true" />
 
 </div>
 
@@ -210,7 +210,7 @@ handled automatically.
 
 <div class="node-icon">
 
-🎙️
+<AudioLines aria-hidden="true" />
 
 </div>
 
@@ -228,7 +228,7 @@ Voice AI
 
 <div class="node-icon">
 
-🤖
+<Bot aria-hidden="true" />
 
 </div>
 
@@ -246,7 +246,7 @@ Agents
 
 <div class="node-icon">
 
-⚙️
+<Workflow aria-hidden="true" />
 
 </div>
 
@@ -264,7 +264,7 @@ Automation
 
 <div class="node-icon">
 
-📚
+<BookOpen aria-hidden="true" />
 
 </div>
 
@@ -291,6 +291,7 @@ ref,
 onMounted,
 onUnmounted
 } from "vue"
+import { AudioLines, BookOpen, Bot, CalendarDays, ChartNoAxesCombined, ContactRound, Workflow } from "lucide-vue-next"
 
 /* ===========================================
 REFERENCES
@@ -2530,5 +2531,23 @@ scroll-behavior:auto !important;
 
 }
 
+}
+
+/* Shared concept-tile treatment for the legacy ecosystem cards and nodes. */
+.ecosystem .node-icon,
+.ecosystem .service-icon{
+width:46px;
+height:46px;
+display:grid;
+place-items:center;
+border-radius:14px;
+font-size:0;
+}
+
+.ecosystem .node-icon svg,
+.ecosystem .service-icon svg{
+width:20px;
+height:20px;
+stroke-width:2;
 }
 </style>

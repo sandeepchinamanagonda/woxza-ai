@@ -7,6 +7,8 @@ import './style.css'
 // Import routes
 import Home from './views/Home.vue'
 import NotFound from './views/NotFound.vue'
+import AdminFeatures from './views/AdminFeatures.vue'
+import AdminPrompts from './views/AdminPrompts.vue'
 
 const routes = [
   {
@@ -14,7 +16,23 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: {
-      title: 'Voxa | Enterprise AI Voice Platform'
+      title: 'Woxza | Enterprise AI Voice Platform'
+    }
+  },
+  {
+    path: '/admin/features',
+    name: 'AdminFeatures',
+    component: AdminFeatures,
+    meta: {
+      title: 'Woxza | Feature Management'
+    }
+  },
+  {
+    path: '/admin/prompts',
+    name: 'AdminPrompts',
+    component: AdminPrompts,
+    meta: {
+      title: 'Woxza | Prompt Templates'
     }
   },
   {
@@ -49,7 +67,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title || 'Voxa'
+  document.title = to.meta.title || 'Woxza'
   next()
 })
 

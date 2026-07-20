@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { CalendarDays, CheckCircle2, LockKeyhole, Mail, MessageCircle, MessageSquareText, Puzzle, RefreshCw, Send, ShieldCheck, Target, Zap } from "lucide-vue-next"
+import { CalendarDays, CheckCircle2, LockKeyhole, Mail, MessageSquareText, Network, RefreshCw, ShieldCheck, Target, Zap } from "lucide-vue-next"
 
 const asset = name => `/brand-logos/${name}.svg`
 
@@ -76,12 +76,12 @@ const categories = [
   },
   {
     title: "Messaging",
-    icon: Send,
+    icon: MessageSquareText,
     accent: "#ff4fb7",
     soft: "#eef5ff",
     tools: [
       { name: "WhatsApp", logo: asset("whatsapp") },
-      { name: "SMS", icon: MessageCircle },
+      { name: "SMS", icon: MessageSquareText },
       { name: "Email", icon: Mail },
       { name: "SendGrid", logo: asset("sendgrid") }
     ]
@@ -100,7 +100,7 @@ const categories = [
   },
   {
     title: "Other Integrations",
-    icon: Puzzle,
+    icon: Network,
     accent: "#28e2ef",
     soft: "#edf1f7",
     tools: [
@@ -156,9 +156,9 @@ const assurances = [
 .category:nth-child(3) { transform:translateY(0); }
 .category:nth-child(4) { transform:translateY(-5px); }
 .category:nth-child(5) { transform:translateY(-10px); }
-.category-icon { position:relative; display:grid; width:58px; height:58px; margin:0 auto 16px; place-items:center; border:1px solid color-mix(in srgb,var(--category-accent) 66%,transparent); border-radius:50%; color:var(--category-accent); background:color-mix(in srgb,var(--category-accent) 16%,#07172f); box-shadow:0 0 0 9px color-mix(in srgb,var(--category-accent) 6%,transparent),0 0 32px color-mix(in srgb,var(--category-accent) 28%,transparent); }
-.category-icon::after { content:""; position:absolute; inset:7px; border:1px solid color-mix(in srgb,var(--category-accent) 32%,transparent); border-radius:50%; }
-.category-icon svg { width:25px; height:25px; }
+.category-icon { position:relative; display:grid; width:46px; height:46px; margin:0 auto 16px; place-items:center; border:1px solid color-mix(in srgb,var(--category-accent) 66%,transparent); border-radius:14px; color:var(--category-accent); background:color-mix(in srgb,var(--category-accent) 16%,#07172f); box-shadow:0 0 0 7px color-mix(in srgb,var(--category-accent) 6%,transparent),0 0 32px color-mix(in srgb,var(--category-accent) 28%,transparent); }
+.category-icon::after { content:""; position:absolute; inset:6px; border:1px solid color-mix(in srgb,var(--category-accent) 32%,transparent); border-radius:9px; }
+.category-icon svg { width:20px; height:20px; stroke-width:2; }
 .category h3 { min-height:38px; margin:0; color:var(--category-accent); font-size:14px; font-weight:800; line-height:1.25; letter-spacing:-.02em; }
 .tool-list { position:relative; display:grid; gap:8px; min-height:300px; margin-top:16px; padding:14px 0 34px 28px; border:0; border-radius:0; background:transparent; box-shadow:none; text-align:left; }
 .tool-list::before { content:""; position:absolute; left:11px; top:14px; bottom:18px; width:1px; background:linear-gradient(to bottom,var(--category-accent),color-mix(in srgb,var(--category-accent) 8%,transparent)); opacity:.82; }

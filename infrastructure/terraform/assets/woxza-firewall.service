@@ -1,0 +1,12 @@
+[Unit]
+Description=Woxza public HTTP and HTTPS firewall rules
+After=network.target
+Wants=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/woxza-firewall
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

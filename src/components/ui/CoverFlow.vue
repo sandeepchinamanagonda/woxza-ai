@@ -28,7 +28,7 @@
 
             <div class="cf-icon">
 
-                {{ item.icon }}
+                <component :is="item.icon" aria-hidden="true" />
 
             </div>
 
@@ -428,11 +428,11 @@ box-shadow:
 
 .cf-icon{
 
-width:84px;
+width:46px;
 
-height:84px;
+height:46px;
 
-border-radius:24px;
+border-radius:14px;
 
 display:flex;
 
@@ -442,12 +442,18 @@ justify-content:center;
 
 background:#EEF4FF;
 
-font-size:34px;
+font-size:0;
 
 margin-bottom:34px;
 
 transition:.35s;
 
+}
+
+.cf-icon svg{
+width:20px;
+height:20px;
+stroke-width:2;
 }
 
 .cf-card:hover .cf-icon{

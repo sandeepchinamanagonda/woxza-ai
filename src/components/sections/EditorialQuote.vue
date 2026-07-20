@@ -29,7 +29,7 @@ focus on what truly matters.
 
 <div class="mark"></div>
 
-<span>Voxa</span>
+<span>Woxza</span>
 
 <div class="mark"></div>
 

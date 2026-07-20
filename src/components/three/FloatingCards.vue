@@ -128,7 +128,7 @@ border-radius:22px;
 
 background:rgba(255,255,255,.88);
 
-border:1px solid rgba(var(--voxa-accent-rgb),.12);
+border:1px solid rgba(var(--woxza-accent-rgb),.12);
 
 box-shadow:
 
@@ -176,33 +176,33 @@ flex-shrink:0;
 
 .green{
 
-background:var(--voxa-accent);
+background:var(--woxza-accent);
 
-box-shadow:0 0 14px rgba(var(--voxa-accent-rgb),.65);
+box-shadow:0 0 14px rgba(var(--woxza-accent-rgb),.65);
 
 }
 
 .blue{
 
-background:var(--voxa-accent-2);
+background:var(--woxza-accent-2);
 
-box-shadow:0 0 14px rgba(var(--voxa-accent-rgb),.65);
+box-shadow:0 0 14px rgba(var(--woxza-accent-rgb),.65);
 
 }
 
 .purple{
 
-background:var(--voxa-accent);
+background:var(--woxza-accent);
 
-box-shadow:0 0 14px rgba(var(--voxa-accent-rgb),.65);
+box-shadow:0 0 14px rgba(var(--woxza-accent-rgb),.65);
 
 }
 
 .orange{
 
-background:var(--voxa-accent-2);
+background:var(--woxza-accent-2);
 
-box-shadow:0 0 14px rgba(var(--voxa-accent-rgb),.65);
+box-shadow:0 0 14px rgba(var(--woxza-accent-rgb),.65);
 
 }
 
@@ -294,17 +294,17 @@ animation:none;
 
 transform:translateY(-10px) scale(1.03);
 
-border-color:var(--voxa-accent);
+border-color:var(--woxza-accent);
 
 box-shadow:
 
-0 35px 90px rgba(var(--voxa-accent-rgb),.18);
+0 35px 90px rgba(var(--woxza-accent-rgb),.18);
 
 }
 
 .card:hover strong{
 
-color:var(--voxa-accent);
+color:var(--woxza-accent);
 
 }
 

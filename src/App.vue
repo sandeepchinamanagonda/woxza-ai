@@ -13,33 +13,14 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, onUnmounted } from "vue"
+import { nextTick, onMounted, onUnmounted, watch } from "vue"
 import { RouterView } from "vue-router"
-import Lenis from "@studio-freight/lenis"
 import Navigation from "@/components/Navigation.vue"
 import Footer from "@/components/Footer.vue"
 import { scrollSectionIntoView } from "@/utils/sectionScroll"
+import { useI18n } from "@/composables/useI18n"
 
-let lenis
-let smoothScrollFrame = 0
-
-const startSmoothScroll = () => {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-
-  lenis = new Lenis({
-    duration: 1.05,
-    smoothWheel: true,
-    smoothTouch: false,
-    wheelMultiplier: 0.9
-  })
-
-  const update = (time) => {
-    lenis?.raf(time)
-    smoothScrollFrame = window.requestAnimationFrame(update)
-  }
-
-  smoothScrollFrame = window.requestAnimationFrame(update)
-}
+const { language, startPageTranslation, translatePage } = useI18n()
 
 const alignHashTarget = async () => {
   if (!window.location.hash) return
@@ -53,7 +34,8 @@ const alignHashTarget = async () => {
 }
 
 onMounted(() => {
-  startSmoothScroll()
+  startPageTranslation()
+  watch(language, translatePage)
   window.addEventListener("hashchange", alignHashTarget)
   window.requestAnimationFrame(() => window.requestAnimationFrame(alignHashTarget))
   document.fonts?.ready.then(alignHashTarget)
@@ -61,8 +43,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("hashchange", alignHashTarget)
-  if (smoothScrollFrame) window.cancelAnimationFrame(smoothScrollFrame)
-  lenis?.destroy()
 })
 </script>
 
@@ -72,21 +52,21 @@ onUnmounted(() => {
 
 --bg:#ffffff;
 --dark:#0f172a;
---voxa-blue:#0f172a;
---voxa-blue-2:#162238;
---voxa-blue-rgb:15,23,42;
---voxa-white:#ffffff;
---voxa-soft:#f8f9fb;
---voxa-pale:#edf0f5;
---voxa-heading:#11152b;
---voxa-accent:#2563eb;
---voxa-accent-2:#3b82f6;
---voxa-accent-rgb:37,99,235;
---voxa-accent-soft:#dbeafe;
+--woxza-blue:#0f172a;
+--woxza-blue-2:#162238;
+--woxza-blue-rgb:15,23,42;
+--woxza-white:#ffffff;
+--woxza-soft:#f8f9fb;
+--woxza-pale:#edf0f5;
+--woxza-heading:#11152b;
+--woxza-accent:#2563eb;
+--woxza-accent-2:#3b82f6;
+--woxza-accent-rgb:37,99,235;
+--woxza-accent-soft:#dbeafe;
 --text:#0f172a;
 --muted:#64748b;
 --border:rgba(15,23,42,.08);
---primary:var(--voxa-accent);
+--primary:var(--woxza-accent);
 
 }
 
@@ -100,32 +80,22 @@ body{
 background:#ffffff;
 color:var(--text);
 overflow-x:hidden;
-font-family:"Inter",sans-serif;
+font-family:var(--font-primary);
 -webkit-font-smoothing:antialiased;
 text-rendering:optimizeLegibility;
+}
+
+/* Use system Indic fonts when a visitor chooses Hindi, Telugu, or Tamil. */
+html:lang(hi) body,
+html:lang(te) body,
+html:lang(ta) body{
+font-family:"Noto Sans Devanagari","Noto Sans Telugu","Noto Sans Tamil",var(--font-primary);
 }
 
 #app{
 min-height:100vh;
 overflow-x:hidden;
 background:#ffffff;
-}
-
-html.lenis,
-html.lenis body{
-height:auto;
-}
-
-.lenis.lenis-smooth{
-scroll-behavior:auto !important;
-}
-
-.lenis.lenis-stopped{
-overflow:hidden;
-}
-
-.lenis.lenis-scrolling iframe{
-pointer-events:none;
 }
 
 .site-content{
@@ -148,7 +118,7 @@ font-family:inherit;
 }
 
 ::selection{
-background:var(--voxa-accent);
+background:var(--woxza-accent);
 color:#fff;
 }
 

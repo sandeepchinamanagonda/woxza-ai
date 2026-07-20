@@ -6,7 +6,13 @@
         class="overlay"
         @click.self="closeModal"
       >
-        <div class="modal">
+        <WaitlistConfirmation
+          v-if="successMessage"
+          :message="confirmationMessage"
+          @close="closeModal"
+        />
+
+        <div v-else class="modal">
           <button
             class="close"
             type="button"
@@ -19,7 +25,7 @@
           <aside class="modal-story">
             <div class="modal-brand" aria-hidden="true">
               <i class="modal-brand-dot"></i>
-              <span>Voxa</span>
+              <span>Woxza</span>
             </div>
 
             <div class="modal-header">
@@ -42,7 +48,7 @@
 
           </aside>
 
-          <div class="modal-content">
+          <div class="modal-content" @wheel.stop>
 
           <div
             v-if="successMessage"
@@ -52,13 +58,6 @@
             <strong>{{ successMessage }}</strong>
             <span>{{ successDetail }}</span>
 
-            <button
-              class="btn-primary"
-              type="button"
-              @click="closeModal"
-            >
-              Done
-            </button>
           </div>
 
           <form
@@ -118,144 +117,55 @@
                       </button>
                     </div>
                   </div>
-                  <input v-model.trim="form.phoneNumber" autocomplete="tel-national" inputmode="tel" placeholder="312 555 0100" required>
+                  <input v-model.trim="form.phoneNumber" autocomplete="tel-national" inputmode="tel" placeholder="312 555 0100" required @input="removeRepeatedCountryCode">
                 </div>
               </label>
 
               <label class="wide">
-                <span>Company <em>Optional</em></span>
+                <span>Company name</span>
                 <input
                   v-model.trim="form.company"
                   autocomplete="organization"
                   placeholder="Business name"
+                  required
                 >
               </label>
-            </section>
-
-            <section
-              v-show="stepIndex === 1"
-              class="step-panel"
-            >
-              <div class="field-block wide dropdown-field" :class="{ 'is-open': industryMenuOpen }">
-                <span class="field-title">Industry</span>
-                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (industryMenuOpen = false)">
-                  <button class="option-select-trigger" type="button" aria-label="Industry" :aria-expanded="industryMenuOpen" @click="industryMenuOpen = !industryMenuOpen" @keydown.esc.stop="industryMenuOpen = false">
-                    <span :class="{ placeholder: !form.industry }">{{ selectedIndustryLabel }}</span><i></i>
-                  </button>
-                  <div v-if="industryMenuOpen" class="option-select-menu" role="listbox" aria-label="Industry">
-                    <button v-for="type in businessTypeOptions" :key="type.value" type="button" role="option" :aria-selected="form.industry === type.value" @click="selectIndustry(type.value)">
-                      <span>{{ type.label }}</span><b v-if="form.industry === type.value">✓</b>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <label v-if="form.industry === 'other'" class="wide">
-                <span>Enter your industry</span>
-                <input v-model.trim="form.otherIndustry" type="text" placeholder="For example, Manufacturing" maxlength="100" required>
+              <label class="wide">
+                <span>Your role in the company</span>
+                <FormDropdown v-model="form.role" :options="roleOptions" label="Your role in the company" placeholder="Select your role" dark />
               </label>
 
-              <div class="field-block wide dropdown-field" :class="{ 'is-open': employeeMenuOpen }">
-                <span class="field-title">Employee count</span>
-                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (employeeMenuOpen = false)">
-                  <button class="option-select-trigger" type="button" aria-label="Employee count" :aria-expanded="employeeMenuOpen" @click="employeeMenuOpen = !employeeMenuOpen" @keydown.esc.stop="employeeMenuOpen = false">
-                    <span :class="{ placeholder: !form.companySize }">{{ selectedEmployeeLabel }}</span><i></i>
-                  </button>
-                  <div v-if="employeeMenuOpen" class="option-select-menu employee-select-menu" role="listbox" aria-label="Employee count">
-                    <button v-for="size in teamSizeOptions" :key="size.value" type="button" role="option" :aria-selected="form.companySize === size.value" @click="selectEmployeeCount(size.value)">
-                      <span>{{ size.label }}</span><b v-if="form.companySize === size.value">✓</b>
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <label class="wide">
+                <span>Select your industry</span>
+                <FormDropdown v-model="form.industry" :options="businessTypeOptions" label="Select your industry" placeholder="Select industry" searchable dark />
+              </label>
 
               <label class="wide">
-                <span>What do you want Voxa to take off your plate?</span>
-                <textarea
-                  v-model.trim="form.useCase"
-                  rows="4"
-                  placeholder="Example: answer order calls, check stock, confirm delivery times, and update our team"
-                  required
-                ></textarea>
+                <span>Company size</span>
+                <FormDropdown v-model="form.companySize" :options="teamSizeOptions" label="Company size" placeholder="Select company size" dark />
               </label>
             </section>
 
-            <section
-              v-show="stepIndex === 2"
-              class="step-panel"
-            >
-              <div class="field-block wide dropdown-field" :class="{ 'is-open': pricingMenuOpen }">
-                <span class="field-title">Preferred pricing</span>
-                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (pricingMenuOpen = false)">
-                  <button class="option-select-trigger" type="button" aria-label="Preferred pricing" :aria-expanded="pricingMenuOpen" @click="pricingMenuOpen = !pricingMenuOpen" @keydown.esc.stop="pricingMenuOpen = false">
-                    <span :class="{ placeholder: !form.pricing }">{{ selectedPricingLabel }}</span><i></i>
-                  </button>
-                  <div v-if="pricingMenuOpen" class="option-select-menu pricing-select-menu" role="listbox" aria-label="Preferred pricing">
-                    <button v-for="price in pricingOptions" :key="price.value" type="button" role="option" :aria-selected="form.pricing === price.value" @click="selectPricing(price.value)">
-                      <span class="pricing-option-copy"><strong>{{ price.label }}</strong><small>{{ price.helper }}</small></span><b v-if="form.pricing === price.value">✓</b>
-                    </button>
-                  </div>
-                </div>
-              </div>
+            <section v-show="stepIndex === 1" class="step-panel">
+              <p v-if="validationAttempted && waitlistMissingFields.length" class="validation-summary" role="alert">Please select an answer for every field marked in red.</p>
+              <label class="wide" :class="{ 'is-invalid': validationAttempted && !form.helpWith.length }"><span class="question-heading">What would you like Woxza to help you with?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.helpWith" :options="helpOptions" label="Ways Woxza can help" placeholder="Select one or more" dark /></label>
 
-              <div class="field-block wide dropdown-field" :class="{ 'is-open': timelineMenuOpen }">
-                <span class="field-title">Launch timeline</span>
-                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (timelineMenuOpen = false)">
-                  <button class="option-select-trigger" type="button" aria-label="Launch timeline" :aria-expanded="timelineMenuOpen" @click="timelineMenuOpen = !timelineMenuOpen" @keydown.esc.stop="timelineMenuOpen = false">
-                    <span :class="{ placeholder: !form.adoptionTimeline }">{{ selectedTimelineLabel }}</span><i></i>
-                  </button>
-                  <div v-if="timelineMenuOpen" class="option-select-menu" role="listbox" aria-label="Launch timeline">
-                    <button v-for="timeline in timelineOptions" :key="timeline.value" type="button" role="option" :aria-selected="form.adoptionTimeline === timeline.value" @click="selectTimeline(timeline.value)">
-                      <span>{{ timeline.label }}</span><b v-if="form.adoptionTimeline === timeline.value">✓</b>
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <label class="wide" :class="{ 'is-invalid': validationAttempted && !form.biggestChallenges.length }"><span class="question-heading">What's the biggest challenge you're trying to solve?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.biggestChallenges" :options="challengeOptions" label="Biggest challenges" placeholder="Select one or more" dark /></label>
+              <label class="wide" :class="{ 'is-invalid': validationAttempted && !form.callHandlings.length }"><span class="question-heading">How are customer calls handled today?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.callHandlings" :options="callHandlingOptions" label="Current call handling" placeholder="Select one or more" dark /></label>
 
-              <div class="field-block wide dropdown-field" :class="{ 'is-open': featureMenuOpen }">
-                <span class="field-title">Must-have features</span>
-                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (featureMenuOpen = false)">
-                  <button class="option-select-trigger feature-select-trigger" type="button" aria-label="Must-have features" :aria-expanded="featureMenuOpen" @click="featureMenuOpen = !featureMenuOpen" @keydown.esc.stop="featureMenuOpen = false">
-                    <span :class="{ placeholder: !form.features.length }">{{ selectedFeaturesLabel }}</span><i></i>
-                  </button>
-                  <div v-if="featureMenuOpen" class="option-select-menu feature-select-menu" role="listbox" aria-label="Must-have features" aria-multiselectable="true">
-                    <button v-for="feature in featureOptions" :key="feature.value" type="button" role="option" :aria-selected="form.features.includes(feature.value)" :disabled="featureDisabled(feature.value)" @click="toggleFeature(feature.value)">
-                      <span>{{ feature.label }}</span><b v-if="form.features.includes(feature.value)">✓</b>
-                    </button>
-                    <div class="custom-feature-entry">
-                      <input
-                        v-model.trim="form.customFeature"
-                        type="text"
-                        maxlength="100"
-                        placeholder="Add your own feature"
-                        aria-label="Custom feature"
-                        @keydown.enter.prevent="addCustomFeature"
-                      >
-                      <button type="button" :disabled="!canAddCustomFeature" @click="addCustomFeature">Add</button>
-                    </div>
-                  </div>
-                </div>
+              <label class="wide" :class="{ 'is-invalid': validationAttempted && !form.software.length }"><span class="question-heading">Which software does your business currently use?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.software" :options="softwareOptions" label="Business software" placeholder="Select one or more" dark /></label>
 
-                <div v-if="form.features.length" class="selected-feature-list" aria-label="Selected features">
-                  <span v-for="feature in form.features" :key="feature">
-                    {{ featureLabel(feature) }}
-                    <button type="button" :aria-label="`Remove ${featureLabel(feature)}`" @click="toggleFeature(feature)">×</button>
-                  </span>
-                </div>
+              <label class="wide" :class="{ 'is-invalid': validationAttempted && !form.dailyCalls.length }"><span>Approximately how many customer calls does your business receive each day?</span><FormDropdown v-model="dailyCallsSelection" :options="dailyCallOptions" label="Daily call volume" placeholder="Select daily call volume" dark /></label>
+            </section>
 
-                <small>
-                  Choose up to {{ featureLimit }}.
-                </small>
-              </div>
+            <section v-show="stepIndex === 2" class="step-panel">
+              <label class="wide"><span>If Woxza could do one thing perfectly for your business, what would it be?</span><textarea v-model.trim="form.onePerfectThing" rows="4" placeholder="For example: Answer every incoming call, qualify leads, book appointments, update our CRM, and follow up with customers automatically." required></textarea></label>
 
-              <label class="wide">
-                <span>What would make this useful for you?</span>
-                <textarea
-                  v-model.trim="form.message"
-                  rows="3"
-                  placeholder="Optional notes"
-                ></textarea>
-              </label>
+              <label class="wide"><span class="question-heading">Which capabilities matter most to you?<small class="field-hint">Select all that apply</small></span><MultiSelectDropdown v-model="form.features" :options="featureOptions" label="Required capabilities" placeholder="Select one or more" :max="featureLimit" dark /></label>
+
+              <label class="wide"><span>When are you planning to implement a Voice AI solution?</span><FormDropdown v-model="form.adoptionTimeline" :options="timelineOptions" label="Implementation timeline" placeholder="Select implementation timeline" dark /></label>
+              <label class="wide"><span>How much of a priority is solving this for your business?</span><FormDropdown v-model="form.pricing" :options="pricingOptions" label="Investment priority" placeholder="Select investment priority" dark /></label>
+              <label class="wide"><span>How did you hear about Woxza?</span><FormDropdown v-model="form.referralSource" :options="referralOptions" label="Referral source" placeholder="Select a source" dark /></label>
             </section>
 
             <p
@@ -271,7 +181,7 @@
                 class="btn-secondary"
                 type="button"
                 :disabled="stepIndex === 0 || isSubmitting"
-                @click="stepIndex -= 1"
+                @click="goBack"
               >
                 Back
               </button>
@@ -280,7 +190,7 @@
                 v-if="!isLastStep"
                 class="btn-primary"
                 type="button"
-                :disabled="!canContinue || isSubmitting"
+                :disabled="isSubmitting"
                 @click="goNext"
               >
                 Next
@@ -290,9 +200,9 @@
                 v-else
                 class="btn-primary"
                 type="submit"
-                :disabled="!canContinue || isSubmitting"
+                :disabled="isSubmitting"
               >
-                {{ isSubmitting ? "Joining" : "Join Waitlist" }}
+                {{ isSubmitting ? "Joining" : "Join the waitlist" }}
               </button>
             </div>
           </form>
@@ -337,7 +247,7 @@
                       </button>
                     </div>
                   </div>
-                  <input v-model.trim="form.phoneNumber" autocomplete="tel-national" inputmode="tel" placeholder="312 555 0100" required>
+                  <input v-model.trim="form.phoneNumber" autocomplete="tel-national" inputmode="tel" placeholder="312 555 0100" required @input="removeRepeatedCountryCode">
                 </div>
               </label>
 
@@ -350,19 +260,10 @@
                 >
               </label>
 
-              <div class="field-block wide dropdown-field" :class="{ 'is-open': industryMenuOpen }">
-                <span class="field-title">Industry</span>
-                <div class="option-select" @focusout="!$event.currentTarget.contains($event.relatedTarget) && (industryMenuOpen = false)">
-                  <button class="option-select-trigger" type="button" aria-label="Industry" :aria-expanded="industryMenuOpen" @click="industryMenuOpen = !industryMenuOpen" @keydown.esc.stop="industryMenuOpen = false">
-                    <span :class="{ placeholder: !form.industry }">{{ selectedIndustryLabel }}</span><i></i>
-                  </button>
-                  <div v-if="industryMenuOpen" class="option-select-menu" role="listbox" aria-label="Industry">
-                    <button v-for="type in businessTypeOptions" :key="`sales-${type.value}`" type="button" role="option" :aria-selected="form.industry === type.value" @click="selectIndustry(type.value)">
-                      <span>{{ type.label }}</span><b v-if="form.industry === type.value">✓</b>
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <label class="wide">
+                <span>Industry</span>
+                <FormDropdown v-model="form.industry" :options="businessTypeOptions" label="Industry" placeholder="Select industry" searchable dark />
+              </label>
 
               <label v-if="form.industry === 'other'" class="wide">
                 <span>Enter your industry</span>
@@ -370,7 +271,7 @@
               </label>
 
               <label class="wide">
-                <span>What do you want Voxa to take off your plate?</span>
+                <span>What do you want Woxza to take off your plate?</span>
                 <textarea
                   v-model.trim="form.message"
                   rows="5"
@@ -392,7 +293,7 @@
               <button
                 class="btn-primary"
                 type="submit"
-                :disabled="!salesReady || isSubmitting"
+                :disabled="isSubmitting"
               >
                 {{ isSubmitting ? "Requesting" : "Request My Demo" }}
               </button>
@@ -406,21 +307,28 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from "vue"
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue"
+import FormDropdown from "./FormDropdown.vue"
+import MultiSelectDropdown from "./MultiSelectDropdown.vue"
+import WaitlistConfirmation from "./WaitlistConfirmation.vue"
 
 const props = defineProps({
   isOpen: Boolean,
   mode: {
     type: String,
     default: "waitlist"
+  },
+  initialEmail: {
+    type: String,
+    default: ""
   }
 })
 
 const emit = defineEmits(["close"])
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "")
-const waitlistSteps = ["Contact", "Use case", "Launch fit"]
-const featureLimit = 5
+const waitlistSteps = ["About you", "Your business", "Requirements"]
+const featureLimit = 16
 const phonePattern = /^[\d\s().-]{6,24}$/
 
 const countryCodeOptions = [
@@ -440,24 +348,67 @@ const selectCountry = (country) => {
   countryMenuOpen.value = false
 }
 
+// The selector owns the country code. Browser autofill and pasted international
+// numbers can include it again, so retain only the local number in this field.
+const removeRepeatedCountryCode = () => {
+  const rawNumber = form.value.phoneNumber
+  const countryDigits = form.value.countryCode.replace(/\D/g, "")
+  const compactNumber = rawNumber.replace(/[\s().-]/g, "")
+
+  if (compactNumber.startsWith(`+${countryDigits}`)) {
+    form.value.phoneNumber = compactNumber.slice(countryDigits.length + 1)
+  } else if (compactNumber.startsWith(`00${countryDigits}`)) {
+    form.value.phoneNumber = compactNumber.slice(countryDigits.length + 2)
+  }
+}
+
 const businessTypeOptions = [
   { label: "Healthcare or pharma", value: "healthcare" },
   { label: "Real estate", value: "real-estate" },
-  { label: "Local services", value: "local-services" },
-  { label: "Ecommerce", value: "ecommerce" },
-  { label: "SaaS", value: "saas" },
-  { label: "Agency", value: "agency" },
   { label: "Financial services", value: "financial-services" },
+  { label: "Insurance", value: "insurance" },
+  { label: "Retail", value: "retail" },
+  { label: "Ecommerce", value: "ecommerce" },
   { label: "Hospitality", value: "hospitality" },
+  { label: "Restaurants", value: "restaurants" },
+  { label: "Education", value: "education" },
+  { label: "Logistics and supply chain", value: "logistics" },
+  { label: "Manufacturing", value: "manufacturing" },
+  { label: "Construction", value: "construction" },
+  { label: "Automotive", value: "automotive" },
+  { label: "Legal", value: "legal" },
+  { label: "Accounting and tax", value: "accounting-tax" },
+  { label: "Recruitment and staffing", value: "recruitment-staffing" },
+  { label: "Home services", value: "home-services" },
+  { label: "Beauty and wellness", value: "beauty-wellness" },
+  { label: "Travel and tourism", value: "travel-tourism" },
+  { label: "Telecommunications", value: "telecommunications" },
+  { label: "IT services", value: "it-services" },
+  { label: "SaaS", value: "saas" },
+  { label: "Marketing agency", value: "marketing-agency" },
+  { label: "Government", value: "government" },
+  { label: "Non-profit", value: "non-profit" },
   { label: "Other", value: "other" }
 ]
 
 const teamSizeOptions = [
-  { label: "1 employee", value: "just-me" },
-  { label: "2-10 employees", value: "2-10" },
-  { label: "11-50 employees", value: "11-50" },
-  { label: "51-200 employees", value: "51-200" },
-  { label: "200+ employees", value: "200-plus" }
+  { label: "Just me", value: "just-me" }, { label: "2-10", value: "2-10" },
+  { label: "11-25", value: "11-25" }, { label: "26-50", value: "26-50" },
+  { label: "51-100", value: "51-100" }, { label: "101-250", value: "101-250" },
+  { label: "251-500", value: "251-500" }, { label: "501-1000", value: "501-1000" },
+  { label: "1000+", value: "1000-plus" }
+]
+
+const roleOptions = ["Founder","Co-founder","CEO","COO","Operations Manager","Sales Manager","Customer Success Manager","Customer Support Manager","Marketing Manager","IT / Engineering","Other"].map(label => ({ label, value:label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") }))
+const helpOptions = ["Answer incoming calls","Book appointments","Customer support","Qualify leads","Make outbound calls","Follow up with customers","Send appointment reminders","Answer FAQs","Route calls to the right person","Update our CRM","Collect customer information","Process orders","Payment reminders","Collect customer feedback","Technical support","HR and recruitment calls","Internal employee support","Other"].map(label => ({ label, value:label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") }))
+const challengeOptions = ["Missing customer calls","Spending too much time answering repetitive questions","High hiring and staffing costs","Overloaded support team","Inconsistent lead follow-ups","Slow response times","Lack of after-hours support","Too many manual processes","Improving customer experience","Automating business operations","Exploring Voice AI for the business","Other"].map(label => ({ label, value:label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") }))
+const callHandlingOptions = ["Receptionist","Customer support team","Call center","IVR (Interactive Voice Response)","Employees answer calls directly","Voicemail","No structured process","A combination of the above","Other"].map(label => ({ label, value:label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") }))
+const softwareOptions = ["Salesforce","HubSpot","Zoho CRM","Pipedrive","Microsoft Dynamics","Freshworks CRM","Twilio","Aircall","RingCentral","Five9","WhatsApp Business","Zendesk","Intercom","Freshdesk","Google Workspace","Microsoft 365","Slack","Microsoft Teams","Calendly","Shopify","WooCommerce","None","Other"].map(label => ({ label, value:label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") }))
+const dailyCallOptions = [
+  { label:"Less than 20", value:"under-20" }, { label:"20-50", value:"20-50" },
+  { label:"50-100", value:"50-100" }, { label:"100-300", value:"100-300" },
+  { label:"300-1,000", value:"300-1000" }, { label:"More than 1,000", value:"1000-plus" },
+  { label:"Not sure", value:"not-sure" }
 ]
 
 const industryMenuOpen = ref(false)
@@ -479,34 +430,22 @@ const selectEmployeeCount = (value) => {
 }
 
 const pricingOptions = [
-  {
-    label: "Starter",
-    value: "100-299",
-    helper: "Simple call handling for one team"
-  },
-  {
-    label: "Growth",
-    value: "300-999",
-    helper: "Calls, booking and CRM automation"
-  },
-  {
-    label: "Custom",
-    value: "1000-plus",
-    helper: "Advanced workflows and integrations"
-  },
-  {
-    label: "Not sure",
-    value: "not-sure",
-    helper: "Help me choose the right plan"
-  }
+  { label:"Exploring options", value:"under-100" }, { label:"Low priority", value:"100-300" },
+  { label:"Moderate priority", value:"300-700" }, { label:"High priority", value:"700-1500" },
+  { label:"Strategic priority", value:"1500-3000" }, { label:"Business-critical", value:"3000-plus" },
+  { label:"Not sure yet", value:"not-sure" }
 ]
 
 const timelineOptions = [
   { label: "Immediately", value: "immediately" },
-  { label: "1-3 months", value: "1-3-months" },
-  { label: "3-6 months", value: "3-6-months" },
+  { label: "Within the next 30 days", value: "within-30-days" },
+  { label: "In the next 1-3 months", value: "1-3-months" },
+  { label: "In the next 3-6 months", value: "3-6-months" },
+  { label: "More than 6 months from now", value: "6-plus-months" },
   { label: "Just exploring", value: "exploring" }
 ]
+
+const referralOptions = ["Google Search","LinkedIn","Instagram","X (Twitter)","YouTube","Referral","Friend or colleague","Event or conference","Other"].map(label => ({ label, value:label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") }))
 
 const pricingMenuOpen = ref(false)
 const timelineMenuOpen = ref(false)
@@ -553,14 +492,22 @@ const addCustomFeature = () => {
 }
 
 const featureOptions = [
-  { label: "AI phone agent", value: "ai-phone-agent" },
+  { label: "Human-like conversations", value: "human-like-conversations" },
   { label: "Appointment booking", value: "appointment-booking" },
-  { label: "Customer support", value: "customer-support" },
-  { label: "Lead qualification", value: "lead-qualification" },
   { label: "CRM integrations", value: "crm-integrations" },
-  { label: "Analytics", value: "analytics" },
   { label: "Multilingual support", value: "multilingual-support" },
-  { label: "Custom workflows", value: "custom-workflows" }
+  { label: "24/7 availability", value: "24-7-availability" },
+  { label: "Human handoff to an agent", value: "human-handoff" },
+  { label: "Call recording and transcripts", value: "call-recording-transcripts" },
+  { label: "Analytics and reporting", value: "analytics-reporting" },
+  { label: "Knowledge base integration", value: "knowledge-base-integration" },
+  { label: "Custom workflows", value: "custom-workflows" },
+  { label: "Outbound calling", value: "outbound-calling" },
+  { label: "WhatsApp integration", value: "whatsapp-integration" },
+  { label: "Email automation", value: "email-automation" },
+  { label: "Existing phone number support", value: "existing-phone-number-support" },
+  { label: "Fast response times", value: "fast-response-times" },
+  { label: "Other", value: "other" }
 ]
 
 const emptyForm = () => ({
@@ -571,18 +518,26 @@ const emptyForm = () => ({
   countryCode: "+91",
   countryFlag: "🇮🇳",
   phoneNumber: "",
+  role: "",
   industry: "",
   otherIndustry: "",
   companySize: "",
-  useCase: "",
+  helpWith: [],
+  biggestChallenges: [],
+  callHandlings: [],
+  software: [],
+  dailyCalls: [],
+  onePerfectThing: "",
   pricing: "",
   adoptionTimeline: "",
   features: [],
+  referralSource: "",
   customFeature: "",
   message: ""
 })
 
 const stepIndex = ref(0)
+const validationAttempted = ref(false)
 const form = ref(emptyForm())
 const registrationId = ref("")
 const isSubmitting = ref(false)
@@ -642,22 +597,28 @@ const modalCopy = computed(() => {
   if (props.mode === "sales") {
     return {
       eyebrow: "GET A DEMO",
-      title: "Get a tailored Voxa demo",
-      intro: "Tell us what you want to automate and we'll help map the right Voxa setup for your business"
+      title: "Get a tailored Woxza demo",
+      intro: "Share a few details and we will help map the right Woxza setup for your business."
     }
   }
 
   return {
     eyebrow: "JOIN THE WAITLIST",
-    title: "Join the Voxa waitlist",
-    intro: "Share the basics now, and we will use this to prioritize early access and the first Voxa launch packages"
+    title: "Join the Woxza waitlist",
+    intro: "Share the basics to help us prioritise your early access and prepare the right launch package for your business."
   }
 })
 
 const successDetail = computed(() =>
   props.mode === "sales"
-    ? "Your sales inquiry was saved in the backend"
-    : "Your waitlist registration and preferences were saved in the backend"
+    ? "Our team will be in touch shortly to arrange your tailored demo."
+    : "We'll reach out as soon as you're up."
+)
+
+const confirmationMessage = computed(() =>
+  props.mode === "sales"
+    ? "Your demo request is confirmed. Our team will be in touch shortly to arrange your tailored demo."
+    : "You're on the Woxza waitlist. We'll reach out to the email you gave us as soon as your access is ready."
 )
 
 const emailReady = computed(() =>
@@ -673,26 +634,66 @@ const isLastStep = computed(() =>
 )
 
 const contactReady = computed(() =>
-  Boolean(form.value.firstName && form.value.lastName && emailReady.value && phoneReady.value)
+  Boolean(
+    form.value.firstName && form.value.lastName && emailReady.value && phoneReady.value &&
+    form.value.company && form.value.role && form.value.industry && form.value.companySize
+  )
 )
 
 const useCaseReady = computed(() =>
   Boolean(
-    form.value.industry &&
-    (form.value.industry !== "other" || form.value.otherIndustry.trim()) &&
-    form.value.companySize &&
-    form.value.useCase
+    form.value.helpWith.length && form.value.biggestChallenges.length && form.value.callHandlings.length &&
+    form.value.software.length && form.value.dailyCalls.length
   )
 )
 
 const launchReady = computed(() =>
-  Boolean(form.value.pricing && form.value.adoptionTimeline && form.value.features.length)
+  Boolean(
+    form.value.onePerfectThing && form.value.features.length && form.value.adoptionTimeline &&
+    form.value.pricing && form.value.referralSource
+  )
 )
 
 const canContinue = computed(() => {
   if (stepIndex.value === 0) return contactReady.value
   if (stepIndex.value === 1) return useCaseReady.value
   return launchReady.value
+})
+
+const dailyCallsSelection = computed({
+  get: () => form.value.dailyCalls[0] || "",
+  set: (value) => {
+    form.value.dailyCalls = value ? [value] : []
+  }
+})
+
+const waitlistMissingFields = computed(() => {
+  const missing = []
+
+  if (stepIndex.value === 0) {
+    if (!form.value.firstName) missing.push("first name")
+    if (!form.value.lastName) missing.push("last name")
+    if (!emailReady.value) missing.push("a valid email address")
+    if (!phoneReady.value) missing.push("a valid phone number")
+    if (!form.value.company) missing.push("company name")
+    if (!form.value.role) missing.push("your role")
+    if (!form.value.industry) missing.push("industry")
+    if (!form.value.companySize) missing.push("company size")
+  } else if (stepIndex.value === 1) {
+    if (!form.value.helpWith.length) missing.push("what Woxza can help with")
+    if (!form.value.biggestChallenges.length) missing.push("your biggest challenge")
+    if (!form.value.callHandlings.length) missing.push("how calls are handled today")
+    if (!form.value.software.length) missing.push("the software you use")
+    if (!form.value.dailyCalls.length) missing.push("daily call volume")
+  } else {
+    if (!form.value.onePerfectThing) missing.push("what Woxza should do perfectly")
+    if (!form.value.features.length) missing.push("the capabilities that matter most")
+    if (!form.value.adoptionTimeline) missing.push("your implementation timeline")
+    if (!form.value.pricing) missing.push("your priority level")
+    if (!form.value.referralSource) missing.push("how you heard about Woxza")
+  }
+
+  return missing
 })
 
 const salesReady = computed(() =>
@@ -706,6 +707,20 @@ const salesReady = computed(() =>
     form.value.message
   )
 )
+
+const salesMissingFields = computed(() => {
+  const missing = []
+
+  if (!form.value.firstName) missing.push("first name")
+  if (!form.value.lastName) missing.push("last name")
+  if (!emailReady.value) missing.push("a valid email address")
+  if (!phoneReady.value) missing.push("a valid phone number")
+  if (!form.value.industry) missing.push("industry")
+  if (form.value.industry === "other" && !form.value.otherIndustry.trim()) missing.push("your industry")
+  if (!form.value.message) missing.push("what you want Woxza to help with")
+
+  return missing
+})
 
 const optionLabel = (options, value) =>
   options.find((option) => option.value === value)?.label || value
@@ -728,7 +743,9 @@ const postJson = async (path, payload) => {
 
   if (!response.ok) {
     const details = Array.isArray(body.details) ? ` ${body.details.join(", ")}` : ""
-    throw new Error(`${body.error || "Request failed"}${details}`)
+    const error = new Error(`${body.error || "Request failed"}${details}`)
+    error.status = response.status
+    throw error
   }
 
   return body
@@ -743,17 +760,11 @@ const registrationPayload = (intent) => {
     phoneNumber: form.value.phoneNumber,
     businessName: form.value.company || null,
     businessType: form.value.industry || "other",
+    role: form.value.role,
     metadata: {
       source: "website-modal",
       intent,
-      businessTypeLabel: form.value.industry === "other"
-        ? form.value.otherIndustry
-        : optionLabel(businessTypeOptions, form.value.industry),
-      otherIndustry: form.value.industry === "other" ? form.value.otherIndustry : undefined,
-      companySizeLabel: optionLabel(teamSizeOptions, form.value.companySize),
-      pricingLabel: optionLabel(pricingOptions, form.value.pricing),
-      selectedFeatures: form.value.features.map(featureLabel),
-      message: form.value.message || undefined
+      otherIndustry: form.value.industry === "other" ? form.value.otherIndustry : undefined
     }
   }
 }
@@ -761,9 +772,22 @@ const registrationPayload = (intent) => {
 const preferencesPayload = () => ({
   priceRange: form.value.pricing,
   desiredFeatures: form.value.features,
-  primaryChallenge: form.value.useCase,
+  primaryChallenge: form.value.onePerfectThing,
   adoptionTimeline: form.value.adoptionTimeline,
   teamSize: form.value.companySize
+})
+
+const waitlistPayload = () => ({
+  ...registrationPayload("waitlist"),
+  ...preferencesPayload(),
+  helpWith: form.value.helpWith,
+  biggestChallenge: form.value.biggestChallenges[0],
+  biggestChallenges: form.value.biggestChallenges,
+  callHandling: form.value.callHandlings[0],
+  callHandlings: form.value.callHandlings,
+  software: form.value.software,
+  dailyCalls: form.value.dailyCalls,
+  referralSource: form.value.referralSource
 })
 
 const salesPayload = () => ({
@@ -772,19 +796,17 @@ const salesPayload = () => ({
 })
 
 const submitWaitlist = async () => {
-  if (!registrationId.value) {
-    const registration = await postJson(
-      "/api/waitlist/registrations",
-      registrationPayload("waitlist")
-    )
-
+  try {
+    const registration = await postJson("/api/waitlist/registrations/complete", waitlistPayload())
     registrationId.value = registration.registrationId
+  } catch (error) {
+    // Supports an already-running API during a rolling deployment; it still stores
+    // the complete questionnaire in registration metadata and preferences.
+    if (error.status !== 404) throw error
+    const registration = await postJson("/api/waitlist/registrations", registrationPayload("waitlist"))
+    registrationId.value = registration.registrationId
+    await postJson(`/api/waitlist/registrations/${registrationId.value}/preferences`, preferencesPayload())
   }
-
-  await postJson(
-    `/api/waitlist/registrations/${registrationId.value}/preferences`,
-    preferencesPayload()
-  )
 }
 
 const submitSales = async () => {
@@ -800,7 +822,21 @@ const featureDisabled = (value) =>
 
 const goNext = () => {
   submitError.value = ""
+  if (!canContinue.value) {
+    validationAttempted.value = true
+    submitError.value = `Please complete: ${waitlistMissingFields.value.join(", ")}.`
+    return
+  }
+  validationAttempted.value = false
   stepIndex.value += 1
+  nextTick(() => document.querySelector(".modal-content")?.scrollTo({ top:0, behavior:"auto" }))
+}
+
+const goBack = () => {
+  submitError.value = ""
+  validationAttempted.value = false
+  stepIndex.value -= 1
+  nextTick(() => document.querySelector(".modal-content")?.scrollTo({ top:0, behavior:"auto" }))
 }
 
 const resetForm = () => {
@@ -809,6 +845,7 @@ const resetForm = () => {
   registrationId.value = ""
   isSubmitting.value = false
   submitError.value = ""
+  validationAttempted.value = false
   successMessage.value = ""
   countryMenuOpen.value = false
   industryMenuOpen.value = false
@@ -831,7 +868,7 @@ const friendlyError = (error) => {
   }
 
   if (message.includes("Failed to fetch")) {
-    return "I could not reach the backend, make sure the API server is running on port 8787"
+    return "We couldn't submit your request right now. Please try again in a moment."
   }
 
   return message
@@ -841,15 +878,26 @@ const handleSubmit = async () => {
   if (isSubmitting.value) return
 
   submitError.value = ""
+
+  if (props.mode === "waitlist" && !canContinue.value) {
+    submitError.value = `Please complete: ${waitlistMissingFields.value.join(", ")}.`
+    return
+  }
+
+  if (props.mode === "sales" && !salesReady.value) {
+    submitError.value = `Please complete: ${salesMissingFields.value.join(", ")}`
+    return
+  }
+
   isSubmitting.value = true
 
   try {
     if (props.mode === "sales") {
       await submitSales()
-      successMessage.value = "Sales request received"
+      successMessage.value = "You're all set."
     } else {
       await submitWaitlist()
-      successMessage.value = "You are on the Voxa waitlist"
+      successMessage.value = "You're all set."
     }
   } catch (error) {
     submitError.value = friendlyError(error)
@@ -871,6 +919,7 @@ watch(
     if (open) {
       lockPageScroll()
       resetForm()
+      form.value.email = props.initialEmail
     } else {
       unlockPageScroll()
     }
@@ -915,25 +964,26 @@ onBeforeUnmount(unlockPageScroll)
 .eyebrow{
   font-size:12px;
   letter-spacing:.24em;
-  color:var(--voxa-accent);
-  font-family:"IBM Plex Sans",sans-serif;
+  color:var(--woxza-accent);
+  font-family:var(--font-primary);
   font-weight:800;
   display:block;
   margin-bottom:12px;
 }
 
 .modal h2{
-  font-family:"Inter",sans-serif;
+  font-family:var(--font-primary);
   font-size:clamp(32px,5vw,46px);
   font-weight:800;
   line-height:1.04;
-  color:var(--voxa-blue);
+  color:var(--woxza-blue);
 }
 
 .intro{
   margin-bottom:30px;
   max-width:620px;
   color:#64748b;
+  font-size:18px;
   line-height:1.7;
 }
 
@@ -949,7 +999,7 @@ onBeforeUnmount(unlockPageScroll)
 }
 
 .close:hover{
-  color:var(--voxa-accent);
+  color:var(--woxza-accent);
 }
 
 .success-card{
@@ -957,12 +1007,12 @@ onBeforeUnmount(unlockPageScroll)
   gap:14px;
   padding:24px;
   border-radius:18px;
-  background:rgba(var(--voxa-accent-rgb),.08);
-  border:1px solid rgba(var(--voxa-accent-rgb),.16);
+  background:rgba(var(--woxza-accent-rgb),.08);
+  border:1px solid rgba(var(--woxza-accent-rgb),.16);
 }
 
 .success-card strong{
-  color:var(--voxa-blue);
+  color:var(--woxza-blue);
   font-size:20px;
 }
 
@@ -998,7 +1048,7 @@ onBeforeUnmount(unlockPageScroll)
 }
 
 .steps span.active{
-  background:var(--voxa-accent);
+  background:var(--woxza-accent);
 }
 
 .step-count{
@@ -1032,8 +1082,15 @@ label.wide,
 label > span,
 .field-title{
   color:#475569;
-  font-size:13px;
+  font-size:16px;
   font-weight:800;
+}
+
+.field-hint{
+  margin-top:-3px;
+  color:#7b8799;
+  font-size:13px;
+  font-weight:500;
 }
 
 label > span em{
@@ -1061,8 +1118,10 @@ label > span em{
   border-radius:14px;
   background:#f8fbff;
   border:1px solid rgba(15,23,42,.10);
-  color:var(--voxa-blue);
+  color:var(--woxza-blue);
   font:inherit;
+  font-size:17px;
+  font-weight:400;
   outline:none;
 }
 
@@ -1078,9 +1137,57 @@ label > span em{
 .form input:focus,
 .form textarea:focus,
 .form select:focus{
-  border-color:var(--voxa-accent);
-  box-shadow:0 0 0 4px rgba(var(--voxa-accent-rgb),.10);
+  border-color:var(--woxza-accent);
+  box-shadow:0 0 0 4px rgba(var(--woxza-accent-rgb),.10);
 }
+
+.choice-field{
+  min-width:0;
+  margin:0;
+  padding:0;
+  border:0;
+}
+
+.choice-field legend{
+  margin-bottom:9px;
+  color:#475569;
+  font-size:13px;
+  font-weight:800;
+}
+
+.choice-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:10px;
+  border:1px solid rgba(15,23,42,.1);
+  border-radius:14px;
+  background:#f8fbff;
+}
+
+.choice{
+  display:flex;
+  grid-template-columns:none;
+  align-items:flex-start;
+  gap:9px;
+  min-width:0;
+  padding:8px 9px;
+  border-radius:9px;
+  color:#475569;
+  cursor:pointer;
+}
+
+.choice:hover{background:#eef4ff}
+.choice:has(input:checked){color:#14264d;background:#e7efff}
+.choice input{
+  flex:0 0 auto;
+  width:16px;
+  min-height:16px;
+  margin:2px 0 0;
+  padding:0;
+  accent-color:var(--woxza-accent);
+}
+.choice span{font-size:12px;font-weight:700;line-height:1.35}
 
 .phone-row{
   position:relative;
@@ -1116,7 +1223,7 @@ label > span em{
   padding:0 13px;
   border:1px solid rgba(15,23,42,.10);
   border-radius:14px;
-  color:var(--voxa-blue);
+  color:var(--woxza-blue);
   background:#f8fbff;
   font:inherit;
   cursor:pointer;
@@ -1244,9 +1351,9 @@ label > span em{
   border-radius:7px;
   color:#475569;
   background:#fff;
-  font:inherit;
-  font-size:13px;
-  font-weight:700;
+  font-family:var(--font-primary);
+  font-size:14px;
+  font-weight:400;
   text-align:left;
   cursor:pointer;
 }
@@ -1380,17 +1487,17 @@ label > span em{
 }
 
 .choice-pill:hover{
-  border-color:rgba(var(--voxa-accent-rgb),.45);
+  border-color:rgba(var(--woxza-accent-rgb),.45);
 }
 
 .choice-pill.active{
-  border-color:var(--voxa-accent);
-  background:rgba(var(--voxa-accent-rgb),.09);
-  box-shadow:0 8px 20px rgba(var(--voxa-accent-rgb),.10);
+  border-color:var(--woxza-accent);
+  background:rgba(var(--woxza-accent-rgb),.09);
+  box-shadow:0 8px 20px rgba(var(--woxza-accent-rgb),.10);
 }
 
 .choice-pill.active span{
-  color:var(--voxa-blue);
+  color:var(--woxza-blue);
 }
 
 .option-grid{
@@ -1423,7 +1530,7 @@ label > span em{
 .option-card strong{
   display:block;
   margin-bottom:7px;
-  color:var(--voxa-blue);
+  color:var(--woxza-blue);
   font-size:15px;
 }
 
@@ -1444,9 +1551,9 @@ label > span em{
 }
 
 .option-card.active{
-  border-color:var(--voxa-accent);
-  background:rgba(var(--voxa-accent-rgb),.08);
-  box-shadow:0 12px 28px rgba(var(--voxa-accent-rgb),.12);
+  border-color:var(--woxza-accent);
+  background:rgba(var(--woxza-accent-rgb),.08);
+  box-shadow:0 12px 28px rgba(var(--woxza-accent-rgb),.12);
 }
 
 .option-card.disabled{
@@ -1456,7 +1563,7 @@ label > span em{
 
 .option-card.active span,
 .option-card.active strong{
-  color:var(--voxa-blue);
+  color:var(--woxza-blue);
 }
 
 .error-message{
@@ -1488,19 +1595,20 @@ label > span em{
   padding:0 24px;
   border-radius:999px;
   border:none;
+  font-size:17px;
   font-weight:800;
   cursor:pointer;
   transition:.25s ease;
 }
 
 .btn-primary{
-  background:var(--voxa-accent);
+  background:var(--woxza-accent);
   color:#fff;
 }
 
 .btn-secondary{
   background:#f8fbff;
-  color:var(--voxa-blue);
+  color:var(--woxza-blue);
   border:1px solid rgba(15,23,42,.08);
 }
 
@@ -1584,7 +1692,7 @@ label > span em{
   display:grid;
   grid-template-columns:minmax(290px,.8fr) minmax(430px,1.2fr);
   width:min(900px,100%);
-  height:min(560px,calc(100vh - 48px));
+  height:min(720px,calc(100dvh - 48px));
   min-height:0;
   max-height:calc(100vh - 48px);
   overflow:hidden;
@@ -1652,7 +1760,7 @@ label > span em{
 .eyebrow{
   margin:0 0 12px;
   color:var(--lead-accent);
-  font-family:"Inter",sans-serif;
+  font-family:var(--font-primary);
   letter-spacing:0;
   text-transform:none;
 }
@@ -1729,7 +1837,16 @@ label > span em{
   max-height:none;
   overflow-y:auto;
   padding:32px 38px 26px;
+  scrollbar-gutter:stable;
   background:#fff;
+}
+
+.modal-content::-webkit-scrollbar{ width:8px; }
+.modal-content::-webkit-scrollbar-track{ background:transparent; }
+.modal-content::-webkit-scrollbar-thumb{
+  border:2px solid #fff;
+  border-radius:999px;
+  background:#cbd5e1;
 }
 
 .modal-content .form{ min-height:100%; gap:14px; }
@@ -1738,7 +1855,7 @@ label > span em{
   position:relative;
   z-index:10;
   grid-template-columns:1fr;
-  gap:13px;
+  gap:18px;
   padding:0;
   isolation:auto;
   content-visibility:visible;
@@ -1808,9 +1925,18 @@ label > span em{
 .modal .option-card.active strong{ color:var(--lead-accent); }
 
 .form-actions{
+  position:sticky;
+  z-index:20;
+  right:0;
+  bottom:-26px;
+  left:0;
   align-items:center;
-  margin-top:auto;
-  padding-top:16px;
+  margin:auto -38px -26px;
+  padding:16px 38px 26px;
+  border-top:1px solid rgba(15,23,42,.07);
+  background:rgba(255,255,255,.96);
+  box-shadow:0 -12px 24px rgba(15,23,42,.05);
+  backdrop-filter:blur(10px);
 }
 
 .btn-primary,
@@ -1822,12 +1948,170 @@ label > span em{
 .btn-primary{ min-width:210px; background:var(--lead-accent); box-shadow:0 12px 26px rgba(var(--lead-accent-rgb),.2); }
 .btn-secondary{ background:#fff; }
 
+/* Shared waitlist/demo palette: reuse the global Woxza light-blue surface and CTA tokens. */
+.modal-story,
+.modal-content{ background:var(--woxza-accent-soft); }
+.modal-story{ border-right-color:rgba(var(--woxza-accent-rgb),.16); }
+.modal h2,
+.modal-brand,
+.modal .form label > span,
+.modal .field-title{ color:var(--woxza-heading); }
+.intro{ color:#475569; }
+.modal .form input,
+.modal .form textarea,
+.modal .form select,
+.modal .country-select-trigger,
+.modal :deep(.form-dropdown__trigger),
+.modal :deep(.multi-select__trigger){
+  border-color:rgba(var(--woxza-accent-rgb),.26);
+  color:var(--woxza-heading);
+  background:var(--woxza-white);
+}
+.modal .form input::placeholder,
+.modal .form textarea::placeholder,
+.modal :deep(.form-dropdown__trigger .placeholder),
+.modal :deep(.multi-select__trigger .placeholder){ color:#64748b; }
+.modal :deep(.form-dropdown__menu),
+.modal :deep(.multi-select__menu){
+  border-color:rgba(var(--woxza-accent-rgb),.22);
+  background:var(--woxza-white);
+}
+.form-actions{ border-top-color:rgba(var(--woxza-accent-rgb),.16); background:rgba(219,234,254,.96); }
+.btn-primary{ background:var(--woxza-accent); color:var(--woxza-white); }
+.btn-secondary{ border-color:rgba(var(--woxza-accent-rgb),.26); color:var(--woxza-heading); background:var(--woxza-white); }
+
+/* Reuse the existing #06142a Transformation-section surface across both modal panels. */
+.modal{
+  background:
+    linear-gradient(rgba(147,197,253,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(147,197,253,.035) 1px,transparent 1px),
+    #06142a;
+  background-size:64px 64px;
+}
+.modal-story,
+.modal-content{ background:transparent; }
+.modal-story{ border-right-color:rgba(255,255,255,.12); }
+.modal h2,
+.modal-brand,
+.modal .form label > span,
+.modal .field-title{ color:var(--woxza-white); }
+.intro{ color:#b8c7dd; }
+.close{ color:var(--woxza-white); background:#081a34; }
+.modal .form input,
+.modal .form textarea,
+.modal .form select,
+.modal .country-select-trigger,
+.modal :deep(.form-dropdown__trigger),
+.modal :deep(.multi-select__trigger){
+  border-color:rgba(147,197,253,.28);
+  color:var(--woxza-white);
+  background:rgba(255,255,255,.07);
+}
+.modal .form input::placeholder,
+.modal .form textarea::placeholder,
+.modal :deep(.form-dropdown__trigger .placeholder),
+.modal :deep(.multi-select__trigger .placeholder){ color:#b8c7dd; }
+.modal .form input:focus,
+.modal .form textarea:focus,
+.modal .form select:focus{
+  border-color:var(--woxza-accent);
+  background:rgba(255,255,255,.10);
+  box-shadow:0 0 0 4px rgba(var(--woxza-accent-rgb),.16);
+}
+.modal .form input:-webkit-autofill,
+.modal .form input:-webkit-autofill:hover,
+.modal .form input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--woxza-white);
+  caret-color:var(--woxza-white);
+  background-color:#17263c !important;
+  -webkit-box-shadow:0 0 0 1000px #17263c inset !important;
+  box-shadow:0 0 0 1000px #17263c inset !important;
+  transition:background-color 9999s ease-out 0s;
+}
+.question-heading{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  column-gap:10px;
+  row-gap:4px;
+  line-height:1.35;
+}
+.question-heading .field-hint{
+  margin:0;
+  color:#b8c7dd;
+  font-size:12px;
+  font-weight:600;
+  line-height:1.35;
+  white-space:nowrap;
+}
+.validation-summary{
+  margin:0;
+  padding:10px 12px;
+  border:1px solid rgba(248,113,113,.72);
+  border-radius:8px;
+  color:#fecaca;
+  background:rgba(127,29,29,.42);
+  font-size:13px;
+  font-weight:700;
+}
+.modal .form label.is-invalid > span{ color:#fca5a5; }
+.modal .form label.is-invalid :deep(.multi-select__trigger),
+.modal .form label.is-invalid :deep(.form-dropdown__trigger){
+  border-color:#f87171;
+  box-shadow:0 0 0 3px rgba(248,113,113,.16);
+}
+.modal .error-message{
+  border-color:rgba(252,165,165,.72);
+  color:#fecaca;
+  background:rgba(127,29,29,.42);
+}
+.form-actions{ border-top-color:rgba(255,255,255,.12); background:rgba(6,20,42,.96); }
+.btn-secondary{ border-color:rgba(147,197,253,.28); color:var(--woxza-white); background:rgba(255,255,255,.07); }
+.btn-primary:disabled,
+.btn-secondary:disabled{
+  opacity:1;
+  color:var(--woxza-white);
+  -webkit-text-fill-color:var(--woxza-white);
+  cursor:not-allowed;
+}
+.btn-primary:disabled{ background:rgba(37,99,235,.62); }
+.btn-secondary:disabled{ background:rgba(255,255,255,.10); }
+.form-actions .btn-primary,
+.form-actions .btn-secondary,
+.form-actions .btn-primary:disabled,
+.form-actions .btn-secondary:disabled{
+  border-color:rgba(255,255,255,.88);
+  color:#06142a;
+  -webkit-text-fill-color:#06142a;
+  background:var(--woxza-white);
+  box-shadow:0 12px 26px rgba(0,0,0,.18);
+}
+.story-steps::before{ background:rgba(219,234,254,.38); }
+.story-steps div{ color:#b8c7dd; }
+.story-steps span{ border-color:rgba(219,234,254,.42); color:#dbeafe; background:rgba(255,255,255,.08); }
+.story-steps div.active{ color:var(--woxza-white); }
+.story-steps div.active span{ border-color:var(--woxza-accent); background:var(--woxza-accent); box-shadow:0 0 0 5px rgba(var(--woxza-accent-rgb),.18); }
+.modal-content{
+  scrollbar-color:#59718f transparent;
+}
+.modal-content::-webkit-scrollbar{ width:10px; }
+.modal-content::-webkit-scrollbar-track{ background:transparent; }
+.modal-content::-webkit-scrollbar-thumb{
+  border:2px solid #06142a;
+  border-radius:999px;
+  background:#59718f;
+}
+
 .success-card{
   align-content:center;
   min-height:480px;
-  padding:0;
-  border:0;
-  background:#fff;
+  padding:36px;
+  border:1px solid rgba(147,197,253,.35);
+  background:var(--woxza-accent);
+}
+.success-card strong,
+.success-card span{
+  color:var(--woxza-white);
 }
 
 @media(max-width:820px){
@@ -1843,6 +2127,17 @@ label > span em{
   .story-steps small{ font-size:10px; }
   .modal-content{ max-height:none; overflow:visible; padding:30px 24px 26px; }
   .modal-content .form{ min-height:430px; }
+  .form-actions{
+    position:static;
+    margin-top:auto;
+    margin-right:0;
+    margin-bottom:0;
+    margin-left:0;
+    padding:16px 0 0;
+    border-top:0;
+    box-shadow:none;
+    backdrop-filter:none;
+  }
 }
 
 @media(max-width:520px){
