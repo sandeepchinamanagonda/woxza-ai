@@ -34,6 +34,19 @@
           <p v-if="isTerminal" class="terminal-note">{{ terminalNote }} Returning you to the demo…</p>
         </div>
 
+        <div v-else-if="isCheckingCallAvailability" class="call-unavailable" role="status" aria-live="polite">
+          <div class="form-icon"><PhoneCall :size="21" /></div>
+          <h3>Checking availability…</h3>
+          <p>We’re confirming whether live calling is available in your region.</p>
+        </div>
+
+        <div v-else-if="!isIndiaCallRegion" class="call-unavailable" role="status" aria-live="polite">
+          <div class="form-icon"><PhoneCall :size="21" /></div>
+          <h3>Live calling is coming soon</h3>
+          <p>Woxza live calls are currently available in India only. Join the waitlist and we’ll let you know when calling launches in your region.</p>
+          <button class="waitlist-link availability-waitlist" type="button" @click="$emit('join-waitlist')">Join the waitlist</button>
+        </div>
+
         <form v-else class="call-form" @submit.prevent="submitDemo">
           <div class="form-heading">
             <div class="form-icon"><PhoneCall :size="21" /></div>
@@ -88,6 +101,7 @@ const regionalLanguages = {
 const isLocalDemo = import.meta.env.DEV || import.meta.env.VITE_LOCAL_ADMIN_MODE === "true"
 const inferredRegion = /^en-US|es-US|America\//.test(`${navigator.language} ${Intl.DateTimeFormat().resolvedOptions().timeZone}`) ? "US" : "IN"
 const detectedRegion = ref(inferredRegion)
+const regionResolved = ref(isLocalDemo)
 const form = reactive({ useCase:"", language:regionalLanguages[inferredRegion][0].value, name:"", countryId:inferredRegion, countryCode:countries.find(country => country.id === inferredRegion).code, phone:"", consent:false, website:"" })
 const openUseCase = ref(false)
 const openLanguage = ref(false)
@@ -98,6 +112,8 @@ let pollTimer
 let returnTimer
 const busy = computed(() => ["pending", "ringing", "connected"].includes(status.value))
 const isTerminal = computed(() => ["completed", "no_answer", "failed"].includes(status.value))
+const isCheckingCallAvailability = computed(() => !isLocalDemo && !regionResolved.value)
+const isIndiaCallRegion = computed(() => isLocalDemo || (regionResolved.value && detectedRegion.value === "IN"))
 const activeCountry = computed(() => countries.find(country => country.id === form.countryId) || countries[0])
 const availableLanguages = computed(() => regionalLanguages[activeCountry.value.id] || regionalLanguages.US)
 const selectedLanguage = computed(() => availableLanguages.value.find(language => language.value === form.language) || availableLanguages.value[0])
@@ -144,7 +160,7 @@ async function poll(callId) {
   } catch { if (!isTerminal.value) pollTimer = window.setTimeout(() => poll(callId), 4000) }
 }
 async function submitDemo() {
-  if (form.website) return
+  if (form.website || !isIndiaCallRegion.value) return
   error.value = ""; limitReached.value = false; status.value = "pending"
   try {
     const response = await fetch(`${apiBaseUrl}/api/demo/call`, { method:"POST", headers:{ "content-type":"application/json" }, body:JSON.stringify({ entry_hint:form.useCase || null, language:form.language, name:form.name, country_code:form.countryCode, phone_number:form.phone, consent:form.consent, website:form.website }) })
@@ -162,6 +178,7 @@ onMounted(async () => {
     const location = await response.json()
     setDetectedRegion(location.country_code === "IN" ? "IN" : "US")
   } catch { setDetectedRegion(inferredRegion) }
+  finally { regionResolved.value = true }
 })
 </script>
 
@@ -222,5 +239,6 @@ label { display:grid; gap:5px; color:#526078; font-size:10px; font-weight:800; l
 /* Use the complete device screen and keep each choice on its own row. */
 .call-form{height:calc(100% - 26px);padding:48px 10px 32px;align-content:space-between;}.split-fields{grid-template-columns:1fr;gap:10px;}.phone-stage.is-busy{animation:phone-vibrate .22s ease-in-out 0s 3;}.phone-stage.has-call-screen{background:#0b1425;}.phone-stage.has-call-screen .phone-topbar{color:#fff;}.phone-stage.has-call-screen::before{background:linear-gradient(180deg,#152841,#0a1426);}
 .call-screen{height:calc(100% - 26px);min-height:0;margin:0 -2px;padding:56px 18px 28px;border-radius:38px;background:radial-gradient(circle at 50% 18%,#3a5c92 0%,#1b2b46 30%,#0b1425 78%);color:#fff;}.call-screen .calling-label,.call-screen h3,.call-screen .call-status,.call-screen .terminal-note{color:#fff;}.call-screen .calling-label{opacity:.72;}.call-screen .call-status{opacity:.78;}.call-screen .caller-avatar{width:104px;height:104px;background:linear-gradient(145deg,#387cf2,#75a9ff);box-shadow:0 18px 42px rgba(29,105,238,.42);}.call-screen .voice-ribbon{margin:28px -10px auto;}.call-screen .call-actions{gap:22px;}.call-screen .call-actions button{width:54px;height:54px;color:#fff;background:rgba(255,255,255,.18);box-shadow:none;backdrop-filter:blur(8px);}.call-screen .call-actions .hangup{background:#ef4444;}
+.call-unavailable{position:relative;z-index:1;height:calc(100% - 26px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:44px 24px 34px;text-align:center;color:#172541;}.call-unavailable h3{margin:4px 0 0;font-size:21px;letter-spacing:-.03em;}.call-unavailable p{margin:0;color:#6c7890;font-size:12px;font-weight:600;line-height:1.65;}.call-unavailable .form-icon{width:48px;height:48px;}.availability-waitlist{margin-top:2px;font-size:12px;}
 @keyframes phone-vibrate{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-2px) rotate(-.25deg)}75%{transform:translateX(2px) rotate(.25deg)}}
 </style>
