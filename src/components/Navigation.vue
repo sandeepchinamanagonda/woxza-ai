@@ -455,11 +455,14 @@ top:16px;
 
 .navbar.scrolling{
 
-opacity:0;
+/* Keep the header usable and fully visible while the page is moving.  The
+   previous translate animation could leave it clipped at the top of the
+   viewport when a screenshot or scroll stopped mid-transition. */
+opacity:1;
 
-pointer-events:none;
+pointer-events:auto;
 
-transform:translate3d(0,calc(-100% - 24px),0);
+transform:none;
 
 }
 
@@ -1583,9 +1586,8 @@ display:block;
 
 }
 
-/* Keep one recognizable brand surface throughout the site.  Previously this
-   inverted to white over the dark sections, which made the bar disappear on
-   white sections and break the visual continuity while scrolling. */
+/* The navigation deliberately inverts with the section behind it: blue on
+   light surfaces, white on dark ones. */
 .navbar-inner,
 .navbar.scrolled .navbar-inner{
 background:linear-gradient(108deg,#0d2455 0%,#163b84 52%,#2869d9 100%)!important;
@@ -1611,7 +1613,7 @@ background-size:100% 100%,6px 6px;
 background:#ffffff;
 }
 
-/* The compact menu control sits on the same blue surface. */
+/* The compact menu control sits on the blue surface. */
 .mobile-toggle{
 color:#ffffff;
 }
@@ -1629,43 +1631,43 @@ box-shadow:0 10px 28px rgba(0,0,0,.18);
 background:#eaf1ff;
 }
 
-/* Do not invert on dark sections: the gradient is the navbar's permanent
-   treatment, independent of the section behind it. */
+/* Dark sections receive a white navigation surface with the blue brand
+   palette, so the bar remains distinct from its background. */
 .navbar.on-dark .navbar-inner,
 .navbar.on-dark.scrolled .navbar-inner{
-background:linear-gradient(108deg,#0d2455 0%,#163b84 52%,#2869d9 100%)!important;
-border-color:rgba(255,255,255,.18);
-box-shadow:0 18px 60px rgba(9,25,66,.25);
+background:#ffffff!important;
+border-color:rgba(20,38,77,.10);
+box-shadow:0 18px 60px rgba(9,25,66,.20);
 }
 
 .navbar.on-dark .brand,
 .navbar.on-dark .brand-name,
 .navbar.on-dark .nav-links a{
-color:#ffffff!important;
+color:#14264D!important;
 }
 
 .navbar.on-dark .wave{
 background:
-radial-gradient(circle at center,#ffffff 18%,transparent 20%),
-radial-gradient(circle,#ffffff 1px,transparent 1px);
+radial-gradient(circle at center,#3B82F6 18%,transparent 20%),
+radial-gradient(circle,#3B82F6 1px,transparent 1px);
 background-size:100% 100%,6px 6px;
 }
 
 .navbar.on-dark .nav-links a::after{
-background:#ffffff;
+background:#14264D;
 }
 
 .navbar.on-dark .cta,
 .navbar.on-dark .cta-secondary{
-border-color:#ffffff;
-color:#14264D;
-background:#ffffff;
-box-shadow:0 10px 28px rgba(0,0,0,.18);
+border-color:#14264D;
+color:#ffffff;
+background:#14264D;
+box-shadow:0 10px 28px rgba(20,38,77,.16);
 }
 
 .navbar.on-dark .cta:hover,
 .navbar.on-dark .cta-secondary:hover{
-background:#eaf1ff;
+background:#1d3568;
 }
 
 /* Final desktop proportions: brand, links, language selector, then actions. */
@@ -1682,15 +1684,15 @@ padding-right:32px;
 .actions .language-selector{ flex:0 0 42px; width:42px; margin:0; }
 .actions .cta{ padding:13px 20px; white-space:nowrap; }
 
-/* Match the language control to the white CTA contrast in every state. */
+/* Match the language control to the dark calls-to-action on white. */
 .navbar.on-dark :deep(.language-selector){
-color:#14264D!important;
-background:#ffffff!important;
+color:#ffffff!important;
+background:#14264D!important;
 }
 
 .navbar.on-dark :deep(.language-selector:hover),
 .navbar.on-dark :deep(.language-selector:focus-visible){
-background:#eaf1ff!important;
+background:#1d3568!important;
 }
 
 }
@@ -1698,6 +1700,7 @@ background:#eaf1ff!important;
 /* The language popover opens below the bar, so it must not be clipped by the scroll shine wrapper. */
 .navbar.scrolled .navbar-inner{ overflow:visible; }
 
-/* Final mobile contrast override: the menu icon remains readable on blue. */
+/* Final mobile contrast override. */
 .mobile-toggle{ color:#ffffff!important; }
+.navbar.on-dark .mobile-toggle{ color:#14264D!important; }
 </style>
