@@ -15,7 +15,10 @@ const schemaUrls = [
   new URL("../migrations/009_lead_submission_questionnaire_view.sql", import.meta.url),
   new URL("../migrations/010_waitlist_multi_selects.sql", import.meta.url),
   new URL("../migrations/011_demo_submissions.sql", import.meta.url),
-  new URL("../migrations/012_deduplicate_lead_metadata.sql", import.meta.url)
+  new URL("../migrations/012_deduplicate_lead_metadata.sql", import.meta.url),
+  new URL("../migrations/013_conversation_entry_hint.sql", import.meta.url),
+  new URL("../migrations/014_faq_feature_catalog.sql", import.meta.url),
+  new URL("../migrations/015_demo_feature_story.sql", import.meta.url)
 ];
 
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));

@@ -4,34 +4,34 @@
       <div class="demo-intro">
         <span class="eyebrow"><PhoneCall :size="14" /> LIVE CALL DEMO</span>
         <h2 class="display-heading">See how every call can feel effortless.</h2>
-        <p>Choose a scenario and Woxza will call your phone with a two-minute live demo.</p>
+        <p>Woxza will call your phone for a live conversation. You can explore the product or try a workflow.</p>
         <div class="trust-row">
           <span><ShieldCheck :size="16" /> Your number stays private</span>
-          <span><Clock3 :size="16" /> Under 2 minutes</span>
+          <span><Clock3 :size="16" /> Ends when you’re done</span>
         </div>
-        <div class="demo-ready" aria-hidden="true">
-          <VoiceRibbon state="idle" />
-          <span><i></i>Ready when you are</span>
+        <div class="demo-ready" aria-live="polite">
+          <VoiceRibbon :state="ribbonState" />
+          <span :key="status"><i :class="status"></i>{{ statusCopy }}</span>
         </div>
       </div>
 
-      <div class="phone-stage" :class="{ 'is-busy': busy }">
+      <div class="phone-stage" :class="{ 'is-busy': busy, 'has-call-screen': busy || isTerminal }">
         <div class="dynamic-island"><i></i><b></b></div>
         <div class="phone-topbar"><span>9:41</span><span class="phone-status"><Signal :size="14" /><Wifi :size="14" /><BatteryFull :size="17" /></span></div>
 
-        <div v-if="busy" class="call-screen" aria-live="polite">
-          <button class="back-to-form" type="button" :disabled="busy" @click="resetCall"><ChevronLeft :size="19" /> Back</button>
+        <div v-if="busy || isTerminal" class="call-screen" aria-live="polite">
+          <button v-if="busy" class="back-to-form" type="button" :disabled="busy" @click="resetCall"><ChevronLeft :size="19" /> Back</button>
           <div class="caller-avatar" :class="status"><span>W</span><i></i></div>
           <p class="calling-label">{{ status === 'connected' ? 'Woxza voice agent' : 'Woxza' }}</p>
           <h3>{{ callTitle }}</h3>
-          <p class="call-status"><span :class="status"></span>{{ statusCopy }}</p>
+          <p :key="status" class="call-status"><span :class="status"></span>{{ statusCopy }}</p>
           <VoiceRibbon :state="ribbonState" />
-          <div class="call-actions">
+          <div v-if="busy" class="call-actions">
             <button type="button" aria-label="Mute"><Mic :size="22" /></button>
             <button type="button" aria-label="Speaker"><Volume2 :size="22" /></button>
             <button class="hangup" type="button" :disabled="busy" aria-label="Return to demo details" @click="resetCall"><PhoneOff :size="24" /></button>
           </div>
-          <p v-if="isTerminal" class="terminal-note">{{ terminalNote }}</p>
+          <p v-if="isTerminal" class="terminal-note">{{ terminalNote }} Returning you to the demo…</p>
         </div>
 
         <form v-else class="call-form" @submit.prevent="submitDemo">
@@ -43,7 +43,7 @@
           <label><span>Phone number</span><div class="phone-input"><select v-if="isLocalDemo" v-model="form.countryId" class="country-code" aria-label="Country code" @change="selectCountry"><option v-for="country in countries" :key="country.id" :value="country.id">{{ country.flag }} {{ country.code }}</option></select><span v-else class="country-code country-locked">{{ activeCountry.flag }} {{ activeCountry.code }}</span><input v-model.trim="form.phone" autocomplete="tel-national" inputmode="tel" required placeholder="312 555 0100" /></div></label>
           <div class="split-fields">
             <div class="form-field"><span>Language</span><div class="custom-select" @focusout="closeLanguageOnBlur" @keydown.esc="openLanguage = false"><button class="select-trigger" type="button" aria-haspopup="listbox" :aria-expanded="openLanguage" @click="openLanguage = !openLanguage"><span>{{ selectedLanguage.label }}</span><ChevronDown :class="{ rotated: openLanguage }" /></button><div v-if="openLanguage" class="select-menu language-menu" role="listbox" aria-label="Language"><button v-for="language in availableLanguages" :key="language.value" type="button" role="option" :aria-selected="form.language === language.value" :class="{ selected: form.language === language.value }" @click="selectLanguage(language.value)"><span>{{ language.label }}</span><Check v-if="form.language === language.value" /></button></div></div></div>
-            <div class="form-field"><span>Call type</span><div class="custom-select" @focusout="closeUseCaseOnBlur" @keydown.esc="openUseCase = false"><button class="select-trigger" type="button" aria-haspopup="listbox" :aria-expanded="openUseCase" @click="openUseCase = !openUseCase"><span>{{ selectedUseCase.label }}</span><ChevronDown :class="{ rotated: openUseCase }" /></button><div v-if="openUseCase" class="select-menu" role="listbox" aria-label="Call type"><button v-for="useCase in useCases" :key="useCase.value" type="button" role="option" :aria-selected="form.useCase === useCase.value" :class="{ selected: form.useCase === useCase.value }" @click="selectUseCase(useCase.value)"><span>{{ useCase.label }}</span><Check v-if="form.useCase === useCase.value" /></button></div></div></div>
+            <div class="form-field"><span>What would you like to explore? <em>(optional)</em></span><div class="custom-select" @focusout="closeUseCaseOnBlur" @keydown.esc="openUseCase = false"><button class="select-trigger" type="button" aria-haspopup="listbox" :aria-expanded="openUseCase" @click="openUseCase = !openUseCase"><span>{{ selectedUseCase.label }}</span><ChevronDown :class="{ rotated: openUseCase }" /></button><div v-if="openUseCase" class="select-menu use-case-menu" role="listbox" aria-label="Optional call topic"><button v-for="useCase in useCases" :key="useCase.value || 'none'" type="button" role="option" :aria-selected="form.useCase === useCase.value" :class="{ selected: form.useCase === useCase.value }" @click="selectUseCase(useCase.value)"><span>{{ useCase.label }}</span><Check v-if="form.useCase === useCase.value" /></button></div></div></div>
           </div>
           <label class="consent"><input v-model="form.consent" type="checkbox" required /><span>I agree to receive this demo call from Woxza.</span></label>
           <label class="honeypot" aria-hidden="true"><span>Website</span><input v-model="form.website" name="website" tabindex="-1" autocomplete="off" /></label>
@@ -74,7 +74,7 @@ const countries = [
   { id:"MX", name:"Mexico", flag:"🇲🇽", code:"+52" }, { id:"BR", name:"Brazil", flag:"🇧🇷", code:"+55" }
 ]
 const useCases = [
-  { value:"order_taking", label:"Order taking" }, { value:"customer_support", label:"Customer support" },
+  { value:"", label:"Not sure yet / let’s talk" }, { value:"order_taking", label:"Order taking" }, { value:"customer_support", label:"Customer support" },
   { value:"lead_qualification", label:"Lead qualification" }, { value:"appointment_booking", label:"Booking" },
   { value:"event_rsvp", label:"Event RSVP" }, { value:"feedback_survey", label:"Feedback" }, { value:"recruiting_screening", label:"Recruiting" }
 ]
@@ -82,10 +82,13 @@ const regionalLanguages = {
   US:[{ value:"en", label:"English" }, { value:"es", label:"Spanish" }],
   IN:[{ value:"as", label:"Assamese" }, { value:"bn", label:"Bengali" }, { value:"en", label:"English" }, { value:"gu", label:"Gujarati" }, { value:"hi", label:"Hindi" }, { value:"kn", label:"Kannada" }, { value:"ml", label:"Malayalam" }, { value:"mr", label:"Marathi" }, { value:"pa", label:"Punjabi" }, { value:"ta", label:"Tamil" }, { value:"te", label:"Telugu" }, { value:"ur", label:"Urdu" }]
 }
-const isLocalDemo = import.meta.env.DEV
+// Docker's production frontend build is also used for the local stack, where
+// local-admin mode deliberately exposes the country picker for testing calls.
+// `import.meta.env.DEV` is false in that build, so it cannot be the only gate.
+const isLocalDemo = import.meta.env.DEV || import.meta.env.VITE_LOCAL_ADMIN_MODE === "true"
 const inferredRegion = /^en-US|es-US|America\//.test(`${navigator.language} ${Intl.DateTimeFormat().resolvedOptions().timeZone}`) ? "US" : "IN"
 const detectedRegion = ref(inferredRegion)
-const form = reactive({ useCase:"order_taking", language:regionalLanguages[inferredRegion][0].value, name:"", countryId:inferredRegion, countryCode:countries.find(country => country.id === inferredRegion).code, phone:"", consent:false, website:"" })
+const form = reactive({ useCase:"", language:regionalLanguages[inferredRegion][0].value, name:"", countryId:inferredRegion, countryCode:countries.find(country => country.id === inferredRegion).code, phone:"", consent:false, website:"" })
 const openUseCase = ref(false)
 const openLanguage = ref(false)
 const status = ref("idle")
@@ -116,11 +119,16 @@ const setDetectedRegion = region => {
   form.language = (regionalLanguages[country.id] || regionalLanguages.US)[0].value
 }
 const ribbonState = computed(() => status.value === "connected" ? "connected" : busy.value ? "calling" : "idle")
-const statusCopy = computed(() => ({ pending:"Starting your call…", ringing:"Your phone is ringing…", connected:"Live now", completed:"Call complete", no_answer:"No answer", failed:"Couldn’t connect" }[status.value] || "Ready"))
+const statusCopy = computed(() => ({ idle:"Ready when you are", pending:"Starting your call…", initiating:"Starting your call…", calling:"Starting your call…", ringing:"Your phone is ringing…", connected:"Live now", completed:"Call ended", no_answer:"No answer", failed:"Couldn’t connect" }[status.value] || "Starting your call…"))
 const callTitle = computed(() => status.value === "connected" ? "Connected" : status.value === "completed" ? "Thanks for trying Woxza" : status.value === "no_answer" ? "We missed you" : status.value === "failed" ? "Call unavailable" : "Calling…")
 const terminalNote = computed(() => status.value === "no_answer" ? "Check your phone and try again when you’re ready." : status.value === "failed" ? "Please try again in a moment." : "Your live demo is complete.")
 
 function resetCall() { window.clearTimeout(pollTimer); window.clearTimeout(returnTimer); status.value = "idle"; error.value = ""; limitReached.value = false }
+function returnToCallForm() {
+  // Keep the caller's details in place so a permitted second or third try is
+  // genuinely one tap. The server remains the source of truth for the limit.
+  resetCall()
+}
 async function poll(callId) {
   try {
     const response = await fetch(`${apiBaseUrl}/api/demo-call/${callId}/status`)
@@ -128,7 +136,8 @@ async function poll(callId) {
     const body = await response.json()
     status.value = body.status
     if (isTerminal.value) {
-      returnTimer = window.setTimeout(resetCall, 700)
+      window.clearTimeout(returnTimer)
+      returnTimer = window.setTimeout(returnToCallForm, 4_500)
       return
     }
     pollTimer = window.setTimeout(() => poll(callId), 2000)
@@ -138,7 +147,7 @@ async function submitDemo() {
   if (form.website) return
   error.value = ""; limitReached.value = false; status.value = "pending"
   try {
-    const response = await fetch(`${apiBaseUrl}/api/demo/call`, { method:"POST", headers:{ "content-type":"application/json" }, body:JSON.stringify({ use_case:form.useCase, language:form.language, name:form.name, country_code:form.countryCode, phone_number:form.phone, consent:form.consent, website:form.website }) })
+    const response = await fetch(`${apiBaseUrl}/api/demo/call`, { method:"POST", headers:{ "content-type":"application/json" }, body:JSON.stringify({ entry_hint:form.useCase || null, language:form.language, name:form.name, country_code:form.countryCode, phone_number:form.phone, consent:form.consent, website:form.website }) })
     const body = await response.json().catch(() => ({}))
     if (response.status === 429) limitReached.value = true
     if (!response.ok) throw new Error(body.error || "We could not start the demo call")
@@ -188,7 +197,7 @@ label { display:grid; gap:5px; color:#526078; font-size:10px; font-weight:800; l
 .demo-section::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:46px 46px;opacity:.45;pointer-events:none;}
 .demo-shell{position:relative;z-index:1;width:min(1180px,100%);grid-template-columns:1.08fr .92fr;gap:70px;padding:64px;border:1px solid rgba(255,255,255,.1);border-radius:36px;background:#162238;box-shadow:0 35px 100px rgba(0,0,0,.24);}
 .eyebrow{color:#8eb4ff;}.demo-intro h2{max-width:650px;color:#fff;font-size:clamp(42px,5vw,68px);letter-spacing:-.045em;}.demo-intro>p{max-width:570px;color:#aeb9cc;font-size:18px;line-height:1.7;}.trust-row{display:none;}
-.demo-ready{width:calc(100% + 60px);margin:14px -30px -18px;color:#c2cad8;font-size:13px;font-weight:750;}.demo-ready .voice-ribbon{height:auto;overflow:visible;}.demo-ready .voice-ribbon svg{transform:none;}.demo-ready span{gap:10px;margin:0 0 0 38px;}.demo-ready i{width:9px;height:9px;border:0;background:#94a3b8;box-shadow:0 0 0 6px #f1f5f9;}
+.demo-ready{width:calc(100% + 60px);margin:14px -30px -18px;color:#c2cad8;font-size:13px;font-weight:750;}.demo-ready .voice-ribbon{height:auto;overflow:visible;}.demo-ready .voice-ribbon svg{transform:none;}.demo-ready span{gap:10px;margin:0 0 0 38px;}.demo-ready i{width:9px;height:9px;border:0;background:#94a3b8;box-shadow:0 0 0 6px #f1f5f9;}.demo-ready i.pending,.demo-ready i.ringing{background:#f0a329;animation:pulse 1.2s infinite;}.demo-ready i.connected,.demo-ready i.completed{background:#2bbb5d;animation:pulse 1.2s infinite;}.demo-ready i.failed{background:#df4e4e;}.demo-ready i.no_answer{background:#f0a329;}
 .phone-stage{min-height:0;padding:0;border:1px solid #e2e8f0;border-radius:24px;background:#fff;box-shadow:0 18px 45px rgba(20,38,77,.08);overflow:visible;}.phone-stage::before,.dynamic-island,.phone-topbar,.home-indicator{display:none;}.call-form{gap:16px;padding:30px;}.form-heading{font-size:17px;}.form-icon{width:46px;height:46px;}.form-icon svg{width:20px;height:20px;}label{gap:7px;font-size:13px;}input,select{min-height:50px;font-size:14px;}.phone-input{grid-template-columns:120px 1fr;gap:9px;}.country-code{min-height:50px;font-size:12px;}.split-fields{gap:10px;}.consent{grid-template-columns:20px 1fr;gap:9px;font-size:11px;}.consent input{width:18px;min-height:18px;}.start-call{min-height:54px;border-radius:999px;font-size:14px;}.call-form small{font-size:10px;}.call-screen{min-height:540px;}.call-screen .voice-ribbon{margin:24px -10px auto;}
 @media(max-width:850px){.demo-section{padding:80px 16px;}.demo-shell{grid-template-columns:1fr;gap:35px;padding:34px 24px;}.demo-intro{text-align:left;}.demo-ready{margin-left:-18px;}.demo-ready span{margin-left:18px;}.phone-stage{max-width:none;}.trust-row{display:none;}}
 @media(max-width:480px){.demo-shell{padding:28px 18px;}.phone-input,.split-fields{grid-template-columns:1fr;}.call-form{padding:22px 18px;}.demo-ready{width:calc(100% + 36px);}.demo-intro h2{font-size:40px;}}
@@ -201,7 +210,7 @@ label { display:grid; gap:5px; color:#526078; font-size:10px; font-weight:800; l
 .country-code{display:block;appearance:auto;padding:0 5px;cursor:pointer;}
 .country-locked{display:flex;align-items:center;appearance:none;cursor:default;}
 .form-field{display:grid;gap:5px;color:#526078;font-size:10px;font-weight:800;letter-spacing:.02em;}
-.custom-select{position:relative;}.select-trigger{width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:7px;padding:0 9px;border:1px solid rgba(94,113,144,.22);border-radius:12px;background:rgba(255,255,255,.76);color:#192540;font:inherit;font-size:13px;font-weight:650;text-align:left;cursor:pointer;}.select-trigger:focus-visible,.custom-select:focus-within .select-trigger{outline:none;border-color:#3282f6;box-shadow:0 0 0 4px rgba(50,130,246,.14);background:#fff;}.select-trigger svg{width:15px;height:15px;flex:0 0 auto;transition:transform .2s;}.select-trigger svg.rotated{transform:rotate(180deg);}.select-menu{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 5px);display:grid;gap:2px;padding:5px;border:1px solid #dce4ef;border-radius:12px;background:rgba(255,255,255,.98);box-shadow:0 14px 30px rgba(15,23,42,.2);}.language-menu{max-height:190px;overflow-y:auto;overscroll-behavior:contain;}.select-menu button{width:100%;min-height:32px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 8px;border:0;border-radius:8px;background:transparent;color:#475569;font:inherit;font-size:11px;font-weight:650;text-align:left;cursor:pointer;}.select-menu button:hover,.select-menu button:focus-visible{outline:none;background:#eef4ff;color:#14264d;}.select-menu button.selected{background:#eaf2ff;color:#2563eb;}.select-menu button svg{width:13px;height:13px;flex:0 0 auto;}
+.custom-select{position:relative;}.select-trigger{width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:7px;padding:0 9px;border:1px solid rgba(94,113,144,.22);border-radius:12px;background:rgba(255,255,255,.76);color:#192540;font:inherit;font-size:13px;font-weight:650;text-align:left;cursor:pointer;}.select-trigger:focus-visible,.custom-select:focus-within .select-trigger{outline:none;border-color:#3282f6;box-shadow:0 0 0 4px rgba(50,130,246,.14);background:#fff;}.select-trigger svg{width:15px;height:15px;flex:0 0 auto;transition:transform .2s;}.select-trigger svg.rotated{transform:rotate(180deg);}.select-menu{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 5px);display:grid;gap:2px;max-height:190px;padding:5px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(71,85,105,.38) transparent;border:1px solid #dce4ef;border-radius:12px;background:rgba(255,255,255,.98);box-shadow:0 14px 30px rgba(15,23,42,.2);}.select-menu::-webkit-scrollbar{width:5px;}.select-menu::-webkit-scrollbar-thumb{border-radius:99px;background:rgba(71,85,105,.38);}.language-menu{max-height:190px;}.use-case-menu{top:auto;bottom:calc(100% + 6px);max-height:260px;box-shadow:0 -14px 30px rgba(15,23,42,.2);}.select-menu button{width:100%;min-height:32px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 8px;border:0;border-radius:8px;background:transparent;color:#475569;font:inherit;font-size:11px;font-weight:650;text-align:left;cursor:pointer;}.select-menu button:hover,.select-menu button:focus-visible{outline:none;background:#eef4ff;color:#14264d;}.select-menu button.selected{background:#eaf2ff;color:#2563eb;}.select-menu button svg{width:13px;height:13px;flex:0 0 auto;}
 @media(max-width:850px){.phone-stage{min-height:590px;}.demo-intro{text-align:center;}.demo-ready span{margin-left:0;justify-content:center;}}
 
 /* iPhone 17 Pro-style hardware proportions — never stretch the device to its grid column. */
@@ -211,7 +220,7 @@ label { display:grid; gap:5px; color:#526078; font-size:10px; font-weight:800; l
 @media(max-width:850px){.phone-stage{width:min(100%,320px);min-height:0;}.phone-stage::before{inset:6px;}}
 
 /* Use the complete device screen and keep each choice on its own row. */
-.call-form{height:calc(100% - 26px);padding:48px 10px 32px;align-content:space-between;}.split-fields{grid-template-columns:1fr;gap:10px;}.phone-stage.is-busy{animation:phone-vibrate .22s ease-in-out 0s 3;}.phone-stage.is-busy .phone-topbar{color:#fff;}.phone-stage.is-busy::before{background:linear-gradient(180deg,#152841,#0a1426);}
+.call-form{height:calc(100% - 26px);padding:48px 10px 32px;align-content:space-between;}.split-fields{grid-template-columns:1fr;gap:10px;}.phone-stage.is-busy{animation:phone-vibrate .22s ease-in-out 0s 3;}.phone-stage.has-call-screen{background:#0b1425;}.phone-stage.has-call-screen .phone-topbar{color:#fff;}.phone-stage.has-call-screen::before{background:linear-gradient(180deg,#152841,#0a1426);}
 .call-screen{height:calc(100% - 26px);min-height:0;margin:0 -2px;padding:56px 18px 28px;border-radius:38px;background:radial-gradient(circle at 50% 18%,#3a5c92 0%,#1b2b46 30%,#0b1425 78%);color:#fff;}.call-screen .calling-label,.call-screen h3,.call-screen .call-status,.call-screen .terminal-note{color:#fff;}.call-screen .calling-label{opacity:.72;}.call-screen .call-status{opacity:.78;}.call-screen .caller-avatar{width:104px;height:104px;background:linear-gradient(145deg,#387cf2,#75a9ff);box-shadow:0 18px 42px rgba(29,105,238,.42);}.call-screen .voice-ribbon{margin:28px -10px auto;}.call-screen .call-actions{gap:22px;}.call-screen .call-actions button{width:54px;height:54px;color:#fff;background:rgba(255,255,255,.18);box-shadow:none;backdrop-filter:blur(8px);}.call-screen .call-actions .hangup{background:#ef4444;}
 @keyframes phone-vibrate{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-2px) rotate(-.25deg)}75%{transform:translateX(2px) rotate(.25deg)}}
 </style>

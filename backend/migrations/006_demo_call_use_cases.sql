@@ -8,6 +8,7 @@ ALTER TABLE demo_calls ADD CONSTRAINT demo_calls_use_case_check
     'event_rsvp',
     'feedback_survey',
     'recruiting_screening',
+    'discover',
     'restaurant_reservations',
     'medical_distribution',
     'payments_support',
