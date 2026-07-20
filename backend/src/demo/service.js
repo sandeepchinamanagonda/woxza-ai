@@ -16,7 +16,7 @@ const normalizePlivoStatus = value => {
   return "failed"
 }
 
-export function createDemoService({ db, limiter, plivo, twilio, followupQueue, bridgeUrl, publicUrl, signingSecret }) {
+export function createDemoService({ db, plivo, twilio, followupQueue, bridgeUrl, publicUrl, signingSecret }) {
   const timers = new Map()
   const clearTimers = id => {
     const callTimers = timers.get(id)
@@ -56,19 +56,6 @@ export function createDemoService({ db, limiter, plivo, twilio, followupQueue, b
          WHERE id=$1`,
         [submissionId, status, failureReason, demoCallId]
       )
-      const isTestPhone = process.env.DEMO_TEST_PHONE === phone
-      if (!isTestPhone) {
-        const recent = await db.query(`SELECT COUNT(*)::int AS count FROM demo_calls WHERE phone=$1 AND created_at >= NOW() - INTERVAL '24 hours'`, [phone])
-        if (recent.rows[0]?.count >= 3) {
-          await updateSubmission("rate_limited", "phone_limit")
-          return { error:"This number has already tried the live demo today. Please try again tomorrow.", reason:"phone_limit", status:429 }
-        }
-        const limited = await limiter.consume({ phone, ip })
-        if (!limited.allowed) {
-          await updateSubmission("rate_limited", limited.reason)
-          return { error:limited.reason === "phone_limit" ? "This number has already tried the live demo today. Please try again tomorrow." : "Too many demo requests from this connection. Please try again later.", reason:limited.reason, status:429 }
-        }
-      }
       const id = randomUUID()
       await db.query(
         `INSERT INTO demo_calls (id,use_case,entry_hint,language,name,phone,email,ip,consent_marketing,status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'initiating')`,

@@ -62,8 +62,7 @@
           <label class="honeypot" aria-hidden="true"><span>Website</span><input v-model="form.website" name="website" tabindex="-1" autocomplete="off" /></label>
           <p v-if="error" class="form-error" role="alert">{{ error }}</p>
           <button class="start-call" type="submit"><PhoneCall :size="18" /> Call me now</button>
-          <small>Carrier rates may apply. Up to 3 calls per number every 24 hours.</small>
-          <button v-if="limitReached" class="waitlist-link" type="button" @click="$emit('join-waitlist')">Join the waitlist instead</button>
+          <small>Carrier rates may apply.</small>
         </form>
         <div class="home-indicator"></div>
       </div>
@@ -107,7 +106,6 @@ const openUseCase = ref(false)
 const openLanguage = ref(false)
 const status = ref("idle")
 const error = ref("")
-const limitReached = ref(false)
 let pollTimer
 let returnTimer
 const busy = computed(() => ["pending", "ringing", "connected"].includes(status.value))
@@ -139,7 +137,7 @@ const statusCopy = computed(() => ({ idle:"Ready when you are", pending:"Startin
 const callTitle = computed(() => status.value === "connected" ? "Connected" : status.value === "completed" ? "Thanks for trying Woxza" : status.value === "no_answer" ? "We missed you" : status.value === "failed" ? "Call unavailable" : "Calling…")
 const terminalNote = computed(() => status.value === "no_answer" ? "Check your phone and try again when you’re ready." : status.value === "failed" ? "Please try again in a moment." : "Your live demo is complete.")
 
-function resetCall() { window.clearTimeout(pollTimer); window.clearTimeout(returnTimer); status.value = "idle"; error.value = ""; limitReached.value = false }
+function resetCall() { window.clearTimeout(pollTimer); window.clearTimeout(returnTimer); status.value = "idle"; error.value = "" }
 function returnToCallForm() {
   // Keep the caller's details in place so a permitted second or third try is
   // genuinely one tap. The server remains the source of truth for the limit.
@@ -161,17 +159,16 @@ async function poll(callId) {
 }
 async function submitDemo() {
   if (form.website || !isIndiaCallRegion.value) return
-  error.value = ""; limitReached.value = false; status.value = "pending"
+  error.value = ""; status.value = "pending"
   try {
     const response = await fetch(`${apiBaseUrl}/api/demo/call`, { method:"POST", headers:{ "content-type":"application/json" }, body:JSON.stringify({ entry_hint:form.useCase || null, language:form.language, name:form.name, country_code:form.countryCode, phone_number:form.phone, consent:form.consent, website:form.website }) })
     const body = await response.json().catch(() => ({}))
     if (!response.ok) {
-      // Validation, availability, and rate-limit errors are actionable before
-      // a provider call is attempted. Keep the form visible so the caller sees
+      // Validation and availability errors are actionable before a provider
+      // call is attempted. Keep the form visible so the caller sees
       // the backend's exact explanation instead of a misleading call failure.
       if (response.status >= 400 && response.status < 500) {
         status.value = "idle"
-        limitReached.value = response.status === 429
         error.value = body.error || "We could not start the demo call"
         return
       }
