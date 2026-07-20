@@ -1,16 +1,30 @@
 import { GoogleGenAI } from "@google/genai"
 import { WebSocketServer } from "ws"
-import { buildDemoPrompt, LANGUAGES, LOCALIZED_DEMO_NAMES, USE_CASE_CONFIG, localizedPostCompletionOffer, localizedRedirect, localizedScopeBoundary } from "./prompt.js"
+import { buildDemoPrompt, LANGUAGES, LOCALIZED_DEMO_NAMES, USE_CASE_CONFIG, localizedDemoEnding, localizedIdentityOpening, localizedPitchThinkingAcknowledgement, localizedPostCompletionOffer, localizedPostOrderActionCapability, localizedRedirect, localizedScopeBoundary } from "./prompt.js"
 import { getCallMessages } from "./messages.js"
-import { createPcmSpeechDetector, resamplePcm } from "./audio-codec.js"
+import { createPcmSpeechDetector, resamplePcm, swapPcm16Endianness } from "./audio-codec.js"
 import { createStreamingOutputSafetyGuard, findUnsafeOutput } from "./output-guardrail.js"
 import { getFeaturePrompts, logFeatureMention, resolveFeatureContext } from "../features.js"
 import { createAppointmentBookingState, transitionAppointmentBooking } from "./appointment-state.js"
+import { getProofPoints } from "./proof-points.js"
+import { createOpeningController } from "./opening-controller.js"
+import { beginContextualDemo, completeContextualDemo, createContextualDemoState, prepareContextualDemoResponse } from "./contextual-demo-state.js"
 
 const EXPIRY_MINUTES = 10
-export const WRAP_UP_MODE_MS = 90_000
-export const FORCE_CLOSING_MS = 105_000
-export const HARD_CUTOFF_MS = 120_000
+export const GEMINI_CAPACITY_MAX_RETRIES = 3
+const INITIAL_CALLER_FIRST_WINDOW_MS = 200
+
+// Gemini closes a Live session with 1011 when its serving pool is temporarily
+// exhausted. Spread reconnects out so a busy pool has time to recover and a
+// single call never becomes a tight reconnect loop.
+export function geminiCapacityRetryDelay(retries, random=Math.random) {
+  return Math.min(1_000 * (2 ** Math.max(0, retries)) + random() * 1_000, 16_000)
+}
+
+export function isGeminiCapacityClose(event) {
+  const reason = String(event?.reason || event?.message || "")
+  return Number(event?.code) === 1011 && /resource\s+has\s+been\s+exhausted|quota|capacity/i.test(reason)
+}
 const SILENCE_REPROMPTS = {
   en:"Are you still there?",
   es:"¿Sigue ahí?",
@@ -53,6 +67,17 @@ function pcmToMuLaw(input) {
     output[index] = (~(sign | (exponent << 4) | ((sample >> (exponent + 3)) & 0x0f))) & 0xff
   }
   return output
+}
+
+export function decodePlivoInboundAudio(payload, contentType=process.env.PLIVO_STREAM_CONTENT_TYPE || "audio/x-l16;rate=16000", l16ByteOrder=process.env.PLIVO_L16_BYTE_ORDER || "little") {
+  const raw = Buffer.from(payload, "base64")
+  if (/audio\/x-l16;rate=16000/i.test(contentType)) {
+    if (l16ByteOrder === "little") return raw
+    if (l16ByteOrder === "big") return swapPcm16Endianness(raw)
+    throw new Error(`Unsupported Plivo L16 byte order: ${l16ByteOrder}`)
+  }
+  if (/audio\/x-mulaw;rate=8000/i.test(contentType)) return resamplePcm(muLawToPcm(raw), 8000, 16000)
+  throw new Error(`Unsupported Plivo stream content type: ${contentType}`)
 }
 
 // Carriers play G.711 most reliably as steady 20 ms frames. Gemini's audio
@@ -105,7 +130,7 @@ export function createPacedMuLawWriter({ onFrame, frameMs=20, startupMs=60, sche
 
 async function findDemoCall(db, demoCallId) {
   const result = await db.query(
-    `SELECT id,use_case,name,language,answered_at FROM demo_calls
+    `SELECT id,use_case,entry_hint,name,language,answered_at FROM demo_calls
      WHERE id=$1 AND created_at >= NOW() - INTERVAL '${EXPIRY_MINUTES} minutes' AND status IN ('ringing','connected')`,
     [demoCallId]
   )
@@ -161,6 +186,15 @@ export function createDemoOrderState(demoCallId) {
   }
 }
 
+export function missingOrderDetails({ restaurant, item, variant, quantity }) {
+  const missing = []
+  if (!String(restaurant || "").trim()) missing.push("restaurant or branch")
+  if (!String(item || "").trim()) missing.push("item")
+  if (/biryani|బిర్యానీ/iu.test(String(item || "")) && !String(variant || "").trim()) missing.push("vegetarian or non-vegetarian choice")
+  if (!String(quantity || "").trim()) missing.push("quantity")
+  return missing
+}
+
 export function createScopeRedirectState() {
   return { consecutive:0 }
 }
@@ -184,6 +218,14 @@ export function isOrderAffirmative(text) {
   return /(?:\b(?:yes|confirm|confirmed|okay|ok|sure|proceed)\b|అవును|కన్ఫర్మ్|చేయండి|हाँ|हां|कन्फर्म|ஆம்|உறுதி|ಹೌದು|ದೃಢ|അതെ|സ്ഥിരീകര|होय|पुष्टी|હા|પુષ્ટિ|হ্যাঁ|নিশ্চিত|ਹਾਂ|ਪੁਸ਼ਟੀ|হয়|নিশ্চিত|ہاں|تصدیق)/iu.test(String(text || ""))
 }
 
+export function isOrderCorrection(text) {
+  return /(?:\b(?:wrong(?:\s+item)?|mistake|incorrect|not that|that's not|that is not|cancel(?:\s+the\s+order)?|change (?:the )?item)\b|t+h?a+p+p+u+|తప్పు|गलत|गलत है|गलत था|incorrecto)/iu.test(String(text || ""))
+}
+
+export function isPostOrderActionQuestion(text) {
+  return /(?:\b(?:call(?:\s+me)?\s+back|callback|follow[ -]?up|after\s+(?:checking|knowing|finding).*(?:price|availability)|(?:price|availability).*(?:call|callback|follow))\b|(?:ఫోన్|కాల్).{0,40}(?:చేయ|చేయగల|మళ్ళీ|తిరిగి)|(?:ధర|ప్రైస్).{0,60}(?:ఫోన్|కాల్|చేయ)|(?:తెలుసుకున్నాక|చూసిన తర్వాత).{0,60}(?:ఫోన్|కాల్|చేయ))/iu.test(String(text || ""))
+}
+
 export function looksLikeOrderConfirmationQuestion(text) {
   return /(?:confirm|confirmation|కన్ఫర్మ్|నిర్ధార|कन्फर्म|पुष्टि|உறுதி|ದೃಢ|സ്ഥിരീകര|पुष्टी|પુષ્ટિ|নিশ্চিত|ਪੁਸ਼ਟੀ|تصدیق)/iu.test(String(text || ""))
 }
@@ -200,23 +242,39 @@ export function containsOrderConfirmation(text, reference) {
 export function isConversationEndRequest(text) {
   const value = String(text || "").trim().toLowerCase()
   if (!value) return false
+  if (/(?:చలో\s*(?:ఉంటాను|untanu)|chalo\s*untanu|ఇంకా\s*(?:వద్దు|వదdu)|inka\s*(?:vaddu|vaddhu|vadhu|vadu)|అక్కర్లేదు|akkarledu|లేదు\s*(?:అండి|andi)?\s*చాలు|not needed|no need|that will do)/iu.test(value)) return true
   return /(?:\b(?:bye(?:\s+bye)?|good\s*bye|good night|see you(?: later)?|talk to you later|that'?s all|that is all|nothing else|nothing more(?!\s+than)|no (?:thanks|thank you),?\s*(?:that'?s all|nothing (?:else|more)|i'?m done)|i(?: am|'m) (?:done|finished)|end (?:the )?(?:call|conversation)|hang up|disconnect (?:the )?(?:call|conversation))\b|अलविदा|बाय\b|बस इतना|यही है|धन्यवाद,?\s*बस|వీడ్కోలు|బై\b|ఇంతే|చాలు|ధన్యవాదాలు,?\s*చాలు|adiós|hasta luego|eso es todo|nada más|gracias,?\s*(?:eso es todo|nada más)|விடைபெறுகிறேன்|பை\b|அவ்வளவுதான்|போதும்|ವಿದಾಯ|ಬೈ\b|ಅಷ್ಟೇ|ಸಾಕು|വിട|ബൈ\b|അത്ര മതി|മതി|निरोप|बाय\b|इतकेच|बस झाले|અલવિદા|બાય\b|બસ એટલું|થૅન્ક યુ,?\s*બસ|বিদায়|বাই\b|এই পর্যন্ত|আর কিছু নেই|ਅਲવિદા|ਬਾਇ\b|ਬਸ ਇੰਨਾ|الوداع|بائے\b|بس اتنا)/iu.test(value)
+}
+
+// Speech-to-text commonly writes a spoken menu choice as a clock value (for
+// example, “second” becomes “2:00”). These only apply while the two-choice
+// welcome is active, never in an ordinary conversation.
+export function resolveNumericOpeningChoice(text) {
+  const value = String(text || "").trim().toLowerCase().replace(/[.!?,]+$/u, "")
+  if (/^(?:1|1:00|01:00)$/u.test(value)) return "demo"
+  if (/^(?:2|2:00|02:00)$/u.test(value)) return "business"
+  return null
 }
 
 function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, onOutputBlocked, onInterrupted, onClosed, onCallerActivity, onConversationEndRequested, onAgentActivity, onOpeningComplete, onAgentTurnComplete, onClosingComplete, onTurnTiming, openingAlreadyHandled=false }) {
   if (!process.env.GEMINI_API_KEY) throw new Error("Gemini is not configured")
-  const messages = getCallMessages({ useCase:call.use_case, language, businessName:process.env.DEMO_BUSINESS_NAME, companyName:process.env.DEMO_COMPANY_NAME })
+  const messages = { ...getCallMessages({ useCase:call.entry_hint || call.use_case, language, businessName:process.env.DEMO_BUSINESS_NAME, companyName:process.env.DEMO_COMPANY_NAME }), ending:localizedDemoEnding(language) }
   return getFeaturePrompts(db)
-    .then(featurePrompts => buildDemoPrompt({ name:call.name, useCase:call.use_case, language, featurePrompts, openingAlreadyHandled, ...messages }))
+    .then(featurePrompts => buildDemoPrompt({ name:call.name, entryHint:call.entry_hint, language, featurePrompts, openingAlreadyHandled, ...messages }))
     .then(async prompt => {
     const ai = new GoogleGenAI({ apiKey:process.env.GEMINI_API_KEY })
     let liveSession
     let openingPending = !openingAlreadyHandled
-    const isOrderTaking = call.use_case === "order_taking"
-    const isAppointmentBooking = call.use_case === "appointment_booking"
+    let openingChoicePending = false
+    let openingPhase = openingAlreadyHandled ? "complete" : "handshake"
+    const conversation = { mode:"discover", activeDemo:null, business:"", demoOffered:false, askedAbout:[], discovery:null }
+    const isOrderTaking = () => conversation.mode === "demonstrate" && conversation.activeDemo === "order_taking"
+    const isAppointmentBooking = () => conversation.mode === "demonstrate" && conversation.activeDemo === "appointment_booking"
+    const isContextualDemo = () => conversation.mode === "demonstrate" && conversation.activeDemo === "contextual_business_demo"
     const orderState = createDemoOrderState(demoCallId)
     const appointmentState = createAppointmentBookingState()
-    const featureState = { businessTag:"", mentionedIds:new Set() }
+    const contextualDemo = createContextualDemoState()
+    const featureState = { businessTag:"", mentionedIds:new Set(), productRevealDelivered:false }
     const scopeState = createScopeRedirectState()
     let latestCallerText = ""
     let appointmentConfirmationPending = false
@@ -238,10 +296,10 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       onTurnTiming?.(event, { elapsedFromCallerTranscriptionMs:Date.now() - responseStartedAt, ...extra })
     }
     const streamingGuard = createStreamingOutputSafetyGuard({
-      useCase:call.use_case,
+      useCase:"discover",
       language,
       callId:demoCallId,
-      safeFallback:USE_CASE_CONFIG[call.use_case]?.safeFallback || "Please tell me how I can help.",
+      safeFallback:"Please tell me how I can help with Woxza.",
       holdMs:120,
       onAudio,
       onAllowedTurn:() => {},
@@ -252,7 +310,7 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       onTrigger:event => console.warn("Gemini streaming output blocked", event)
     })
     const injectOrderConfirmation = () => {
-      if (!isOrderTaking || orderState.confirmationPromptInjected) return
+      if (!isOrderTaking() || orderState.confirmationPromptInjected) return
       orderState.status = "confirmed"
       orderState.awaitingConfirmationTurn = true
       orderState.confirmationPromptInjected = true
@@ -261,17 +319,38 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       promptLiveAgent(liveSession, `[ORDER CONFIRMATION TURN REQUIRED: Speak one distinct confirmation turn now in ${languageName}, using native script and the required formal register. Clearly say the order is confirmed, read this COMPLETE order summary: ${orderState.summary || orderState.callerDetails.join(", ")}.${total} Say the order reference exactly as ${orderState.reference}. Do not say the demo closing or thank the caller yet.]`)
     }
     const sendOrderToolResponse = calls => {
-      if (!isOrderTaking) return
+      if (!isOrderTaking()) return
       const responses = []
       for (const toolCall of calls || []) {
         if (toolCall.name !== "update_order_state") continue
         const args = toolCall.args || toolCall.arguments || {}
-        if (args.summary) orderState.summary = String(args.summary).trim()
-        if (args.total) orderState.total = String(args.total).trim()
+        const details = {
+          restaurant:String(args.restaurant || orderState.restaurant || "").trim(),
+          item:String(args.item || orderState.item || "").trim(),
+          variant:String(args.variant || orderState.variant || "").trim(),
+          quantity:String(args.quantity || orderState.quantity || "").trim(),
+          extras:String(args.extras || orderState.extras || "").trim()
+        }
         if (args.action === "set_pending") {
+          const missing = missingOrderDetails(details)
+          if (missing.length) {
+            responses.push({ id:toolCall.id, name:toolCall.name, response:{
+              status:"collecting",
+              missing,
+              instruction:`Do not confirm or read back the order. In the configured language, ask exactly one short question for the next missing detail: ${missing[0]}.`
+            } })
+            continue
+          }
+          Object.assign(orderState, details)
+          orderState.summary = String(args.summary || [details.restaurant, details.quantity, details.variant, details.item, details.extras].filter(Boolean).join(", ")).trim()
+          if (args.total) orderState.total = String(args.total).trim()
           orderState.status = "pending_confirmation"
           responses.push({ id:toolCall.id, name:toolCall.name, response:{ status:orderState.status, summary:orderState.summary, total:orderState.total || null, reference:orderState.reference, instruction:"Read back the complete order now, then ask for confirmation. Do not close." } })
         } else if (args.action === "confirm") {
+          if (orderState.status !== "pending_confirmation") {
+            responses.push({ id:toolCall.id, name:toolCall.name, response:{ status:"collecting", instruction:"Do not confirm yet. Collect the missing order details, then read the complete order back and ask for the caller's explicit confirmation." } })
+            continue
+          }
           orderState.status = "confirmed"
           orderState.awaitingConfirmationTurn = true
           responses.push({ id:toolCall.id, name:toolCall.name, response:{ status:orderState.status, summary:orderState.summary, total:orderState.total || null, reference:orderState.reference, instruction:"Speak only the explicit confirmation, complete summary, available total, and reference. Do not include the closing." } })
@@ -280,7 +359,7 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       if (responses.length) liveSession?.sendToolResponse({ functionResponses:responses })
     }
     const sendAppointmentToolResponse = calls => {
-      if (!isAppointmentBooking) return
+      if (!isAppointmentBooking()) return
       const responses = []
       for (const toolCall of calls || []) {
         if (toolCall.name !== "update_booking_state") continue
@@ -324,23 +403,24 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       for (const toolCall of calls || []) {
         if (toolCall.name !== "resolve_feature_context") continue
         scopeState.consecutive = 0
-        if (isAppointmentBooking) appointmentToolRequired = false
+        if (isAppointmentBooking()) appointmentToolRequired = false
         const args = toolCall.args || toolCall.arguments || {}
         const intent = args.intent || "recommend"
+        const proofPoints = await getProofPoints()
         if (intent === "highlight_feature") {
           responses.push({ id:toolCall.id, name:toolCall.name, response:{
             intent,
-            feature:{ title:"AI phone agent that talks to customers in real time", description:"A natural voice agent that handles customer conversations as they happen.", status:"live" },
-            instruction:"Answer in the configured language with one concise sentence. Do not say this is your personal preference. Say this is a particularly useful Woxza feature and explain its practical benefit. Do not ask a follow-up question."
+            proof_points:proofPoints,
+            instruction:"Use the FEATURE LIBRARY rules in the live prompt. Select one approved point that is distinct from earlier features and useful for the caller's stated business or question. Explain its practical benefit in one concise sentence. Do not say this is your personal preference or mention internal tags."
           } })
           continue
         }
         if (intent === "intro") {
-          const prompts = await getFeaturePrompts(db)
+          featureState.productRevealDelivered = true
           responses.push({ id:toolCall.id, name:toolCall.name, response:{
             intent,
-            introduction:prompts.feature_intro_pitch || "Woxza answers calls and makes calls on behalf of a business.",
-            instruction:"Give this introduction briefly, then ask what kind of business the caller runs. Do not list features yet."
+            proof_points:proofPoints,
+            instruction:"This is an explicit feature question. Use the FEATURE LIBRARY rules in the live prompt. Give a compact, varied three-point answer from the approved library, in plain everyday language for a non-technical 60-year-old business owner. Do not repeat the opening, read a generic list, or claim a connected action happened in this public demo. Then ask which practical help would matter most to their business."
           } })
           continue
         }
@@ -377,7 +457,7 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       for (const toolCall of calls || []) {
         if (toolCall.name !== "handle_scope_redirect") continue
         scopeRedirectUsedThisTurn = true
-        if (isAppointmentBooking) appointmentToolRequired = false
+        if (isAppointmentBooking()) appointmentToolRequired = false
         const args = toolCall.args || toolCall.arguments || {}
         const result = advanceScopeRedirect(scopeState, {
           language,
@@ -397,11 +477,112 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       if (responses.length) liveSession?.sendToolResponse({ functionResponses:responses })
       if (responses.length) logTurnTiming("tool_response_sent", { tool:"handle_scope_redirect" })
     }
+    const sendConversationToolResponse = calls => {
+      const responses = []
+      for (const toolCall of calls || []) {
+        const args = toolCall.args || toolCall.arguments || {}
+        if (toolCall.name === "update_conversation_context") {
+          if (args.business) {
+            const changed = conversation.business && conversation.business !== String(args.business).trim().toLowerCase()
+            conversation.business = String(args.business).trim().toLowerCase()
+            if (changed) conversation.demoOffered = false
+          }
+          if (["discover", "explain", "demonstrate"].includes(args.mode)) {
+            conversation.mode = args.mode
+            if (args.mode === "explain" || args.mode === "demonstrate") openingChoicePending = false
+          }
+          responses.push({ id:toolCall.id, name:toolCall.name, response:{ mode:conversation.mode, business:conversation.business || null, demo_offered:conversation.demoOffered, instruction:"Continue naturally. Do not mention internal modes or tools." } })
+        } else if (toolCall.name === "start_workflow" && USE_CASE_CONFIG[args.workflow]) {
+          if (openingChoicePending) {
+            responses.push({ id:toolCall.id, name:toolCall.name, response:{
+              mode:"discover",
+              active_demo:null,
+              instruction:"Do not start a workflow. The caller is still answering the two opening choices. Treat a bare 1 or 1:00 as demo, and a bare 2 or 2:00 as business explanation. Ask only for the intended path if it is genuinely unclear."
+            } })
+            continue
+          }
+          conversation.mode = "demonstrate"
+          conversation.activeDemo = args.workflow
+          responses.push({ id:toolCall.id, name:toolCall.name, response:{ mode:"demonstrate", active_demo:args.workflow, instruction:`Begin the ${USE_CASE_CONFIG[args.workflow].label} demonstration naturally. Do not claim any real-world action was completed.` } })
+        } else if (toolCall.name === "start_contextual_demo") {
+          const result = beginContextualDemo(contextualDemo, {
+            business:conversation.discovery?.business_description || conversation.business,
+            currentProcess:conversation.discovery?.current_process,
+            primaryPain:conversation.discovery?.primary_pain,
+            scale:conversation.discovery?.scale || conversation.discovery?.languages || conversation.discovery?.handoff,
+            topic:args.topic,
+            callerGoal:args.caller_goal
+          })
+          if (result.ok) {
+            conversation.mode = "demonstrate"
+            conversation.activeDemo = "contextual_business_demo"
+            openingChoicePending = false
+          }
+          responses.push({ id:toolCall.id, name:toolCall.name, response:result.ok
+            ? { ok:true, demo:result.details, instruction:"Start the contextual business simulation described by the live conversation prompt. Use the discovered business context and topic. The later answer may use believable sample stock, price, discount, delivery, or follow-up details to make the simulation feel real; keep those details consistent with what the caller said." }
+            : { ok:false, error:result.error, instruction:"Do not start a demo yet. Ask the caller what business they run." }
+          })
+        } else if (toolCall.name === "prepare_contextual_demo_response") {
+          const result = prepareContextualDemoResponse(contextualDemo, {
+            customerRequest:args.customer_request,
+            details:args.details,
+            simulatedResult:args.simulated_result
+          })
+          responses.push({ id:toolCall.id, name:toolCall.name, response:result.ok
+            ? { ok:true, demo:result.details, instruction:"Deliver the simulated customer answer now in the configured language. Give a concrete, believable example answer to the customer using the details collected: you may say an item is in stock, quote an example price or discount, describe delivery, or confirm a follow-up. Make it feel like a real customer call, but keep it clearly within this simulated demo rather than implying access to the caller's actual business data. Do not say you will check later, ask the caller to wait, or ask another question." }
+            : { ok:false, error:result.error, instruction:"Continue collecting one missing customer detail at a time." }
+          })
+        } else if (toolCall.name === "offer_demo") {
+          const allowed = Boolean(conversation.business) && !conversation.demoOffered
+          if (allowed) conversation.demoOffered = true
+          responses.push({ id:toolCall.id, name:toolCall.name, response:{ allowed, instruction:allowed ? "Offer one short, gentle contextual customer-call simulation based on the caller's business and pain. If they accept, call start_contextual_demo; do not call start_workflow unless they explicitly name an existing workflow." : "Do not proactively offer a demo. Continue the current conversation naturally." } })
+        } else if (toolCall.name === "resolve_action_capability") {
+          conversation.askedAbout.push(String(args.action || "follow_up"))
+          responses.push({ id:toolCall.id, name:toolCall.name, response:{ capability_tier:"configurable", say_exactly:localizedPostOrderActionCapability(language), preserve_mode:conversation.mode, preserve_active_demo:conversation.activeDemo, instruction:"Speak say_exactly naturally and concisely. Do not say an action was scheduled. Then return to the prior conversation context." } })
+        }
+      }
+      if (responses.length) liveSession?.sendToolResponse({ functionResponses:responses })
+    }
+    const sendTailoredPitchToolResponse = async calls => {
+      const responses = []
+      for (const toolCall of calls || []) {
+        if (toolCall.name !== "build_tailored_pitch") continue
+        const args = toolCall.args || toolCall.arguments || {}
+        const discovery = {
+          business_description:String(args.business_description || conversation.business || "").trim(),
+          current_process:String(args.current_process || "").trim(),
+          primary_pain:String(args.primary_pain || "").trim(),
+          scale:String(args.scale || "").trim(),
+          languages:String(args.languages || "").trim(),
+          handoff:String(args.handoff || "").trim()
+        }
+        const operatingDetail = discovery.scale || discovery.languages || discovery.handoff
+        if (!discovery.business_description || !discovery.current_process || !discovery.primary_pain || !operatingDetail) {
+          responses.push({ id:toolCall.id, name:toolCall.name, response:{
+            status:"needs_more_discovery",
+            instruction:"Do not pitch yet. Ask exactly one short, specific question that fills the missing operational detail: their current process, main pain, or a concrete scale/language/handoff fact. Use the caller's business and words; do not ask a generic question."
+          } })
+          continue
+        }
+        conversation.discovery = discovery
+        const proofPoints = await getProofPoints()
+        responses.push({ id:toolCall.id, name:toolCall.name, response:{
+          status:"ready",
+          discovery,
+          proof_points:proofPoints,
+          instruction:proofPoints.length
+            ? `The caller has completed discovery. Start with one short acknowledgement in the configured language that conveys this meaning: "${localizedPitchThinkingAcknowledgement(language)}" Then follow the live conversation prompt when selecting and explaining the approved proof points. Avoid jargon, repeat neither the opening nor a list of features, and do not invent claims.`
+            : "No proof-point file is available yet. Briefly reflect the caller's pain, use only the verified Woxza capabilities in the system instruction, and offer the most relevant workflow. Do not invent claims."
+        } })
+      }
+      if (responses.length) liveSession?.sendToolResponse({ functionResponses:responses })
+      if (responses.length) logTurnTiming("tool_response_sent", { tool:"build_tailored_pitch" })
+    }
     const finishAgentTurn = ({ interrupted=false } = {}) => {
       const text = agentTextChunks.filter(Boolean).join(" ").trim()
       let handledOrderRetry = false
       if (text) persistTranscript(db, demoCallId, "agent", text)
-      if (isOrderTaking && text) {
+      if (isOrderTaking() && text) {
         if (looksLikeOrderConfirmationQuestion(text) && orderState.status === "collecting") {
           orderState.status = "pending_confirmation"
           orderState.summary ||= orderState.callerDetails.join(", ")
@@ -428,10 +609,18 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
           }
         }
       }
-      if (isAppointmentBooking && text && appointmentConfirmationPending) {
+      if (isAppointmentBooking() && text && appointmentConfirmationPending) {
         if (!interrupted && !rejectedTurnReason) {
           appointmentConfirmationPending = false
           queueMicrotask(() => promptLiveAgent(liveSession, `[APPOINTMENT CLOSING TURN: The simulated appointment details have been confirmed. Say exactly this configured closing and nothing else: "${messages.ending}"]`))
+        }
+      }
+      if (isContextualDemo() && contextualDemo.status === "responding" && text && !interrupted && !rejectedTurnReason) {
+        const result = completeContextualDemo(contextualDemo)
+        if (result.ok) {
+          conversation.mode = "explain"
+          conversation.activeDemo = null
+          queueMicrotask(() => promptLiveAgent(liveSession, `[CONTEXTUAL DEMO COMPLETED: In the configured language, say that this demo is complete. Then say in one short, plain-language sentence that this was one example and Woxza can be set up to handle many other customer questions and business tasks in the same way. Then ask exactly this feedback question: "${localizedPostCompletionOffer(language)}" Do not repeat the simulated customer answer or start another demo.]`))
         }
       }
       if (text && !scopeRedirectUsedThisTurn) scopeState.consecutive = 0
@@ -444,9 +633,23 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       rejectedTurnReason = null
       const completedAudioDurationMs = turnAudioDurationMs
       turnAudioDurationMs = 0
-      if (openingPending) {
+      const flowOpening = localizedIdentityOpening(language)
+      if (openingPhase === "handshake" && text.includes(flowOpening)) {
+        // The caller spoke inside the initial listen window, so the backend
+        // deliberately sent the flow message instead of the handshake. Treat
+        // that message as the completed opening; otherwise the next caller
+        // reply would trigger a duplicate welcome.
+        openingPhase = "complete"
+        openingPending = false
+        openingChoicePending = true
+        onOpeningComplete?.()
+      } else if (openingPhase === "handshake") {
+        openingPhase = "awaiting_reply"
         openingPending = false
         onOpeningComplete?.()
+      } else if (openingPhase === "awaiting_reply" || openingPhase === "welcome_in_progress") {
+        openingPhase = "complete"
+        openingChoicePending = true
       }
       if (!interrupted) {
         const isClosing = scopeClosingPending || text.includes(messages.ending)
@@ -459,6 +662,30 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
       }
     }
     const functionDeclarations = [{
+      name:"update_conversation_context",
+      description:"Persist a caller business context only when the caller plainly names their business or industry. Never infer a business from unclear, mixed-language, or unrelated speech, and never call for greetings, small talk, or clarification.",
+      parameters:{ type:"OBJECT", properties:{ business:{ type:"STRING" }, mode:{ type:"STRING", enum:["discover", "explain", "demonstrate"] } } }
+    }, {
+      name:"offer_demo",
+      description:"Request the backend's one-time permission to gently offer a contextual business demonstration after explaining value for a known business.",
+      parameters:{ type:"OBJECT", properties:{} }
+    }, {
+      name:"start_workflow",
+      description:"Start one of the named example workflows only after the caller explicitly asks for that exact workflow. Never use this for a business-specific demonstration; use start_contextual_demo instead.",
+      parameters:{ type:"OBJECT", properties:{ workflow:{ type:"STRING", enum:Object.keys(USE_CASE_CONFIG) } }, required:["workflow"] }
+    }, {
+      name:"start_contextual_demo",
+      description:"Start a simulated customer call based on the caller's discovered business, current process, and pain. Use after the caller explicitly accepts a relevant demo but has not named a specific existing workflow.",
+      parameters:{ type:"OBJECT", properties:{ topic:{ type:"STRING", description:"The caller-relevant customer need to demonstrate, such as product availability, pricing, delivery, appointment request, or follow-up." }, caller_goal:{ type:"STRING", description:"The practical outcome the caller wants to see in the simulation." } }, required:["topic"] }
+    }, {
+      name:"prepare_contextual_demo_response",
+      description:"Required in an active contextual business demo after the caller has supplied enough detail for a useful simulated customer answer. Prepare the answer before speaking it; never promise to check later or skip straight to feedback.",
+      parameters:{ type:"OBJECT", properties:{ customer_request:{ type:"STRING" }, details:{ type:"STRING" }, simulated_result:{ type:"STRING", description:"How Woxza would handle the request using the business's connected information, without inventing a real result." } }, required:["customer_request","details"] }
+    }, {
+      name:"resolve_action_capability",
+      description:"Answer a question about a real Woxza operational action such as callback, follow-up, price/stock lookup, transfer, CRM update, or notification. This preserves the current mode and workflow.",
+      parameters:{ type:"OBJECT", properties:{ action:{ type:"STRING" }, caller_question:{ type:"STRING" } }, required:["action"] }
+    }, {
       name:"resolve_feature_context",
       description:"Introduce Woxza's capabilities, recommend verified features after learning the caller's business, and return additional unmentioned features when asked for more.",
       parameters:{ type:"OBJECT", properties:{
@@ -473,17 +700,33 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
         category:{ type:"STRING", enum:["general", "supported_demo"], description:"Use general for news, sports, weather, politics, general knowledge, and unsupported requests. Use supported_demo only for an explicit request matching another available Woxza demo." },
         target_use_case:{ type:"STRING", enum:Object.keys(USE_CASE_CONFIG), description:"Set only for category supported_demo to the matching available Woxza use case." }
       }, required:["category"] }
+    }, {
+      name:"build_tailored_pitch",
+      description:"Build the tailored Woxza pitch after learning the caller's business plus two or three operational details. Call only after discovery is complete; never call after a greeting, a vague business description, or before learning the caller's current process and primary pain.",
+      parameters:{ type:"OBJECT", properties:{
+        business_description:{ type:"STRING", description:"Use the caller's own words for their business." },
+        current_process:{ type:"STRING", description:"How the caller handles the relevant work today." },
+        primary_pain:{ type:"STRING", description:"The main operational problem or consequence they described." },
+        scale:{ type:"STRING", description:"Optional call volume, peak-time, team-size, or growth context." },
+        languages:{ type:"STRING", description:"Optional customer language context." },
+        handoff:{ type:"STRING", description:"Optional description of how complex calls are handled today." }
+      }, required:["business_description", "current_process", "primary_pain"] }
     }]
-    if (isOrderTaking) functionDeclarations.push({
+    functionDeclarations.push({
       name:"update_order_state",
-      description:"Record the complete simulated order before confirmation, then mark it confirmed after the caller explicitly affirms.",
+      description:"Record the complete simulated order before confirmation, then mark it confirmed after the caller explicitly affirms. Do not set_pending until restaurant or branch, exact item details, and an explicit quantity are known. For biryani, exact item details include vegetarian or non-vegetarian, plus the non-vegetarian type when applicable. Never infer a quantity from an ambiguous word such as 'too'.",
       parameters:{ type:"OBJECT", properties:{
         action:{ type:"STRING", enum:["set_pending", "confirm"] },
         summary:{ type:"STRING", description:"Complete order summary with every item, quantity, and special request." },
+        restaurant:{ type:"STRING", description:"Restaurant name and branch stated by the caller." },
+        item:{ type:"STRING", description:"The exact ordered dish or item." },
+        variant:{ type:"STRING", description:"Required for biryani: vegetarian, chicken, mutton, or another exact variant." },
+        quantity:{ type:"STRING", description:"The caller's explicit quantity. Never infer this field." },
+        extras:{ type:"STRING", description:"Optional extras or special instructions." },
         total:{ type:"STRING", description:"Total price only when actually available; otherwise omit." }
       }, required:["action", "summary"] }
     })
-    if (isAppointmentBooking) functionDeclarations.push({
+    functionDeclarations.push({
       name:"update_booking_state",
       description:"Advance the backend-owned salon, movie, or doctor appointment demo by exactly one validated step. Call this before every appointment response after the opening.",
       parameters:{ type:"OBJECT", properties:{
@@ -528,16 +771,44 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
             modelTextSeen = false
             modelAudioSeen = false
             onTurnTiming?.("caller_transcription_received", { textLength:latestCallerText.length })
-            if (isAppointmentBooking) appointmentToolRequired = true
+            if (isAppointmentBooking()) appointmentToolRequired = true
             persistTranscript(db, demoCallId, "caller", callerText)
             onCallerActivity?.()
+            if (openingChoicePending) {
+              const numericChoice = resolveNumericOpeningChoice(callerText)
+              if (numericChoice) {
+                openingChoicePending = false
+                const instruction = numericChoice === "demo"
+                  ? "The caller selected the demo. Ask what kind of customer conversation they want to see. Do not start a named workflow until they describe it."
+                  : "The caller selected the business explanation. Give two short, plain-language sentences about how Woxza helps, then ask what business they run."
+                promptLiveAgent(liveSession, `[OPENING NUMERIC CHOICE: ${instruction}]`)
+                return
+              }
+            }
             if (!callerRequestedEnd && isConversationEndRequest(callerText)) {
               callerRequestedEnd = true
               persistTranscript(db, demoCallId, "system", "Caller requested to end the conversation")
               onConversationEndRequested?.()
               return
             }
-            if (isOrderTaking) {
+            if (isOrderTaking()) {
+              if (orderState.status !== "confirmed" && isOrderCorrection(callerText)) {
+                orderState.status = "collecting"
+                orderState.summary = ""
+                orderState.total = ""
+                orderState.callerDetails = []
+                orderState.awaitingConfirmationTurn = false
+                orderState.confirmationPromptInjected = false
+                persistTranscript(db, demoCallId, "system", "Caller corrected the order; discarded the unconfirmed order state")
+                promptLiveAgent(liveSession, "[CALLER CORRECTION: Discard every previously inferred or unconfirmed item immediately. Do not repeat, confirm, price, or substitute any earlier product. In the configured language, ask the caller to repeat the exact product name and quantity. If the name is unfamiliar or sounds like a medicine, preserve the caller's words exactly and ask for clarification; never turn it into a different familiar product.]")
+                return
+              }
+              if (orderState.status === "confirmed" && isPostOrderActionQuestion(callerText)) {
+                const response = localizedPostOrderActionCapability(language)
+                persistTranscript(db, demoCallId, "system", "Caller asked whether Woxza can perform a post-order callback or follow-up action")
+                promptLiveAgent(liveSession, `[REAL WOXZA ACTION CAPABILITY: Say exactly this and nothing else: "${response}" Do not say that a callback, price check, or follow-up was scheduled.]`)
+                return
+              }
               if (orderState.status === "pending_confirmation" && isOrderAffirmative(callerText)) injectOrderConfirmation()
               else if (orderState.status === "collecting" && !isOrderAffirmative(callerText)) orderState.callerDetails.push(String(callerText).trim())
             }
@@ -547,12 +818,21 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
             logTurnTiming("tool_call_received")
             sendOrderToolResponse(message.toolCall.functionCalls)
             sendAppointmentToolResponse(message.toolCall.functionCalls)
+            sendConversationToolResponse(message.toolCall.functionCalls)
             sendScopeToolResponse(message.toolCall.functionCalls)
+            void sendTailoredPitchToolResponse(message.toolCall.functionCalls).catch(error => {
+              console.error("Tailored pitch tool failed", { demoCallId, error:error.message })
+            })
             void sendFeatureToolResponse(message.toolCall.functionCalls).catch(error => {
               console.error("Feature context tool failed", { demoCallId, error:error.message })
             })
           }
           if (agentText) {
+            // Mark the full welcome as active while its carrier audio is
+            // playing; its caller reply is resolved by choose_opening_path.
+            if (openingPhase === "awaiting_reply") {
+              openingPhase = "welcome_in_progress"
+            }
             if (!modelTextSeen) {
               modelTextSeen = true
               logTurnTiming("first_model_text_received")
@@ -560,8 +840,8 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
             agentTextChunks.push(String(agentText).trim())
             const fullText = agentTextChunks.filter(Boolean).join(" ")
             const unsafePhrase = findUnsafeOutput(fullText, language)
-            const mergedClosing = ((isOrderTaking && orderState.awaitingConfirmationTurn) || (isAppointmentBooking && appointmentConfirmationPending)) && fullText.includes(messages.ending)
-            const missingAppointmentTransition = isAppointmentBooking && appointmentToolRequired
+            const mergedClosing = ((isOrderTaking() && orderState.awaitingConfirmationTurn) || (isAppointmentBooking() && appointmentConfirmationPending)) && fullText.includes(messages.ending)
+            const missingAppointmentTransition = isAppointmentBooking() && appointmentToolRequired
             if (!rejectedTurnReason && (unsafePhrase || mergedClosing || missingAppointmentTransition)) {
               rejectedTurnReason = unsafePhrase || (mergedClosing ? "the demo closing in a confirmation turn" : "speech before the required backend appointment transition")
               console.warn("Gemini output turn rejected", { demoCallId, reason:rejectedTurnReason })
@@ -572,7 +852,7 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
           }
           const audio = []
           for (const part of content?.modelTurn?.parts || []) {
-            if (part.inlineData?.data && socket.readyState === 1 && !rejectedTurnReason && !(isAppointmentBooking && appointmentToolRequired)) {
+            if (part.inlineData?.data && socket.readyState === 1 && !rejectedTurnReason && !(isAppointmentBooking() && appointmentToolRequired)) {
               const pcm24 = Buffer.from(part.inlineData.data, "base64")
               turnAudioDurationMs += pcm24.length / 48
               onAgentActivity?.(pcm24.length / 48)
@@ -604,12 +884,12 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
           // A Live API transport error is terminal for this call. Propagate it
           // to the provider-specific lifecycle owner without waiting for the
           // remote close callback, which is not guaranteed after a fault.
-          onClosed?.()
+          onClosed?.(error)
         },
         onclose(event) {
           clearTimeout(turnCompleteTimer)
           console.warn("Gemini Live demo bridge closed", { demoCallId, code:event?.code, reason:event?.reason || "no reason supplied" })
-          onClosed?.()
+          onClosed?.(event)
         }
       }
     })
@@ -619,9 +899,9 @@ function openGeminiSession({ socket, call, language, demoCallId, db, onAudio, on
 
 export async function openGeminiSessionWithRetry(args, {
   openSession=openGeminiSession,
-  maxAttempts=2,
+  maxAttempts=3,
   timeoutMs=7_000,
-  retryDelayMs=250,
+  retryDelayMs,
   onAttemptFailure=({ demoCallId, attempt, error }) => console.warn("Gemini Live connection attempt failed", { demoCallId, attempt, ...describeGeminiLiveError(error) })
 } = {}) {
   let lastError
@@ -638,10 +918,14 @@ export async function openGeminiSessionWithRetry(args, {
     })
     const pending = Promise.resolve().then(() => openSession({
       ...args,
-      onClosed:() => {
+      onClosed:event => {
         if (!active) return
-        if (connected) args.onClosed?.()
-        else rejectEarlyFailure(new Error("Gemini Live transport closed before session ready"))
+        if (connected) args.onClosed?.(event)
+        else {
+          const error = new Error("Gemini Live transport closed before session ready")
+          error.closeEvent = event
+          rejectEarlyFailure(error)
+        }
       }
     }))
     void pending.then(session => {
@@ -661,7 +945,8 @@ export async function openGeminiSessionWithRetry(args, {
       lastError = error
       try { candidateSession?.close() } catch {}
       onAttemptFailure({ demoCallId:args.demoCallId, attempt, error })
-      if (attempt < maxAttempts && retryDelayMs > 0) await new Promise(resolve => setTimeout(resolve, retryDelayMs))
+      const delay = retryDelayMs === undefined ? geminiCapacityRetryDelay(attempt - 1) : retryDelayMs
+      if (attempt < maxAttempts && delay > 0) await new Promise(resolve => setTimeout(resolve, delay))
     }
   }
   throw lastError || new Error("Gemini Live session failed before it became ready")
@@ -732,20 +1017,23 @@ export function attachDemoGeminiBridge(server, { db }) {
     if (!call) return socket.close(1008, "Demo call not found or expired")
     let closed = false
     let session
-    let wrapUpTimer
-    let forceClosingTimer
-    let terminationTimer
+    let capacityRetryTimer
+    let capacityRetries = 0
+    let reconnectingGemini = false
+    let openLiveSession
     let closingTimer
     let callerFarewellTimer
+    let openingController
     let firstAudioSent = false
+    let inboundMediaFrames = 0
+    let inboundMediaBytes = 0
+    let inboundSpeechFrames = 0
     let openingComplete = false
     let acceptingCallerAudio = true
-    let wrapUpMode = false
-    let closeAfterNextAgentTurn = false
     let agentResponding = false
     let closingDispatched = false
     let callerRequestedEnd = false
-    const callMessages = getCallMessages({ useCase:call.use_case, language, businessName:process.env.DEMO_BUSINESS_NAME, companyName:process.env.DEMO_COMPANY_NAME })
+    const callMessages = { ...getCallMessages({ useCase:call.use_case, language, businessName:process.env.DEMO_BUSINESS_NAME, companyName:process.env.DEMO_COMPANY_NAME }), ending:localizedDemoEnding(language) }
     const timing = { streamConnectedAt:Date.now(), answeredAt:call.answered_at ? new Date(call.answered_at).getTime() : null }
     const logTiming = (event, extra = {}) => console.info("voice-call-timing", { demoCallId, event, elapsedFromAnswerMs:timing.answeredAt ? Date.now() - timing.answeredAt : null, elapsedFromStreamMs:Date.now() - timing.streamConnectedAt, ...extra })
     // Keep provider operations in one small adapter. This makes interruption
@@ -795,11 +1083,11 @@ export function attachDemoGeminiBridge(server, { db }) {
     const close = (endReason="caller_hangup", durationSeconds=null) => {
       if (closed) return
       closed = true
-      clearTimeout(wrapUpTimer)
-      clearTimeout(forceClosingTimer)
-      clearTimeout(terminationTimer)
       clearTimeout(closingTimer)
       clearTimeout(callerFarewellTimer)
+      openingController?.stop()
+      clearTimeout(capacityRetryTimer)
+      console.info("voice-call-media-summary", { demoCallId, inboundMediaFrames, inboundMediaBytes, inboundSpeechFrames })
       silenceMonitor.stop()
       audioWriter.close()
       try { session?.close() } catch (error) { console.warn("Gemini Live close failed", { demoCallId, error:error.message }) }
@@ -824,6 +1112,32 @@ export function attachDemoGeminiBridge(server, { db }) {
       silenceMonitor.start()
       logTiming("opening_completed")
     }
+    const reconnectAfterCapacityClose = event => {
+      if (closed || reconnectingGemini) return
+      if (!isGeminiCapacityClose(event)) return close("gemini_closed")
+      if (capacityRetries >= GEMINI_CAPACITY_MAX_RETRIES) {
+        console.error("Gemini Live capacity retries exhausted", { demoCallId, retries:capacityRetries })
+        return close("gemini_capacity_exhausted")
+      }
+      const retry = capacityRetries++
+      const delay = geminiCapacityRetryDelay(retry)
+      reconnectingGemini = true
+      session = undefined
+      console.warn("Gemini Live capacity limit reached; reconnecting with backoff", { demoCallId, retry:retry + 1, delayMs:Math.round(delay) })
+      capacityRetryTimer = setTimeout(async () => {
+        if (closed) return
+        try {
+          session = await openLiveSession(openingComplete)
+          reconnectingGemini = false
+          logTiming("gemini_session_reconnected", { retry:retry + 1 })
+        } catch (error) {
+          reconnectingGemini = false
+          console.warn("Gemini Live capacity reconnect failed", { demoCallId, retry:retry + 1, error:error.message })
+          reconnectAfterCapacityClose({ code:1011, reason:error.message || "capacity reconnect failed" })
+        }
+      }, delay)
+      capacityRetryTimer.unref?.()
+    }
     const scheduleCompletedClose = playbackDelayMs => {
       acceptingCallerAudio = false
       silenceMonitor.stop()
@@ -846,26 +1160,10 @@ export function attachDemoGeminiBridge(server, { db }) {
         callerFarewellTimer.unref?.()
       }
     }
-    // Start the clocks from the active Plivo connection, not from Gemini's
-    // asynchronous connection completion.
-    wrapUpTimer = setTimeout(() => {
-      wrapUpMode = true
-      persistTranscript(db, demoCallId, "system", "Wrap-up mode entered at 90 seconds")
-    }, WRAP_UP_MODE_MS)
-    wrapUpTimer.unref()
-    forceClosingTimer = setTimeout(() => {
-      closeAfterNextAgentTurn = true
-      acceptingCallerAudio = false
-      silenceMonitor.stop()
-      if (!agentResponding) dispatchClosing("105-second deadline")
-    }, FORCE_CLOSING_MS)
-    forceClosingTimer.unref()
-    terminationTimer = setTimeout(() => close("hard_cutoff", 120), HARD_CUTOFF_MS)
-    terminationTimer.unref()
     socket.on("close", () => close("caller_hangup"))
-    try {
-      session = await openGeminiSessionWithRetry({
-        socket, call, language, demoCallId, db,
+    openLiveSession = openingAlreadyHandled => openGeminiSessionWithRetry({
+      socket, call, language, demoCallId, db,
+      openingAlreadyHandled,
         onAudio:pcm24 => {
           // Gemini emits signed 16-bit, 24 kHz little-endian PCM. Plivo
           // recommends native telephony G.711 μ-law at 8 kHz for reliable
@@ -889,17 +1187,16 @@ export function attachDemoGeminiBridge(server, { db }) {
           if (closingDispatched) {
             return promptLiveAgent(session, `[CLOSING REQUIRED: Say exactly this configured ending and nothing else: "${callMessages.ending}"]`)
           }
-          if (closeAfterNextAgentTurn) dispatchClosing("post-90-second response completed")
         },
         onClosingComplete:({ playbackDelayMs }) => {
           closingDispatched = true
-          clearTimeout(wrapUpTimer)
-          clearTimeout(forceClosingTimer)
           scheduleCompletedClose(playbackDelayMs)
         },
         onTurnTiming:(event, extra) => logTiming(event, extra),
-        onClosed:() => close("gemini_closed")
+        onClosed:reconnectAfterCapacityClose
       })
+    try {
+      session = await openLiveSession(false)
       if (closed) {
         try { session.close() } catch {}
         return
@@ -910,24 +1207,41 @@ export function attachDemoGeminiBridge(server, { db }) {
           if (event.event === "stop") return close()
           if (event.event === "media" && event.media?.payload) {
             if (!acceptingCallerAudio) return
-            // Plivo delivers media frames continuously, including silence. Do
-            // not treat every frame as a caller interruption: Gemini's VAD
-            // emits `interrupted` only when it detects real caller speech.
-            // Likewise, caller activity is recorded from transcription rather
-            // than from carrier silence frames.
-            const pcm8k = muLawToPcm(Buffer.from(event.media.payload, "base64"))
-            if (callerSpeechDetector.push(pcm8k)) {
+            const streamContentType = process.env.PLIVO_STREAM_CONTENT_TYPE || "audio/x-l16;rate=16000"
+            const l16ByteOrder = process.env.PLIVO_L16_BYTE_ORDER || "little"
+            const rawAudio = Buffer.from(event.media.payload, "base64")
+            inboundMediaFrames += 1
+            inboundMediaBytes += rawAudio.length
+            if (inboundMediaFrames === 1) console.info("voice-call-timing", { demoCallId, event:"first_plivo_media_received", bytes:rawAudio.length, codec:streamContentType, l16ByteOrder })
+            const pcm16k = decodePlivoInboundAudio(event.media.payload, streamContentType, l16ByteOrder)
+            if (callerSpeechDetector.push(pcm16k)) {
+              inboundSpeechFrames += 1
+              if (inboundSpeechFrames === 1) console.info("voice-call-timing", { demoCallId, event:"first_plivo_speech_detected" })
               silenceMonitor.noteCallerActivity()
-              if (wrapUpMode) closeAfterNextAgentTurn = true
+              openingController?.noteCallerSpeech()
+                  // Do not cut an active workflow short just because the caller
+                  // is still talking during the wrap-up window.
             }
-            const pcm16k = resamplePcm(pcm8k, 8000, 16000)
+            if (!session) return
             session.sendRealtimeInput({ audio:{ data:pcm16k.toString("base64"), mimeType:"audio/pcm;rate=16000" } })
           }
         } catch (error) { console.warn("Invalid Plivo demo stream event", { demoCallId, error:error.message }) }
       })
       logTiming("gemini_session_ready")
-      promptLiveAgent(session, "Start the demo now. Speak the configured OPENING greeting exactly, then wait for the caller.")
-      logTiming("opening_turn_dispatched")
+      openingController = createOpeningController({
+        callerFirstWindowMs:INITIAL_CALLER_FIRST_WINDOW_MS,
+        onCallerFirst:() => {
+          if (closed || !session) return
+          logTiming("caller_spoke_before_welcome")
+          promptLiveAgent(session, `[CALLER SPOKE FIRST: Do not say the short handshake. In the configured language, say exactly this flow message: "${localizedIdentityOpening(language)}" Then wait for the caller. Do not start a workflow or call a tool.]`)
+        },
+        onWoxzaFirst:() => {
+          if (closed || !session) return
+          promptLiveAgent(session, "Start the demo now. Speak the configured short HANDSHAKE exactly, then wait for the caller.")
+          logTiming("opening_turn_dispatched")
+        }
+      })
+      openingController.start()
       console.info("Gemini Live Plivo demo bridge connected", { demoCallId, language })
     } catch (error) { console.error("Gemini Live Plivo bridge setup failed", { demoCallId, error:error.message }); close() }
   })
@@ -947,16 +1261,11 @@ export function attachDemoGeminiBridge(server, { db }) {
     let acceptingCallerAudio = true
     let closingTimer
     let callerFarewellTimer
-    let wrapUpTimer
-    let forceClosingTimer
-    let terminationTimer
-    let wrapUpMode = false
-    let closeAfterNextAgentTurn = false
     let agentResponding = false
     let closingDispatched = false
     let callMessages
     const queuedAudio = []
-    const close = () => { if (!closed) { closed=true; clearTimeout(closingTimer); clearTimeout(callerFarewellTimer); clearTimeout(wrapUpTimer); clearTimeout(forceClosingTimer); clearTimeout(terminationTimer); try { session?.close() } catch {}; try { socket.close() } catch {} } }
+    const close = () => { if (!closed) { closed=true; clearTimeout(closingTimer); clearTimeout(callerFarewellTimer); try { session?.close() } catch {}; try { socket.close() } catch {} } }
     const scheduleCompletedClose = playbackDelayMs => {
       acceptingCallerAudio = false
       clearTimeout(closingTimer)
@@ -993,17 +1302,7 @@ export function attachDemoGeminiBridge(server, { db }) {
       if (!demoCallId || !LANGUAGES.has(language)) return close()
       try { call = await findDemoCall(db, demoCallId) } catch (error) { console.error("Twilio demo bridge lookup failed", error) }
       if (!call) return close()
-      callMessages = getCallMessages({ useCase:call.use_case, language, businessName:process.env.DEMO_BUSINESS_NAME, companyName:process.env.DEMO_COMPANY_NAME })
-      wrapUpTimer = setTimeout(() => { wrapUpMode = true }, WRAP_UP_MODE_MS)
-      wrapUpTimer.unref?.()
-      forceClosingTimer = setTimeout(() => {
-        closeAfterNextAgentTurn = true
-        acceptingCallerAudio = false
-        if (!agentResponding) dispatchClosing()
-      }, FORCE_CLOSING_MS)
-      forceClosingTimer.unref?.()
-      terminationTimer = setTimeout(close, HARD_CUTOFF_MS)
-      terminationTimer.unref?.()
+      callMessages = { ...getCallMessages({ useCase:call.use_case, language, businessName:process.env.DEMO_BUSINESS_NAME, companyName:process.env.DEMO_COMPANY_NAME }), ending:localizedDemoEnding(language) }
       try {
         session = await openGeminiSessionWithRetry({
           socket, call, language, demoCallId, db,
@@ -1015,7 +1314,7 @@ export function attachDemoGeminiBridge(server, { db }) {
           },
           onOutputBlocked:() => { if (streamSid && socket.readyState === 1) socket.send(JSON.stringify({ event:"clear", streamSid })) },
           onInterrupted:() => { if (streamSid) socket.send(JSON.stringify({ event:"clear", streamSid })) },
-          onCallerActivity:() => { if (wrapUpMode) closeAfterNextAgentTurn = true },
+          onCallerActivity:() => {},
           onConversationEndRequested:() => closingDispatched ? close() : dispatchClosing(true),
           onAgentActivity:() => { agentResponding = true },
           onOpeningComplete:() => { openingComplete = true },
@@ -1025,7 +1324,6 @@ export function attachDemoGeminiBridge(server, { db }) {
             if (closingDispatched) {
               return promptLiveAgent(session, `[CLOSING REQUIRED: Say exactly this configured ending and nothing else: "${callMessages.ending}"]`)
             }
-            if (closeAfterNextAgentTurn) dispatchClosing()
           },
           onClosingComplete:({ playbackDelayMs }) => {
             closingDispatched = true
@@ -1035,7 +1333,7 @@ export function attachDemoGeminiBridge(server, { db }) {
           onClosed:() => close()
         })
         for (const payload of queuedAudio.splice(0)) forwardAudio(payload)
-        promptLiveAgent(session, "Start the demo now. Speak the configured OPENING greeting exactly, then wait for the caller.")
+        promptLiveAgent(session, "Start the demo now. Speak the configured short HANDSHAKE exactly, then wait for the caller.")
         console.info("Gemini Live Twilio demo bridge connected", { demoCallId, language })
       } catch (error) { console.error("Gemini Live Twilio bridge setup failed", { demoCallId, error:error.message }); close() }
     }

@@ -1,6 +1,5 @@
 import IORedis from "ioredis"
 import { Queue, Worker } from "bullmq"
-import { DemoRateLimiter, MemoryRateLimitStore, RedisRateLimitStore } from "./rate-limiter.js"
 import { createPlivoClient } from "./plivo.js"
 import { createTwilioClient } from "./twilio.js"
 import { createDemoService } from "./service.js"
@@ -21,7 +20,6 @@ export function createDemoRuntime(db) {
   const publicUrl = (process.env.PUBLIC_API_URL || `http://localhost:${process.env.PORT || 8787}`).replace(/\/$/, "")
   const redisUrl = process.env.REDIS_URL
   redis ||= redisUrl ? new IORedis(redisUrl, { maxRetriesPerRequest:null }) : null
-  const limiter = new DemoRateLimiter(redis ? new RedisRateLimitStore(redis) : new MemoryRateLimitStore())
   const queue = redis ? new Queue("voxa-jobs", { connection:redis }) : { add:async () => {} }
   const plivo = createPlivoClient({
     authId:process.env.PLIVO_AUTH_ID, authToken:process.env.PLIVO_AUTH_TOKEN,
@@ -37,7 +35,7 @@ export function createDemoRuntime(db) {
   })
   const unavailableProvider = name => ({ call:async () => { throw Object.assign(new Error(`${name} is not fully configured`), { status:503 }) } })
   const service = createDemoService({
-    db, limiter, plivo:plivo || unavailableProvider("Plivo"), twilio:twilio || unavailableProvider("Twilio"), followupQueue:queue,
+    db, plivo:plivo || unavailableProvider("Plivo"), twilio:twilio || unavailableProvider("Twilio"), followupQueue:queue,
     bridgeUrl:process.env.GEMINI_LIVE_BRIDGE_URL || "wss://example.invalid/gemini-live",
     publicUrl, signingSecret:process.env.UNSUBSCRIBE_SIGNING_SECRET || "development-only-change-me"
   })

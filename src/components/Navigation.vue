@@ -104,7 +104,7 @@ RIGHT
 
 <div class="actions">
 
-<LanguageSelector class="language-selector-nav" :dark-popover="isDarkBackground" />
+<LanguageSelector v-if="showLanguageSelector" class="language-selector-nav" :dark-popover="isDarkBackground" />
 
 <button
 class="cta"
@@ -153,7 +153,7 @@ v-if="mobile"
 class="mobile-menu"
 >
 
-<LanguageSelector class="language-selector-mobile" :dark-popover="isDarkBackground" />
+<LanguageSelector v-if="showLanguageSelector" class="language-selector-mobile" :dark-popover="isDarkBackground" />
 
 <a @click="scrollTo('solutions')">
 
@@ -228,6 +228,10 @@ import LanguageSelector from "@/components/LanguageSelector.vue"
 const emit = defineEmits([
   "open-demo"
 ])
+
+// Keep language switching available while developing, but do not expose it on
+// the production marketing site until localized production content is ready.
+const showLanguageSelector = !import.meta.env.PROD
 
 const mobile = ref(false)
 
