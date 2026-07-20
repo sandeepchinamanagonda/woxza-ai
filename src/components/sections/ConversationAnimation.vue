@@ -6,108 +6,100 @@
       <p>Watch Voxa listen, understand, respond and take action while the customer is still on the line.</p>
     </header>
 
-    <div class="call-console">
-      <div class="console-glow"></div>
+    <div class="phone-stage" :class="`phase-${phase}`">
+      <div class="stage-aura aura-one"></div>
+      <div class="stage-aura aura-two"></div>
 
-      <header class="console-bar">
-        <div class="live-status"><i></i><strong>LIVE CALL</strong><span>Secure connection</span></div>
-        <nav class="language-tabs" aria-label="Conversation languages">
-          <button
-            v-for="(item,index) in conversations"
-            :key="item.code"
-            type="button"
-            :class="{ active:index === conversationIndex }"
-            @click="selectConversation(index)"
-          ><span :lang="item.code">{{ item.short }}</span></button>
-        </nav>
-        <div class="call-time"><PhoneCall /> <span>{{ formattedTime }}</span></div>
-      </header>
+      <div class="phone-shell">
+        <div class="phone-frame-highlight"></div>
+        <div class="phone-screen">
+          <header class="phone-statusbar">
+            <span>9:41</span>
+            <i class="phone-island"></i>
+            <div class="device-status"><i></i><i></i><i></i><span></span></div>
+          </header>
 
-      <div class="call-layout">
-        <aside class="caller-panel" :class="{ speaking: phase === 'caller' }">
-          <div class="portrait-wrap">
-            <span class="portrait-ring"></span>
-            <div class="portrait">
-              <svg viewBox="0 0 120 120" fill="none" aria-hidden="true">
-                <path d="M60 19c-21 0-35 15.5-35 37 0 15.5 6.8 24.9 15.8 31.8V102h38.4V87.8C88.2 80.9 95 71.5 95 56c0-21.5-14-37-35-37Z" fill="#DCEAFF"/>
-                <path d="M39 53c4-12.5 12-19 23.5-19 10.6 0 18.4 5.2 23.5 15" stroke="#8DB8F2" stroke-width="3" stroke-linecap="round"/>
-                <circle cx="48" cy="58" r="3" fill="#143D77"/><circle cx="73" cy="58" r="3" fill="#143D77"/>
-                <path d="M60 61v10l5 2" stroke="#5E8FCF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <path class="portrait-mouth" d="M50 81c6 4 13 4 20 0" stroke="#1E5AA8" stroke-width="3" stroke-linecap="round"/>
-              </svg>
-              <span class="speech-rays" aria-hidden="true"><i></i><i></i><i></i></span>
-            </div>
-          </div>
-          <div><span>CALLER</span><strong>Customer</strong><small>{{ phase === 'caller' ? 'Speaking now' : 'On the line' }}</small></div>
-          <div class="caller-wave" aria-hidden="true"><i v-for="n in 13" :key="n" :style="{ '--n':n }"></i></div>
-        </aside>
-
-        <main class="conversation-panel" aria-live="polite">
-          <div class="conversation-status">
-            <span :lang="currentConversation.code">{{ currentConversation.language }}</span>
-            <div><i :class="phase"></i>{{ phaseLabel }}</div>
+          <div class="phone-callbar">
+            <span class="secure-call"><i></i> LIVE CALL</span>
+            <span class="phone-timer"><PhoneCall /> {{ formattedTime }}</span>
           </div>
 
-          <Transition name="conversation-swap" mode="out-in">
-            <div :key="`${currentConversation.code}-${phase}`" class="conversation-content">
-              <article class="utterance caller-utterance" :class="{ subdued: phase !== 'caller' }">
-                <span>CALLER</span>
-                <p :lang="currentConversation.code">{{ currentConversation.question }}</p>
-                <small>{{ currentConversation.questionTranslation }}</small>
-              </article>
+          <nav class="phone-languages" aria-label="Conversation languages">
+            <button v-for="(item,index) in conversations" :key="item.code" type="button" :class="{ active:index === conversationIndex }" @click="selectConversation(index)">
+              <span :lang="item.code">{{ item.short }}</span>
+            </button>
+          </nav>
 
-              <div v-if="phase === 'understanding'" class="understanding-state">
-                <div class="ai-thinking"><i></i><i></i><i></i></div>
-                <span><strong>Understanding intent</strong><small>Checking context and connected systems</small></span>
+          <div class="call-participants">
+            <div class="participant customer" :class="{ active:phase === 'caller' }">
+              <div class="participant-avatar customer-avatar">
+                <img src="/woxza-real-caller.png" alt="Customer on a live phone call" />
               </div>
+              <strong>Customer</strong><small>{{ phase === 'caller' ? 'Speaking' : 'On the line' }}</small>
+            </div>
 
-              <article v-if="phase === 'responding' || phase === 'completed'" class="utterance voxa-utterance">
-                <div class="voxa-label"><span class="voxa-mark"><AudioLines /></span><span>VOXA AI</span><i v-if="phase === 'responding'">Responding</i></div>
-                <p :lang="currentConversation.code">{{ currentConversation.answer }}</p>
-                <small>{{ currentConversation.answerTranslation }}</small>
-                <Transition name="completion-pop">
-                  <div v-if="phase === 'completed'" class="completion-note">
-                    <CheckCircle2 /> <span><strong>{{ currentConversation.actions.length }} workflows completed</strong><small>Everything is already updated</small></span>
+            <div class="live-wave" aria-hidden="true">
+              <i v-for="n in 17" :key="n" :style="{ '--n':n }"></i>
+              <span>{{ phaseLabel }}</span>
+            </div>
+
+            <div class="participant woxza" :class="{ active:phase === 'responding' || phase === 'completed' }">
+              <div class="participant-avatar woxza-avatar"><span>W</span><i></i></div>
+              <strong>Woxza AI</strong><small>{{ phase === 'responding' ? 'Speaking' : phase === 'understanding' ? 'Thinking' : 'Connected' }}</small>
+            </div>
+          </div>
+
+          <main class="voice-focus-panel" aria-live="polite">
+            <Transition name="conversation-swap" mode="out-in">
+              <div :key="`${currentConversation.code}-${phase}`" class="voice-focus-inner">
+                <div v-if="phase === 'caller'" class="active-speaker customer-speaker">
+                  <img class="live-caller-photo" src="/woxza-real-caller.png" alt="Customer speaking with VOXA" />
+                  <div class="caller-photo-shade"></div>
+                  <div class="caller-photo-content">
+                    <div class="speaker-copy"><small>CALLER</small><strong>Customer is speaking</strong><span>VOXA is listening in real time</span></div>
+                    <div class="focus-wave customer-focus-wave" aria-hidden="true"><i v-for="n in 21" :key="n" :style="{ '--n':n }"></i></div>
                   </div>
-                </Transition>
+                </div>
+
+                <div v-else class="active-speaker ai-speaker" :class="{ processing:phase === 'understanding', speaking:phase === 'responding' }">
+                  <div class="ai-core"><span>V</span><i></i><i></i><i></i></div>
+                  <div class="speaker-copy"><small>VOXA AI</small><strong>{{ phase === 'understanding' ? 'Understanding the request' : phase === 'responding' ? 'Responding to the caller' : 'Request handled' }}</strong><span>{{ phase === 'understanding' ? 'Reading context from connected tools' : phase === 'responding' ? 'Natural voice response in progress' : 'The caller and your systems are updated' }}</span></div>
+                  <div class="focus-wave ai-focus-wave" aria-hidden="true"><i v-for="n in 21" :key="n" :style="{ '--n':n }"></i></div>
+                </div>
+              </div>
+            </Transition>
+          </main>
+
+          <section class="inside-workflow" aria-label="Work VOXA performs during the call">
+            <header><span>WORKING IN THE BACKGROUND</span><i :class="{ done:phase === 'completed' }">{{ phase === 'completed' ? 'DONE' : 'LIVE' }}</i></header>
+            <div class="inside-action-list">
+              <article v-for="(action,index) in currentConversation.actions" :key="action.label" :class="{ running:phase === 'understanding' || phase === 'responding', complete:phase === 'completed' }">
+                <span class="inside-action-icon"><component :is="action.icon" /></span>
+                <div><strong>{{ action.label }}</strong><small>{{ action.detail }}</small></div>
+                <span class="inside-action-state">
+                  <Check v-if="phase === 'completed'" />
+                  <i v-else-if="phase === 'understanding' || phase === 'responding'" :style="{ animationDelay:`${index * 180}ms` }"></i>
+                  <em v-else></em>
+                </span>
               </article>
             </div>
-          </Transition>
-        </main>
+          </section>
 
-        <aside class="execution-panel">
-          <header><span>EXECUTION LOG</span><i :class="{ active:phase === 'completed' }"></i></header>
-          <p class="execution-intro">What Voxa completes behind the conversation.</p>
-
-          <TransitionGroup v-if="phase === 'completed'" name="task-reveal" tag="div" class="task-list">
-            <article v-for="(action,index) in currentConversation.actions" :key="action.label" :style="{ '--delay':`${index * 110}ms` }">
-              <span class="task-icon"><component :is="action.icon" /></span>
-              <div><strong>{{ action.label }}</strong><small>{{ action.detail }}</small></div>
-              <Check />
-            </article>
-          </TransitionGroup>
-
-          <div v-else class="execution-waiting">
-            <span><i></i><i></i><i></i></span>
-            <strong>{{ phase === 'caller' ? 'Listening for the request' : phase === 'understanding' ? 'Preparing the right actions' : 'Actions ready to run' }}</strong>
-            <small>Updates appear only after Voxa completes them.</small>
-          </div>
-        </aside>
-      </div>
-
-      <footer class="console-progress">
-        <div v-for="(step,index) in steps" :key="step.key" :class="{ active:step.key === phase, complete:index < phaseIndex }">
-          <span><Check v-if="index < phaseIndex" /><i v-else></i></span>
-          <strong>{{ step.label }}</strong>
+          <footer class="call-controls">
+            <button type="button" aria-label="Mute"><Mic /></button>
+            <button type="button" aria-label="Speaker"><Volume2 /></button>
+            <button type="button" class="end-call" aria-label="End call"><PhoneOff /></button>
+          </footer>
+          <i class="home-indicator"></i>
         </div>
-      </footer>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup>
 import { computed,onBeforeUnmount,onMounted,ref,watch } from "vue"
-import { AudioLines,CalendarCheck,Check,CheckCircle2,ContactRound,DatabaseZap,MailCheck,MessageSquareCheck,PackageCheck,PhoneCall } from "lucide-vue-next"
+import { AudioLines,CalendarCheck,Check,CheckCircle2,ContactRound,DatabaseZap,MailCheck,MessageSquareCheck,Mic,PackageCheck,PhoneCall,PhoneOff,Volume2 } from "lucide-vue-next"
 
 const conversations = [
   { code:"en",short:"EN",language:"English",capabilitySequence:[3,1,4,2],question:"Can I move my appointment to Friday afternoon?",questionTranslation:"",answer:"Absolutely. I’ve moved it to Friday at 3:30 PM and sent your confirmation.",answerTranslation:"",actions:[{ icon:CalendarCheck,label:"Calendar updated",detail:"Friday · 3:30 PM confirmed" },{ icon:MailCheck,label:"Email sent",detail:"Confirmation delivered" }] },
@@ -168,5 +160,53 @@ onBeforeUnmount(() => { window.clearTimeout(phaseTimer); window.clearInterval(cl
 @media(max-width:1050px){.call-layout{grid-template-columns:155px minmax(0,1fr)}.execution-panel{grid-column:1/-1}.execution-waiting{min-height:130px}.task-list{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:1024px){.voice-experience.embedded,.embedded .call-console{height:auto}.embedded .call-layout{height:auto;grid-template-rows:auto}.embedded .execution-panel{height:auto;min-height:0}.embedded .console-progress{flex:auto}}
 @media(max-width:720px){.voice-experience{padding:90px 15px 110px}.section-heading{margin-bottom:38px}.console-bar{grid-template-columns:1fr auto;padding:17px}.live-status span{display:none}.language-tabs{grid-column:1/-1;grid-row:2;justify-content:center}.call-time{grid-column:2;grid-row:1}.call-layout{grid-template-columns:1fr;padding:14px;min-height:0}.caller-panel{flex-direction:row;justify-content:flex-start;gap:14px;padding:16px;text-align:left}.portrait-wrap{width:74px;height:74px;flex:0 0 74px}.portrait{width:58px;height:58px}.speech-rays{left:41px;transform:translateY(-50%) scale(.65)}.caller-panel>div:nth-child(2){margin:0}.caller-wave{margin:0 0 0 auto}.conversation-panel,.execution-panel{padding:17px}.utterance{padding:16px}.utterance p{font-size:19px}.caller-utterance.subdued{display:none}.execution-waiting{min-height:120px}.task-list{grid-template-columns:1fr}.console-progress{padding:0 14px 16px}.console-progress>div{justify-content:center}.console-progress strong{display:none}}
+
+/* Phone-call experience */
+.phone-stage{position:relative;display:grid;width:100%;min-height:760px;place-items:center;overflow:hidden;border:1px solid rgba(96,165,250,.24);border-radius:25px;background:radial-gradient(circle at 50% 7%,rgba(50,120,255,.28),transparent 37%),linear-gradient(145deg,#06152d,#09234a 58%,#071831);box-shadow:0 24px 60px rgba(6,23,51,.22);color:#fff;isolation:isolate}.phone-stage::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(147,197,253,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(147,197,253,.035) 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(to bottom,#000,transparent 88%);pointer-events:none}.stage-aura{position:absolute;border:1px solid rgba(104,161,246,.1);border-radius:50%;pointer-events:none}.aura-one{width:690px;height:690px;animation:stage-orbit 17s linear infinite}.aura-two{width:530px;height:530px;border-color:rgba(104,161,246,.07);animation:stage-orbit 13s linear infinite reverse}
+.phone-shell{position:relative;z-index:3;width:min(390px,calc(100% - 32px));height:720px;padding:8px;border:1px solid rgba(196,218,255,.24);border-radius:48px;background:linear-gradient(145deg,#26344a,#07101e 24%,#020813 70%,#1f2d43);box-shadow:0 36px 90px rgba(0,0,0,.48),inset 0 0 0 2px rgba(255,255,255,.045),0 0 0 1px rgba(18,75,155,.3)}.phone-frame-highlight{position:absolute;inset:2px;border-radius:46px;background:linear-gradient(115deg,rgba(255,255,255,.18),transparent 18%,transparent 75%,rgba(113,165,255,.09));pointer-events:none}.phone-screen{position:relative;display:flex;height:100%;flex-direction:column;overflow:hidden;border-radius:40px;background:radial-gradient(circle at 50% 0,rgba(55,121,241,.27),transparent 36%),linear-gradient(180deg,#0a1e3e,#06152e 72%,#071125)}.phone-screen::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(139,184,248,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(139,184,248,.025) 1px,transparent 1px);background-size:34px 34px;pointer-events:none}
+.phone-statusbar{position:relative;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:35px;padding:0 22px;color:#dceaff;font-size:9px;font-weight:700}.phone-island{width:104px;height:25px;border:1px solid rgba(255,255,255,.025);border-radius:20px;background:#030914;box-shadow:inset 0 1px 5px rgba(255,255,255,.03)}.device-status{display:flex;align-items:flex-end;justify-content:flex-end;gap:2px}.device-status i{width:2px;border-radius:2px;background:#cde1ff}.device-status i:nth-child(1){height:4px}.device-status i:nth-child(2){height:6px}.device-status i:nth-child(3){height:8px}.device-status span{width:12px;height:7px;margin-left:4px;border:1px solid #cde1ff;border-radius:2px;opacity:.85}
+.phone-callbar{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:7px 20px 0}.secure-call,.phone-timer{display:flex;align-items:center;gap:7px;color:#b8cce8;font-size:8px;font-weight:750;letter-spacing:.12em}.secure-call i{width:6px;height:6px;border-radius:50%;background:#43e58c;box-shadow:0 0 0 5px rgba(67,229,140,.09),0 0 14px rgba(67,229,140,.5)}.phone-timer{font-variant-numeric:tabular-nums;letter-spacing:.04em}.phone-timer svg{width:12px}
+.phone-languages{position:relative;z-index:2;display:flex;align-self:center;gap:3px;margin-top:13px;padding:3px;border:1px solid rgba(142,181,236,.12);border-radius:999px;background:rgba(255,255,255,.035)}.phone-languages button{min-width:36px;padding:6px 9px;border:0;border-radius:999px;color:#718aae;background:transparent;font:inherit;font-size:8px;font-weight:750;cursor:pointer;transition:.25s}.phone-languages button.active{color:#fff;background:#2c73e2;box-shadow:0 6px 18px rgba(29,108,235,.32)}
+.call-participants{position:relative;z-index:2;display:grid;grid-template-columns:76px minmax(0,1fr) 76px;align-items:center;gap:11px;padding:17px 23px 13px}.participant{display:flex;min-width:0;flex-direction:column;align-items:center;text-align:center}.participant-avatar{position:relative;display:grid;width:55px;height:55px;place-items:center;border:1px solid rgba(138,182,244,.24);border-radius:50%;transition:.35s}.participant.active .participant-avatar{border-color:#6ea8ff;box-shadow:0 0 0 7px rgba(64,135,239,.07),0 0 35px rgba(43,116,230,.35);transform:scale(1.04)}.customer-avatar{overflow:hidden;background:#dbeaff}.customer-avatar svg{width:100%;height:100%}.woxza-avatar{color:#fff;background:linear-gradient(145deg,#377ef0,#6a92f8);font-size:24px;font-weight:650;box-shadow:0 13px 30px rgba(37,99,235,.28)}.woxza-avatar i{position:absolute;right:0;bottom:2px;width:11px;height:11px;border:2px solid #0a1d3c;border-radius:50%;background:#44e28b}.participant strong{margin-top:8px;font-size:10px}.participant small{margin-top:3px;color:#6f88ac;font-size:7px}.participant.active small{color:#8fbaff}
+.live-wave{position:relative;display:flex;height:48px;align-items:center;justify-content:center;gap:3px}.live-wave::before,.live-wave::after{content:"";position:absolute;top:50%;width:22px;height:1px;background:linear-gradient(90deg,transparent,#3e7bcf)}.live-wave::before{right:100%}.live-wave::after{left:100%;transform:rotate(180deg)}.live-wave i{width:2px;height:calc(5px + (var(--n) % 7) * 2px);border-radius:9px;background:linear-gradient(#75b7ff,#3675ed);animation:phone-bar .65s calc(var(--n) * -.055s) ease-in-out infinite alternate}.phase-understanding .live-wave i{animation:thinking 1s calc(var(--n) * -.05s) ease-in-out infinite alternate;opacity:.48}.phase-completed .live-wave i{animation-play-state:paused;opacity:.32;transform:scaleY(.32)}.live-wave span{position:absolute;top:46px;width:130px;color:#597499;font-size:6px;text-align:center;text-transform:uppercase;letter-spacing:.12em}
+.phone-transcript{position:relative;z-index:2;min-height:254px;margin:10px 15px 0;padding:15px;border:1px solid rgba(121,167,230,.13);border-radius:23px;background:rgba(3,15,36,.44);box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}.transcript-inner{display:flex;flex-direction:column;gap:11px}.call-bubble{position:relative;width:92%;padding:13px 14px;border:1px solid rgba(134,177,235,.12);border-radius:16px;background:rgba(255,255,255,.04);transition:.3s}.call-bubble>div{display:flex;align-items:center;justify-content:space-between}.call-bubble>div span{display:flex;align-items:center;gap:6px;color:#719cdf;font-size:7px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.call-bubble>div span svg{width:12px}.call-bubble>div>i{color:#74a9f6;font-size:6px;font-style:normal;letter-spacing:.1em}.call-bubble p{margin:7px 0 0;color:#f2f6ff;font-size:14px;font-weight:560;line-height:1.35;letter-spacing:-.012em}.call-bubble>small{display:block;margin-top:5px;color:#657e9f;font-size:8px;line-height:1.45}.customer-bubble{align-self:flex-start;border-bottom-left-radius:5px}.customer-bubble.speaking{border-color:rgba(99,161,247,.35);background:rgba(36,100,192,.13);box-shadow:0 12px 28px rgba(0,0,0,.12)}.woxza-bubble{align-self:flex-end;border-color:rgba(97,141,242,.29);border-bottom-right-radius:5px;background:linear-gradient(135deg,rgba(42,105,220,.24),rgba(54,56,151,.16))}.woxza-bubble.speaking{box-shadow:0 0 0 1px rgba(79,142,242,.1),0 14px 32px rgba(0,0,0,.2)}.call-thinking{display:flex;align-self:flex-end;align-items:center;gap:10px;width:82%;padding:12px 14px;border:1px solid rgba(94,148,225,.18);border-radius:15px 15px 5px 15px;background:rgba(37,99,235,.09)}.call-thinking>span,.mini-loader{display:flex;gap:3px}.call-thinking>span i,.mini-loader i{width:4px;height:4px;border-radius:50%;background:#77adf5;animation:thinking .8s infinite alternate}.call-thinking>span i:nth-child(2),.mini-loader i:nth-child(2){animation-delay:.15s}.call-thinking>span i:nth-child(3),.mini-loader i:nth-child(3){animation-delay:.3s}.call-thinking>div,.phone-action-summary>span:last-child{display:flex;flex-direction:column}.call-thinking strong{font-size:8px}.call-thinking small{margin-top:3px;color:#667e9e;font-size:7px}
+.phone-action-summary{position:relative;z-index:2;display:flex;align-items:center;gap:10px;margin:10px 15px 0;padding:10px 12px;border:1px solid rgba(68,226,139,.17);border-radius:15px;color:#87edb1;background:rgba(26,136,84,.1)}.phone-action-summary>svg{width:18px;flex:0 0 auto}.phone-action-summary strong{font-size:8px}.phone-action-summary small{margin-top:3px;color:#6c9983;font-size:7px}.phone-action-summary.waiting{border-color:rgba(113,163,232,.12);color:#afc7e8;background:rgba(255,255,255,.025)}.mini-loader{width:18px;justify-content:center}
+.voice-focus-panel{position:relative;z-index:2;min-height:178px;margin:8px 15px 0;padding:14px;border:1px solid rgba(121,167,230,.13);border-radius:23px;background:radial-gradient(circle at 50% 40%,rgba(42,105,213,.13),transparent 60%),rgba(3,15,36,.44);box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}.voice-focus-inner{height:100%}.active-speaker{display:grid;grid-template-columns:72px minmax(0,1fr);grid-template-rows:auto 38px;align-items:center;column-gap:14px;height:148px}.speaker-face,.ai-core{position:relative;grid-row:1;display:grid;width:66px;height:66px;place-items:center;border:1px solid rgba(122,175,245,.28);border-radius:50%}.speaker-face{background:#dceaff;box-shadow:0 0 0 7px rgba(71,138,232,.06),0 13px 28px rgba(0,0,0,.2)}.speaker-face svg{width:100%;height:100%}.focus-mouth{animation:mouth .42s ease-in-out infinite alternate;transform-origin:center}.face-pulse{position:absolute;inset:-9px;border:1px solid rgba(98,164,248,.26);border-radius:50%;animation:focus-pulse 1.5s ease-out infinite}.ai-core{color:#fff;background:linear-gradient(145deg,#2875ec,#697bf4);box-shadow:0 0 0 7px rgba(68,126,240,.06),0 0 32px rgba(52,114,238,.36)}.ai-core span{font-size:27px;font-weight:700}.ai-core i{position:absolute;inset:-8px;border:1px solid rgba(106,162,255,.22);border-radius:50%;animation:ai-ring 1.8s ease-out infinite}.ai-core i:nth-of-type(2){inset:-16px;animation-delay:.3s}.ai-core i:nth-of-type(3){inset:-24px;animation-delay:.6s}.ai-speaker.processing .ai-core i{animation-duration:1.05s}.ai-speaker:not(.speaking):not(.processing) .ai-core i{animation-play-state:paused;opacity:.25}.speaker-copy{display:flex;min-width:0;flex-direction:column}.speaker-copy small{color:#6399e9;font-size:7px;font-weight:800;letter-spacing:.15em}.speaker-copy strong{margin-top:5px;color:#f2f7ff;font-size:12px;line-height:1.25}.speaker-copy span{margin-top:4px;color:#657e9f;font-size:7px;line-height:1.4}.focus-wave{grid-column:1/-1;display:flex;height:36px;align-items:center;justify-content:center;gap:3px}.focus-wave i{width:2px;height:calc(4px + (var(--n) % 8) * 2px);border-radius:8px;background:linear-gradient(#79bcff,#387cf0);animation:phone-bar .62s calc(var(--n) * -.045s) ease-in-out infinite alternate}.ai-speaker.processing .focus-wave i{opacity:.42;animation:thinking .9s calc(var(--n) * -.04s) ease-in-out infinite alternate}.phase-completed .focus-wave i{animation-play-state:paused;opacity:.3;transform:scaleY(.25)}
+.inside-workflow{position:relative;z-index:2;margin:10px 15px 0;padding:11px;border:1px solid rgba(118,166,230,.13);border-radius:18px;background:rgba(4,17,39,.58)}.inside-workflow>header{display:flex;align-items:center;justify-content:space-between;padding:0 2px 8px}.inside-workflow>header span{color:#7896bd;font-size:6px;font-weight:800;letter-spacing:.16em}.inside-workflow>header i{padding:3px 6px;border-radius:999px;color:#76a8f3;background:rgba(65,126,219,.13);font-size:5px;font-style:normal;font-weight:800;letter-spacing:.12em}.inside-workflow>header i.done{color:#66e39c;background:rgba(46,194,111,.12)}.inside-action-list{display:grid;gap:6px}.inside-action-list article{display:grid;grid-template-columns:31px minmax(0,1fr) 18px;align-items:center;gap:9px;min-height:43px;padding:6px 8px;border:1px solid rgba(117,162,224,.1);border-radius:12px;background:rgba(255,255,255,.025);transition:.35s}.inside-action-list article.running{border-color:rgba(83,148,239,.22);background:rgba(38,100,190,.08)}.inside-action-list article.complete{border-color:rgba(66,210,131,.17);background:rgba(34,143,84,.07)}.inside-action-icon{display:grid;width:29px;height:29px;place-items:center;border-radius:9px;color:#80b6ff;background:rgba(55,123,219,.13)}.inside-action-icon svg{width:14px}.inside-action-list article>div{display:flex;min-width:0;flex-direction:column}.inside-action-list strong{font-size:8px}.inside-action-list small{margin-top:3px;overflow:hidden;color:#687f9f;font-size:6px;text-overflow:ellipsis;white-space:nowrap}.inside-action-state{display:grid;width:17px;height:17px;place-items:center;border:1px solid rgba(109,154,216,.14);border-radius:50%;color:#5fe297}.inside-action-state svg{width:9px}.inside-action-state i{width:6px;height:6px;border-radius:50%;background:#5f9ef5;box-shadow:0 0 0 4px rgba(64,137,238,.08);animation:status-pulse .8s ease-in-out infinite}.inside-action-state em{width:4px;height:4px;border-radius:50%;background:#35547d}
+.call-controls{position:relative;z-index:2;display:flex;justify-content:center;gap:17px;margin-top:auto;padding:12px 0 17px}.call-controls button{display:grid;width:39px;height:39px;place-items:center;border:1px solid rgba(255,255,255,.1);border-radius:50%;color:#d8e7fc;background:rgba(255,255,255,.065);cursor:pointer}.call-controls button svg{width:16px}.call-controls .end-call{border-color:rgba(255,86,86,.36);background:#e84852;box-shadow:0 10px 22px rgba(218,48,61,.25);transform:rotate(135deg)}.home-indicator{position:absolute;bottom:6px;left:50%;width:110px;height:3px;border-radius:4px;background:rgba(217,231,251,.2);transform:translateX(-50%)}
+.action-popouts{position:absolute;z-index:5;right:15px;bottom:95px;display:grid;width:220px;gap:10px}.action-popouts article{display:grid;grid-template-columns:36px minmax(0,1fr) 19px;align-items:center;gap:10px;padding:12px;border:1px solid rgba(141,183,242,.22);border-radius:16px;background:rgba(7,25,54,.94);box-shadow:0 18px 48px rgba(0,0,0,.34);animation:popout-in .55s var(--delay) cubic-bezier(.22,1,.36,1) both;backdrop-filter:blur(14px)}.popout-icon{display:grid;width:35px;height:35px;place-items:center;border-radius:11px;color:#8fc1ff;background:rgba(50,125,231,.15)}.popout-icon svg{width:16px}.action-popouts article>div{min-width:0}.action-popouts small,.action-popouts strong,.action-popouts p{display:block}.action-popouts small{color:#4add91;font-size:6px;font-weight:800;letter-spacing:.12em}.action-popouts strong{margin-top:4px;font-size:9px}.action-popouts p{margin:3px 0 0;overflow:hidden;color:#758dac;font-size:7px;text-overflow:ellipsis;white-space:nowrap}.popout-check{display:grid;width:18px;height:18px;place-items:center;border-radius:50%;color:#6ee7a4;background:rgba(48,195,112,.12)}.popout-check svg{width:10px}
+.task-reveal-enter-active,.task-reveal-leave-active{transition:.45s cubic-bezier(.22,1,.36,1)}.task-reveal-enter-from{opacity:0;transform:translateX(25px) scale(.94)}.task-reveal-leave-to{opacity:0;transform:translateX(15px) scale(.96)}
+@keyframes phone-bar{from{transform:scaleY(.24);opacity:.34}to{transform:scaleY(1);opacity:1}}@keyframes stage-orbit{to{transform:rotate(360deg)}}@keyframes popout-in{from{opacity:0;transform:translateX(35px) scale(.92)}to{opacity:1;transform:none}}@keyframes focus-pulse{0%{opacity:.75;transform:scale(.9)}100%{opacity:0;transform:scale(1.25)}}@keyframes ai-ring{0%{opacity:.65;transform:scale(.82)}100%{opacity:0;transform:scale(1.22)}}
+.voice-experience.embedded .phone-stage{width:100%;height:100%;min-height:0}.voice-experience.embedded{height:100%}
+@media(max-width:1180px){.action-popouts{right:9px;width:188px}.action-popouts article{grid-template-columns:32px minmax(0,1fr) 18px;padding:10px}.popout-icon{width:31px;height:31px}.phone-shell{transform:translateX(-42px)}}
+@media(max-width:1024px){.voice-experience.embedded,.voice-experience.embedded .phone-stage{height:auto}.phone-stage{min-height:730px}.phone-shell{transform:none}.action-popouts{right:18px}}
+@media(max-width:720px){.phone-stage{min-height:720px;border-radius:20px}.phone-shell{height:690px;width:min(370px,calc(100% - 16px));border-radius:43px}.phone-screen{border-radius:35px}.action-popouts{right:17px;bottom:88px;width:180px}.action-popouts article{background:rgba(7,25,54,.97)}.call-bubble p{font-size:13px}.phone-transcript{min-height:235px}.call-participants{padding-inline:17px}}
+.customer-avatar img{width:100%;height:100%;object-fit:cover;object-position:48% 24%;transform:scale(1.18)}
+.customer-speaker{position:relative!important;display:block!important;height:148px!important;overflow:hidden;border-radius:15px;background:#07172e}
+.live-caller-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 30%;animation:caller-camera 5.5s ease-in-out infinite alternate}
+.caller-photo-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,13,30,.08),rgba(3,13,30,.3)),linear-gradient(to top,rgba(2,11,27,.96),transparent 70%)}
+.caller-photo-content{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:12px}
+.caller-photo-content .speaker-copy{max-width:155px}.caller-photo-content .speaker-copy small{color:#91bdff}.caller-photo-content .speaker-copy span{color:#b9cce5}.caller-photo-content .focus-wave{width:98px;height:35px;flex:0 0 auto}
+@keyframes caller-camera{from{transform:scale(1.03) translate3d(0,0,0)}to{transform:scale(1.1) translate3d(-1.5%,1%,0)}}
+
+/* Open canvas layout: the conversation uses the full section, without a phone frame. */
+.phone-stage{display:block;padding:0}
+.phone-shell{width:100%;height:100%;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.phone-frame-highlight,.phone-statusbar,.call-controls,.home-indicator{display:none}
+.phone-screen{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(235px,.65fr);grid-template-rows:48px 116px minmax(0,1fr);gap:14px;height:100%;padding:20px;border-radius:0;background:radial-gradient(circle at 24% 12%,rgba(50,120,255,.22),transparent 35%),linear-gradient(145deg,rgba(5,20,44,.96),rgba(7,30,65,.95))}
+.phone-callbar{grid-column:1;grid-row:1;padding:0 4px}
+.phone-languages{grid-column:2;grid-row:1;align-self:center;justify-self:end;margin:0}
+.call-participants{grid-column:1/-1;grid-row:2;grid-template-columns:120px minmax(180px,1fr) 120px;gap:28px;width:min(640px,100%);justify-self:center;padding:0 22px}
+.participant-avatar{width:66px;height:66px}.participant strong{font-size:12px}.participant small{font-size:8px}.live-wave{height:58px}.live-wave span{top:52px;font-size:7px}
+.voice-focus-panel{grid-column:1;grid-row:3;min-height:0;height:auto;margin:0;padding:0;border-radius:24px}
+.voice-focus-inner,.active-speaker{height:100%}
+.customer-speaker{height:100%!important;min-height:360px;border-radius:23px}
+.live-caller-photo{object-position:center 29%}
+.caller-photo-content{padding:24px}.caller-photo-content .speaker-copy{max-width:270px}.caller-photo-content .speaker-copy small{font-size:8px}.caller-photo-content .speaker-copy strong{font-size:20px}.caller-photo-content .speaker-copy span{font-size:10px}.caller-photo-content .focus-wave{width:160px;height:50px}
+.ai-speaker{grid-template-columns:130px minmax(0,1fr);grid-template-rows:auto 75px;padding:40px;column-gap:35px}.ai-core{width:108px;height:108px}.ai-core span{font-size:42px}.ai-speaker .speaker-copy small{font-size:9px}.ai-speaker .speaker-copy strong{font-size:22px}.ai-speaker .speaker-copy span{font-size:11px}.ai-speaker .focus-wave{height:70px;gap:5px}.ai-speaker .focus-wave i{width:3px}
+.inside-workflow{grid-column:2;grid-row:3;align-self:stretch;margin:0;padding:20px;border-radius:24px;background:rgba(4,17,39,.72)}
+.inside-workflow>header{padding:2px 2px 18px}.inside-workflow>header span{font-size:7px}.inside-action-list{gap:12px}.inside-action-list article{grid-template-columns:44px minmax(0,1fr) 23px;min-height:76px;padding:12px;border-radius:16px}.inside-action-icon{width:42px;height:42px;border-radius:13px}.inside-action-icon svg{width:19px}.inside-action-list strong{font-size:11px}.inside-action-list small{margin-top:6px;font-size:8px}.inside-action-state{width:22px;height:22px}.inside-action-state svg{width:12px}
+@media(max-width:1024px){.phone-screen{grid-template-columns:1fr;grid-template-rows:48px 108px minmax(330px,1fr) auto;padding:16px}.phone-callbar{grid-column:1}.phone-languages{grid-column:1;grid-row:1}.call-participants{grid-column:1;grid-row:2}.voice-focus-panel{grid-column:1;grid-row:3}.inside-workflow{grid-column:1;grid-row:4}.inside-action-list{grid-template-columns:repeat(2,minmax(0,1fr))}.customer-speaker{min-height:330px}}
+@media(max-width:640px){.phone-screen{grid-template-rows:55px 95px 300px auto;padding:12px;gap:10px}.phone-callbar{align-self:start}.phone-languages{align-self:end;justify-self:start}.call-participants{grid-template-columns:78px minmax(90px,1fr) 78px;gap:8px;padding:0}.participant-avatar{width:52px;height:52px}.customer-speaker{min-height:300px}.caller-photo-content{padding:16px}.caller-photo-content .speaker-copy strong{font-size:15px}.caller-photo-content .focus-wave{width:90px}.inside-action-list{grid-template-columns:1fr}.ai-speaker{grid-template-columns:85px minmax(0,1fr);padding:24px;column-gap:20px}.ai-core{width:76px;height:76px}.ai-speaker .speaker-copy strong{font-size:17px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>

@@ -1,5 +1,5 @@
 @import url("https://db.onlinewebfonts.com/c/e55e9079ee863276569c8a68d776ef04?family=Futura+Md+BT+Medium");
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=Raleway:wght@300;400;500;600;700;800&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -67,7 +67,7 @@ BODY
 
 body{
 
-  font-family:"Inter",sans-serif;
+  font-family:"Raleway",sans-serif;
 
   background:var(--bg);
 
@@ -77,6 +77,17 @@ body{
 
   text-rendering:optimizeLegibility;
 
+}
+
+#app,
+#app *{
+  font-family:"Raleway",sans-serif !important;
+}
+
+#app [lang="hi"],
+#app [lang="te"],
+#app [lang="ta"]{
+  font-family:"Nirmala UI","Noto Sans Devanagari","Noto Sans Telugu","Noto Sans Tamil",system-ui,sans-serif !important;
 }
 
 /* ==========================================================
