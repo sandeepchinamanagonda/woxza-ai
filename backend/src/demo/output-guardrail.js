@@ -38,6 +38,30 @@ export function findUnsafeOutput(text, language="en") {
   return phrases.find(phrase => normalized.includes(phrase.toLocaleLowerCase())) || null
 }
 
+// This guard is active only while the backend is handing off demo roles. It
+// blocks Woxza becoming the customer, without blocking the valid handoff and
+// creating a renderer/tool-call deadlock.
+const ROLE_REVERSAL_PATTERNS = {
+  en:/\b(?:i(?:'ll| will| am)|i am going to|let me)\s+(?:become|be|act as|play)?\s*(?:the |your )?(?:customer|client)\b/i,
+  es:/\b(?:seré|voy a ser|haré de)\s+(?:el |la )?cliente\b/i,
+  hi:/मैं\s*(?:(?:एक|आपका|तुम्हारा)\s*)?(?:ग्राहक|कस्टमर)\s*(?:बन|हूँ|होऊँ|की तरह)/iu,
+  te:/నేను\s*(?:ఒక\s*)?(?:కస్టమర్‌గా|కస్టమర్)\s*(?:అవ|ఉంట|నటించ|అనుకో)/iu,
+  ta:/நான்\s*(?:ஒரு\s*)?(?:வாடிக்கையாளராக|கஸ்டமராக)\s*(?:இருப்ப|நடிப்ப)/iu,
+  kn:/ನಾನು\s*(?:ಗ್ರಾಹಕನಾಗಿ|ಕಸ್ಟಮರ್ ಆಗಿ)\s*(?:ಇರುತ್ತ|ನಟಿಸ)/iu,
+  ml:/ഞാൻ\s*(?:ഒരു\s*)?(?:ഉപഭോക്താവായി|കസ്റ്റമറായി)\s*(?:ആക|നടിക്ക)/iu,
+  mr:/मी\s*(?:ग्राहक|कस्टमर)\s*(?:बन|अस)/iu,
+  gu:/હું\s*(?:ગ્રાહક|કસ્ટમર)\s*(?:બન|હોઈશ)/iu,
+  bn:/আমি\s*(?:গ্রাহক|কাস্টমার)\s*(?:হব|হয়ে)/iu,
+  pa:/ਮੈਂ\s*(?:ਗਾਹਕ|ਕਸਟਮਰ)\s*(?:ਬਣ|ਹੋਵਾਂ)/iu,
+  as:/মই\s*(?:গ্ৰাহক|কাষ্টমাৰ)\s*(?:হম|হওঁ)/iu,
+  ur:/میں\s*(?:گاہک|کسٹمر)\s*(?:بن|ہوں)/iu
+}
+
+export function findDemoRoleReversal(text, language="en") {
+  const pattern = ROLE_REVERSAL_PATTERNS[language] || ROLE_REVERSAL_PATTERNS.en
+  return pattern.test(String(text || "")) ? "demo_role_reversal" : null
+}
+
 export function createOutputSafetyGuard({ useCase, language, callId, safeFallback, onAllowed, onRegenerate, onFallback, onExhausted, onTrigger }) {
   let consecutiveBlocks = 0
   return {

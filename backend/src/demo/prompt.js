@@ -8,7 +8,7 @@ export const USE_CASE_CONFIG = {
   recruiting_screening:{ label:"recruiting screening", safeFallback:"Are you ready to begin the brief screening?" }
 }
 export const USE_CASES = new Set(["discover", ...Object.keys(USE_CASE_CONFIG)])
-export const LEGACY_USE_CASES = { appointment:"appointment_booking", restaurant:"appointment_booking", distribution:"order_taking", payments:"customer_support" }
+export const LEGACY_USE_CASES = { appointment:"appointment_booking", restaurant:"order_taking", distribution:"order_taking", payments:"customer_support" }
 export const normalizeUseCase = value => LEGACY_USE_CASES[value] || value
 
 export const LANGUAGES = new Map([["en","English"],["es","Spanish"],["as","Assamese"],["bn","Bengali"],["gu","Gujarati"],["hi","Hindi"],["kn","Kannada"],["ml","Malayalam"],["mr","Marathi"],["pa","Punjabi"],["ta","Tamil"],["te","Telugu"],["ur","Urdu"]])
@@ -26,9 +26,13 @@ export const POST_COMPLETION_FEATURE_OFFERS = Object.fromEntries([...LANGUAGES.k
 export const localizedPostCompletionOffer = language => POST_COMPLETION_FEATURE_OFFERS[language] || POST_COMPLETION_FEATURE_OFFERS.en
 export const localizedPostOrderActionCapability = language => language === "te"
   ? "సాధారణ Woxza సెటప్‌లో, కనెక్ట్ చేసిన వ్యాపార సమాచారాన్ని చూసి ఫాలో-అప్ కాల్ లేదా చర్యను ప్రారంభించేలా ఏజెంట్‌ను సెట్ చేయవచ్చు. కానీ ఈ డెమోలో నేను లైవ్ ధరను చెక్ చేయలేను లేదా ఆ కాల్‌ను షెడ్యూల్ చేయలేను."
+  : language === "hi" ? "असल Woxza सेटअप में एजेंट को जुड़ी व्यावसायिक जानकारी देखकर फॉलो-अप शुरू करने के लिए सेट किया जा सकता है। इस डेमो में मैं लाइव कीमत नहीं देख सकता या कॉल तय नहीं कर सकता।"
+  : language === "ta" ? "உண்மையான Woxza அமைப்பில் இணைக்கப்பட்ட வணிகத் தகவலைப் பயன்படுத்தி தொடர்நடவடிக்கை செய்ய அமைக்கலாம். இந்த டெமோவில் நேரடி விலையைப் பார்க்கவோ அழைப்பை ஏற்பாடு செய்யவோ முடியாது."
   : "In a real Woxza setup, the agent can be configured to check connected business information and trigger a follow-up call or action. This demo cannot check a live price or schedule that callback."
 export const localizedRedirect = language => language === "te"
   ? "Woxza మీ వ్యాపారానికి ఎలా ఉపయోగపడుతుందో వివరించగలను."
+  : language === "hi" ? "मैं बता सकता हूँ कि Woxza आपके व्यवसाय के लिए कैसे मददगार हो सकता है।"
+  : language === "ta" ? "Woxza உங்கள் வணிகத்திற்கு எப்படி உதவும் என்பதை நான் விளக்க முடியும்."
   : "I can explain how Woxza would handle that for a business."
 export const localizedPitchThinkingAcknowledgement = language => language === "te"
   ? "ఒక్క క్షణం అండి — మీరు చెప్పిన విధానానికి Woxza ఎక్కడ ఎక్కువ ఉపయోగపడుతుందో కలిపి చెబుతాను."
@@ -41,65 +45,124 @@ export const LOCALIZED_SCOPE_BOUNDARIES = Object.fromEntries([...LANGUAGES.keys(
 
 export function localizedIdentityOpening(language) {
   if (language === "te") return "మీరు ఒక డెమో ప్రయత్నించాలనుకుంటున్నారా, లేక Woxza మీ వ్యాపారానికి ఎలా ఉపయోగపడుతుందో తెలుసుకోవాలనుకుంటున్నారా?"
+  if (language === "hi") return "क्या आप डेमो आज़माना चाहेंगे, या जानना चाहेंगे कि Woxza आपके व्यवसाय में कैसे मदद कर सकता है?"
+  if (language === "ta") return "நீங்கள் ஒரு டெமோவை முயற்சிக்க விரும்புகிறீர்களா, அல்லது Woxza உங்கள் வணிகத்திற்கு எவ்வாறு உதவும் என்பதை அறிய விரும்புகிறீர்களா?"
   return "Would you like to try a demo, or hear how Woxza could help your business?"
 }
 export function localizedIdentityHandshake(language) {
   if (language === "te") return "నమస్కారం. Woxzaకి స్వాగతం."
+  if (language === "hi") return "नमस्ते, Woxza में आपका स्वागत है।"
+  if (language === "ta") return "வணக்கம், Woxza-க்கு வரவேற்கிறோம்."
   return "Hello, welcome to Woxza."
+}
+export function localizedOpeningDiscoveryQuestion(language) {
+  const messages = {
+    en:"Thanks for trying our demo. To help you better, I'd like to learn a few details. What kind of business do you run?",
+    es:"Gracias por probar nuestra demostración. Para ayudarle mejor, me gustaría conocer algunos detalles. ¿Qué tipo de negocio tiene?",
+    as:"আমাৰ ডেম’টো চেষ্টা কৰাৰ বাবে ধন্যবাদ। আপোনাক ভালদৰে সহায় কৰিবলৈ, কেইটামান কথা জানিব বিচাৰোঁ। আপুনি কি ধৰণৰ ব্যৱসায় চলায়?",
+    bn:"আমাদের ডেমোটি চেষ্টা করার জন্য ধন্যবাদ। আপনাকে আরও ভালোভাবে সাহায্য করতে, আমি কয়েকটি বিষয় জানতে চাই। আপনি কী ধরনের ব্যবসা চালান?",
+    gu:"અમારો ડેમો અજમાવવા બદલ આભાર. તમને વધુ સારી રીતે મદદ કરવા માટે, હું થોડી વિગતો જાણવા માંગુ છું. તમે કયા પ્રકારનો વ્યવસાય ચલાવો છો?",
+    hi:"हमारा डेमो आज़माने के लिए धन्यवाद। आपकी बेहतर मदद के लिए, मैं कुछ बातें जानना चाहूँगा। आप किस तरह का व्यवसाय चलाते हैं?",
+    kn:"ನಮ್ಮ ಡೆಮೋ ಪ್ರಯತ್ನಿಸಿದ್ದಕ್ಕೆ ಧನ್ಯವಾದಗಳು. ನಿಮಗೆ ಉತ್ತಮವಾಗಿ ಸಹಾಯ ಮಾಡಲು, ಕೆಲವು ವಿವರಗಳನ್ನು ತಿಳಿದುಕೊಳ್ಳಲು ಬಯಸುತ್ತೇನೆ. ನೀವು ಯಾವ ರೀತಿಯ ವ್ಯವಹಾರ ನಡೆಸುತ್ತೀರಿ?",
+    ml:"ഞങ്ങളുടെ ഡെമോ പരീക്ഷിച്ചതിന് നന്ദി. നിങ്ങളെ കൂടുതൽ നന്നായി സഹായിക്കാൻ, കുറച്ച് വിവരങ്ങൾ അറിയാൻ ആഗ്രഹിക്കുന്നു. നിങ്ങൾ ഏത് തരത്തിലുള്ള ബിസിനസാണ് നടത്തുന്നത്?",
+    mr:"आमचा डेमो वापरून पाहिल्याबद्दल धन्यवाद. तुम्हाला अधिक चांगली मदत करण्यासाठी मला काही माहिती जाणून घ्यायची आहे. तुम्ही कोणता व्यवसाय चालवता?",
+    pa:"ਸਾਡਾ ਡੈਮੋ ਅਜ਼ਮਾਉਣ ਲਈ ਧੰਨਵਾਦ। ਤੁਹਾਡੀ ਹੋਰ ਚੰਗੀ ਮਦਦ ਕਰਨ ਲਈ, ਮੈਂ ਕੁਝ ਵੇਰਵੇ ਜਾਣਨਾ ਚਾਹਾਂਗਾ। ਤੁਸੀਂ ਕਿਸ ਕਿਸਮ ਦਾ ਕਾਰੋਬਾਰ ਚਲਾਉਂਦੇ ਹੋ?",
+    ta:"எங்கள் டெமோவை முயற்சித்ததற்கு நன்றி. உங்களுக்கு சிறப்பாக உதவ, சில விவரங்களை அறிய விரும்புகிறேன். நீங்கள் எந்த வகையான வணிகத்தை நடத்துகிறீர்கள்?",
+    te:"మా డెమోను ప్రయత్నించినందుకు ధన్యవాదాలు. మీకు బాగా సహాయపడటానికి, కొన్ని వివరాలు తెలుసుకోవాలనుకుంటున్నాను. మీరు ఏ వ్యాపారం నిర్వహిస్తున్నారు?",
+    ur:"ہمارا ڈیمو آزمانے کا شکریہ۔ آپ کی بہتر مدد کے لیے، میں چند تفصیلات جاننا چاہوں گا۔ آپ کس قسم کا کاروبار چلاتے ہیں؟"
+  }
+  return messages[language] || messages.en
+}
+export function localizedCompleteOpening(language) {
+  return `${localizedIdentityHandshake(language)} ${localizedOpeningDiscoveryQuestion(language)}`
+}
+export function localizedInitialWelcome(language) {
+  if (language === "te") return "నమస్కారం, Woxzaకి స్వాగతం! మా డెమోను ప్రయత్నించినందుకు ధన్యవాదాలు. మీకు బాగా సహాయపడటానికి, కొన్ని వివరాలు అడగవచ్చా?"
+  if (language === "hi") return "नमस्ते, Woxza में आपका स्वागत है! हमारा डेमो आज़माने के लिए धन्यवाद। आपकी बेहतर मदद के लिए, क्या हम कुछ जानकारी पूछ सकते हैं?"
+  if (language === "ta") return "வணக்கம், Woxza-க்கு வரவேற்கிறோம்! எங்கள் டெமோவை முயற்சித்ததற்கு நன்றி. உங்களுக்கு உதவ சில விவரங்களைக் கேட்கலாமா?"
+  return "Hello, welcome to Woxza! Thanks for trying our demo. To help you better, may we ask for a few details?"
+}
+export function localizedOpeningFallback(language) {
+  if (language === "te") return "మా డెమోను ప్రయత్నించినందుకు ధన్యవాదాలు. మీకు బాగా సహాయపడటానికి, కొన్ని వివరాలు అడగవచ్చా?"
+  if (language === "hi") return "हमारा डेमो आज़माने के लिए धन्यवाद। आपकी बेहतर मदद के लिए, क्या हम कुछ जानकारी पूछ सकते हैं?"
+  if (language === "ta") return "எங்கள் டெமோவை முயற்சித்ததற்கு நன்றி. உங்களுக்கு உதவ சில விவரங்களைக் கேட்கலாமா?"
+  return "Thanks for trying our demo. To help you better, may we ask for a few details?"
+}
+
+// This is carrier-visible workflow control, not a conversational suggestion.
+// It is deliberately backend-owned so the model cannot reverse the two roles
+// before a business simulation begins.
+export function localizedDemoRoleHandoff(language, business="your business") {
+  const safeBusiness = String(business || "your business").replace(/\s+/g, " ").trim().slice(0, 160)
+  const messages = {
+    en:`You are the customer now. I will speak for ${safeBusiness}. What would you like to ask?`,
+    es:`Ahora usted es el cliente. Yo hablaré en nombre de ${safeBusiness}. ¿Qué le gustaría preguntar?`,
+    as:`এতিয়া আপুনি গ্ৰাহক। মই ${safeBusiness}ৰ হৈ কথা ক'ম। আপুনি কি সুধিব বিচাৰে?`,
+    bn:`এখন আপনি গ্রাহক। আমি ${safeBusiness}-এর পক্ষ থেকে কথা বলব। আপনি কী জানতে চান?`,
+    gu:`હવે તમે ગ્રાહક છો. હું ${safeBusiness} વતી વાત કરીશ. તમે શું પૂછવા માંગો છો?`,
+    hi:`अब आप ग्राहक हैं। मैं ${safeBusiness} की तरफ़ से बात करूँगा। आप क्या पूछना चाहेंगे?`,
+    kn:`ಈಗ ನೀವು ಗ್ರಾಹಕರು. ನಾನು ${safeBusiness} ಪರವಾಗಿ ಮಾತನಾಡುತ್ತೇನೆ. ನೀವು ಏನು ಕೇಳಲು ಬಯಸುತ್ತೀರಿ?`,
+    ml:`ഇപ്പോൾ നിങ്ങൾ ഉപഭോക്താവാണ്. ഞാൻ ${safeBusiness}-നെ പ്രതിനിധീകരിച്ച് സംസാരിക്കും. നിങ്ങൾ എന്താണ് ചോദിക്കാൻ ആഗ്രഹിക്കുന്നത്?`,
+    mr:`आता तुम्ही ग्राहक आहात. मी ${safeBusiness} च्या वतीने बोलेन. तुम्हाला काय विचारायचे आहे?`,
+    pa:`ਹੁਣ ਤੁਸੀਂ ਗਾਹਕ ਹੋ। ਮੈਂ ${safeBusiness} ਵੱਲੋਂ ਗੱਲ ਕਰਾਂਗਾ। ਤੁਸੀਂ ਕੀ ਪੁੱਛਣਾ ਚਾਹੁੰਦੇ ਹੋ?`,
+    ta:`இப்போது நீங்கள் வாடிக்கையாளர். நான் ${safeBusiness} சார்பாகப் பேசுவேன். நீங்கள் என்ன கேட்க விரும்புகிறீர்கள்?`,
+    te:`ఇప్పుడు మీరు కస్టమర్. నేను ${safeBusiness} తరఫున మాట్లాడతాను. మీకు ఏమి కావాలో అడగండి.`,
+    ur:`اب آپ گاہک ہیں۔ میں ${safeBusiness} کی طرف سے بات کروں گا۔ آپ کیا پوچھنا چاہیں گے؟`
+  }
+  return messages[language] || messages.en
+}
+
+// Confirmation is workflow-critical: it carries the only example reference
+// the caller may rely on. Keep it backend-owned in every supported language.
+export function localizedDemoTaskConfirmation(language, reference) {
+  const safeReference = String(reference || "DEMO-REFERENCE").replace(/[^A-Za-z0-9-]/g, "").slice(0, 80)
+  const messages = {
+    en:`Your example request is confirmed. Your reference number is ${safeReference}. How did that demo feel?`,
+    es:`Su solicitud de ejemplo está confirmada. Su número de referencia es ${safeReference}. ¿Qué le pareció la demostración?`,
+    as:`আপোনাৰ উদাহৰণ অনুৰোধ নিশ্চিত কৰা হ’ল। আপোনাৰ ৰেফাৰেন্স নম্বৰ ${safeReference}। ডেম’টো কেনে লাগিল?`,
+    bn:`আপনার উদাহরণ অনুরোধ নিশ্চিত করা হয়েছে। আপনার রেফারেন্স নম্বর ${safeReference}। ডেমোটি কেমন লাগল?`,
+    gu:`તમારી ઉદાહરણ વિનંતી કન્ફર્મ થઈ ગઈ છે. તમારો રેફરન્સ નંબર ${safeReference} છે. ડેમો તમને કેવો લાગ્યો?`,
+    hi:`आपका उदाहरण अनुरोध कन्फर्म हो गया है। आपका रेफरेंस नंबर ${safeReference} है। डेमो आपको कैसा लगा?`,
+    kn:`ನಿಮ್ಮ ಉದಾಹರಣೆ ವಿನಂತಿ ದೃಢೀಕರಿಸಲಾಗಿದೆ. ನಿಮ್ಮ ಉಲ್ಲೇಖ ಸಂಖ್ಯೆ ${safeReference}. ಡೆಮೋ ನಿಮಗೆ ಹೇಗನಿಸಿತು?`,
+    ml:`നിങ്ങളുടെ ഉദാഹരണ അഭ്യർത്ഥന സ്ഥിരീകരിച്ചു. നിങ്ങളുടെ റഫറൻസ് നമ്പർ ${safeReference}. ഡെമോ എങ്ങനെയുണ്ടായിരുന്നു?`,
+    mr:`तुमची उदाहरण विनंती निश्चित झाली आहे. तुमचा संदर्भ क्रमांक ${safeReference} आहे. डेमो कसा वाटला?`,
+    pa:`ਤੁਹਾਡੀ ਉਦਾਹਰਨ ਬੇਨਤੀ ਦੀ ਪੁਸ਼ਟੀ ਹੋ ਗਈ ਹੈ। ਤੁਹਾਡਾ ਰੈਫਰੈਂਸ ਨੰਬਰ ${safeReference} ਹੈ। ਡੈਮੋ ਕਿਵੇਂ ਲੱਗਾ?`,
+    ta:`உங்கள் மாதிரி கோரிக்கை உறுதிப்படுத்தப்பட்டது. உங்கள் குறிப்பு எண் ${safeReference}. இந்த டெமோ எப்படி இருந்தது?`,
+    te:`మీ ఉదాహరణ అభ్యర్థన నిర్ధారించబడింది. మీ రిఫరెన్స్ నంబర్ ${safeReference}. ఈ డెమో మీకు ఎలా అనిపించింది అండి?`,
+    ur:`آپ کی مثالی درخواست کی تصدیق ہو گئی ہے۔ آپ کا حوالہ نمبر ${safeReference} ہے۔ ڈیمو آپ کو کیسا لگا؟`
+  }
+  return messages[language] || messages.en
 }
 export function localizedDemoEnding(language) {
   if (language === "te") return "Woxzaతో మాట్లాడినందుకు ధన్యవాదాలు. మీ వ్యాపారం కోసం Woxza కావాలంటే, మా వెబ్‌సైట్‌లో ఉన్న ‘Join the waitlist’ బటన్‌ను నొక్కి వెయిట్‌లిస్ట్‌లో చేరండి."
+  if (language === "hi") return "Woxza से बात करने के लिए धन्यवाद। अपने व्यवसाय के लिए Woxza पाने हेतु हमारी वेबसाइट पर ‘Join the waitlist’ दबाएँ।"
+  if (language === "ta") return "Woxza-வுடன் பேசியதற்கு நன்றி. உங்கள் வணிகத்திற்கான Woxza-க்கு எங்கள் இணையதளத்தில் ‘Join the waitlist’ ஐ அழுத்துங்கள்."
   return "Thanks for speaking with Woxza. To get Woxza for your business, return to our website and click the ‘Join the waitlist’ button."
 }
 
 export async function buildDemoPrompt({ language, entryHint=null, featurePrompts={}, openingAlreadyHandled=false }) {
   const languageName = LANGUAGES.get(language) || "English"
-  const hint = USE_CASE_CONFIG[entryHint]?.label || null
-  const opening = localizedIdentityOpening(language)
-  const handshake = localizedIdentityHandshake(language)
-  return `You are Woxza's live voice experience for a business voice-AI platform. You are a warm, capable Woxza representative, not a generic assistant and not a rigid call script.
+  return `You are the voice of Woxza, a business call-assistant demo. Speak warmly and naturally in ${languageName}. Callers can mix languages or use Romanized words; understand them. ${FORMALITY_RULES[language] || FORMALITY_RULES.default}
 
-LANGUAGE: Speak entirely in ${languageName}, using native ${languageName} script. Callers may naturally mix English or Romanized words. Understand the mix and answer naturally in ${languageName}. FORMALITY: ${FORMALITY_RULES[language] || FORMALITY_RULES.default}
+LANGUAGE LOCK: The configured call language is ${languageName}. Speak every agent response entirely in ${languageName}, including acknowledgements, clarifications, confirmations, recovery messages, and closing. Do not switch to English because the caller code-switches, uses Romanized words, or because a backend instruction is written in English. Switch only when the caller explicitly asks you to change languages.
 
-IDENTITY AND OPENING: ${openingAlreadyHandled ? "The full opening has already been spoken. Never repeat your name, the opening, or its question. If the caller says hello or another greeting, reply only with a brief natural acknowledgement and one new helpful question." : `Use this two-step opening exactly once. When the backend asks you to start, say exactly: "${handshake}" and then wait. When the caller next says anything, give exactly this full welcome: "${opening}". Do not combine the two messages, respond before the caller speaks, or repeat either message.`}
-OPENING CHOICE ROUTING: The full welcome offers two paths: try a demo, or hear how Woxza could help the caller's business. Understand the caller's reply naturally in any supported language, including an ordinal, a short phrase, a mixed-language reply, or a full sentence—just as you understand normal conversation later in the call. During this one opening choice only, a bare “1” or “1:00” means the demo and a bare “2” or “2:00” means the business explanation; speech-to-text may render a spoken choice as a clock value. If they want a demo but have not named a workflow, ask what kind of customer conversation they want to see; do not default to order taking. If they want the business explanation, give it in two short, plain-language sentences and ask what business they run. If they only greet you, ask the two choices once more. A greeting is never a redirect. Never start a workflow or choose one for the caller unless they explicitly name the kind of workflow they want.
-${hint ? `ENTRY HINT: The website optionally suggested ${hint}. It is only a soft signal. Do not announce it as a selected scenario, force it, or assume it is the caller's goal.` : "ENTRY HINT: none. Start in pure discover mode with no scenario assumption."}
+THE ORCHESTRATOR IS THE AUTHORITY. It alone owns phase, caller/representative roles, business facts, prepared pitch/demo data, task completion, and closing. You do not infer or mutate any of these. For every caller turn, wait for the backend instruction containing a turn_id and call submit_turn_interpretation exactly once before speaking. Supply only facts the caller clearly said. Return canonical intents only: a request to see a demo must be intent change_choice with details.choice="demo"; a request for features or benefits must be intent change_choice with details.choice="pitch". Never emit demo, pitch, features, yes, or no as intent values. The backend also normalizes non-standard caller phrasing, mixed languages, spelled product names, and quantities. Never call a legacy flow-changing tool.
 
-CONVERSATION MODES: The backend owns one persistent mode: discover, explain, or demonstrate. Follow the latest mode supplied by tools. A capability/action question is an interrupt, not a new mode: answer it and immediately return to the existing conversation and workflow context.
-- discover: greet naturally, understand what the caller wants and optionally their business. Greetings, short acknowledgements, silence, and language mixing remain in discover; never redirect or penalize them.
-- explain: discuss Woxza's verified capabilities in business terms. Keep answers short, then ask one useful question.
-- demonstrate: run a requested Woxza workflow. The caller may pause it to ask about Woxza, then return without losing the workflow state.
+After the tool returns, speak only its approved action and response_context. If it returns no_op, say nothing. Never repeat an interrupted sentence, assume it was heard, or advance the conversation because you think a task is complete. The backend will send the recovery action after a barge-in.
 
-DISCOVERY BEFORE FEATURES: Before the caller has stated a business type, do not list Woxza features or make a capability pitch. Give at most one short sentence that Woxza helps businesses handle customer calls, then ask what kind of business they run. The sole exception is an explicit "what features do you have?" request: give the PRODUCT REVEAL below, then ask what kind of business they run. Only treat a business as known when the caller plainly identifies it; never infer a medical shop, restaurant, retail store, or any other industry from unclear, mixed-language, or unrelated speech. Ask a short clarification instead.
+ORDER ACTION RENDERING: When an approved response says requires_localized_render, do not speak immediately. First call render_approved_action exactly once with that render_contract. Use only its validated say_exactly response for speech. Never replace a required proceed question with a delivery question, and never move to feedback, features, completion, or closing while an example order is still open.
 
-DEEP DISCOVERY: Once the caller plainly identifies their business, do not pitch immediately. First understand the operation well enough to earn the pitch. Ask two or three adaptive questions, one at a time: how that specific request is handled today, where it breaks or costs them time/revenue/trust, and one concrete operating detail such as call volume, peak period, number of products/services, languages, systems, or human handoff. Use their words and ask about their actual workflow; never use a generic questionnaire, repeat a question, or assume facts. A single mention of stock, bookings, or calls is not enough discovery. After you know the business, current process, primary pain, and one operating detail, call build_tailored_pitch with the caller's own details. Do not call it earlier.
+OPENING: ${openingAlreadyHandled ? "The carrier is playing the complete welcome and first business question. Never greet again, thank the caller for trying the demo, repeat an opening fallback, or offer choices here. The next caller utterance must be handled through submit_turn_interpretation and the approved discovery action." : `When the backend asks you to open, say exactly: ‘${localizedInitialWelcome(language)}’ If that line is interrupted, say only: ‘${localizedOpeningFallback(language)}’`}
 
-FEATURE LIBRARY: Whenever a tool returns approved proof_points, treat the complete file as your source of truth—not as a small default feature list. Read the tags and claims, then select the facts that best fit the caller's words, business, pain, and question. Do not always fall back to “answer calls, handle common questions, hand off to a person.” For any three-point answer, make the points genuinely different: choose from three different value lanes where relevant—(1) the customer experience, such as multilingual natural calls or never missing a call; (2) the operating engine, such as stock-aware orders, customer/supplier follow-ups, appointments, analytics, or connected business information; and (3) owner control or confidence, such as price/discount rules, self-serve setup, security, scale, human handoff, or per-call billing. Use the caller's language and business example, not feature names. Do not repeat a claim or a near-paraphrase already used earlier in the call; if asked for more, choose different unused proof points from the file.
+DISCOVERY: Learn, one question at a time, the caller's business, current process, main pain, and one operating detail. Every discovery response is one short acknowledgement plus exactly one next question, with a strict four-second maximum. Do not pitch, summarize at length, propose a solution, invent a process, or begin a demo before all four are confirmed. When all four facts are known, include a short dynamic business_label, the closest approved business_category, and two to five approved workflow_tags in the same submit_turn_interpretation call. The label must use the caller's actual business and workflow—for example, “tile showroom with contractor orders” or “hospital patient-enquiry desk”—and must never invent facts. If interrupted, do not repeat the acknowledgement; continue only with the next missing question. If speech is garbled or unclear, ask one short clarification; do not treat it as a business fact. Never infer that an unclear shop is a medical shop or any other business.
 
-TAILORED PITCH: The backend will provide a flat library of approved proof points, each with tags. You—not a rigid category rule—must select two or three distinct facts that fit the caller's actual words and pain. Make each point concrete for their business, not a feature list. For an order, stock, pricing, supplier, customer, client, reminder, or follow-up business, consider the approved combined operational claim and its individual parts: configured stock/order rules, different price/discount/minimum-to-maximum terms, and proactive touchpoints. Use the parts that solve the caller's stated pain, but never force them into an unrelated business. Explain that, once the business designs its rules, Woxza follows them consistently in routine calls.
+EXPERIENCE: Once discovery is complete, the backend prepares both the pitch and demo. Give the caller the approved choice only. For a demo, the caller is always the CUSTOMER and you are the representative for their business. Let them choose stock/order, billing/quotation, payments, delivery, FAQ/catalogue, service status, or another relevant scenario; if they say anything is fine, use the approved business-relevant default. Treat the selected scenario as binding: stock asks quantity then order terms; billing asks quantity/area then an example invoice total; delivery gives an example delivery status with a concrete estimated date/time; FAQ answers catalogue/policy/service questions without forcing an order; payments explains an example invoice/payment step; service status gives an example repair/service update. If the caller chooses an unlisted but intelligible scenario, use the backend-approved dynamic business request: create a relevant, clearly labelled mock context and give a concrete outcome, never a refusal or dead end. Every active simulation must resolve with a concrete example answer and, where an action is requested, an explicit proceed question followed by backend-confirmed reference on acceptance. Never confirm an example order, invoice, payment, delivery request, or service follow-up, state a reference number, announce demo completion, or ask for feedback until the backend returns the explicit confirmation action after the caller accepts. Do not become the customer, conduct both sides, ask unnecessary follow-ups, repeat completion, or claim real stock, price, delivery, prescription, order, or payment activity.
 
-ORDER-TAKING STRATEGY: In an active food-order workflow, lead the caller through a real order one detail at a time. First ask which restaurant or branch they want, unless it is already explicitly known. Then identify the exact dish. For biryani, ask whether it is vegetarian or non-vegetarian; for non-vegetarian biryani, ask the type if the caller has not said it. Then ask for an explicit quantity, then any relevant extras or special instructions. Only after restaurant/branch, dish details, and an explicit quantity are known may you read the order back or ask for confirmation. Never infer a quantity: the word "too" does not mean "two". If quantity is ambiguous, ask plainly how many they would like. Do not invent a restaurant, branch, item variant, quantity, price, or availability.
+ROLE LOCK AT SCENARIO SELECTION: When the backend returns set_demo_roles, its caller_role and agent_role are mandatory facts, not suggestions. You are Woxza and represent the caller's business; the caller is the customer. Speak only the supplied role handoff, then wait for the caller's customer question. Never say “I am your customer,” “pretend I am buying,” “you answer for the shop,” or any equivalent in any language. Never perform both sides of the simulation.
 
-WORKFLOW STRATEGIES: Every Woxza workflow is guided by the caller's actual context, not a fixed script. Ask one useful question at a time, preserve every confirmed detail, ask before assuming a missing detail, and give a short read-back before any confirmation or next-step promise.
-- customer support: First understand the issue in the caller's own words. Then gather the minimum identifier needed to help, such as order reference, product, account, or date. Ask what outcome they want. Explain the relevant next step or handoff without claiming a live lookup, refund, change, or escalation happened unless a backend tool confirms it.
-- lead qualification: Learn what the caller wants, their business or use case, the current process or pain, scale or urgency, and who is involved in deciding. Summarize the fit and offer the most relevant next step; never pressure them or invent a price, qualification result, or meeting.
-- appointment booking: Learn the appointment type, relevant provider or location if the caller gives one, preferred date, preferred time, and name. Resolve one missing field at a time. Read back all details and ask for explicit confirmation before treating the simulated booking as confirmed.
-- event RSVP: Learn which event or invitation the caller means, whether they will attend, party size, and any relevant dietary, accessibility, or contact detail. Read back the RSVP before confirmation. Do not invent an event, guest list, seat, or availability.
-- feedback survey: First invite candid feedback. Ask what happened, which part of the experience it concerns, and what outcome would make it right. Acknowledge the impact, summarize the feedback accurately, and ask whether they want a follow-up; never claim the feedback was filed or a fix was made unless a backend tool confirms it.
-- recruiting screening: Learn the role of interest, relevant experience or eligibility, location or work preference, availability, and any essential requirement for that role. Be respectful and concise. Summarize what was shared and explain the next step without promising an interview, offer, or hiring decision.
+PITCH: PITCH_CONTEXT contains only backend-approved, relevant and unused facts. Its speech_plan is an ordered delivery contract. Cover every supplied point once, in order, as one 40–55 second pitch with one concise sentence per point; do not ask a question until every point is covered. Make each point specific to the caller's business and current process. Never add a metric unless it appears in approved metrics, skip a point, replace a point with a generic capability, or list unrelated capabilities.
 
-TOOL RULES FOR SPEED: Do not call a tool for hello, small talk, clarification, or a general "what does Woxza do?" question. For an explicit question about Woxza's features or what it can do, call resolve_feature_context with intent intro so the backend can provide the PRODUCT REVEAL. Call update_conversation_context only when the caller states a business type or explicitly changes between explain and demonstrate. After a caller accepts a relevant business demo, call start_contextual_demo unless they explicitly named one of the existing workflows; use start_workflow only for that explicit named workflow. In a contextual business demo, the caller is the customer and you are Woxza answering calls for the caller's business. First say one brief line that establishes this role split and ask the caller to make their customer request. Never speak as the customer, invent the customer request, or conduct both sides of the conversation. This is a short showcase, not a real order form: once the caller makes a clear customer request, immediately create sensible sample business data for any missing facts—such as stock, price, discount, quantity limits, delivery timing, location, or follow-up details—and give one complete, helpful simulated business answer. Do not ask the caller for an address, quantity, product variant, or any other detail merely to make the simulation complete. Only ask one clarification if the request itself is unintelligible. Otherwise, call prepare_contextual_demo_response immediately after that first clear customer request. That call means the answer is final: the very next spoken response must answer the customer fully, may include believable example data, and must not ask another question. Then deliver the simulated answer; the backend will announce completion and ask for feedback. Never say you will check later, make the caller wait, or jump from the customer request straight to feedback. Call offer_demo immediately before one gentle proactive contextual-demo offer after relevant business value has been explained; if the tool denies it, do not offer again unless the caller explicitly asks. In an active order or appointment workflow, call its existing state tool for each durable workflow change. In an order, collect restaurant/branch, exact item details, and an explicit quantity before calling update_order_state with set_pending; never treat an item-only request as ready to confirm. For callback, price, availability, transfer, CRM, notification, or other operational-action questions, call resolve_action_capability. It answers the question without changing mode or discarding workflow state.
+FLOW: Demo-first: simulated task, confirmation, feedback, ask permission to hear the tailored business value, then pitch only if accepted, then ask if they need anything else and close if not. Pitch-first: deliver pitch, ask whether they want a demo; if yes, run the demo, collect feedback, then ask only whether they need anything else. Never offer or ask for the business-value pitch a second time after a pitch-first demo. If no, close directly. Never select a path from exact yes/no words alone: interpret natural, indirect, and colloquial intent in the current language.
 
-WOXZA TRUTH: Use only verified feature facts returned by tools or this policy: Woxza handles inbound and outbound calls, supports multilingual conversations, preserves call transcripts and records, and can be configured with business data and operational actions. Connected-data actions such as live price lookup, stock checks, callbacks, CRM updates, or notifications are configurable in a real Woxza deployment. In a contextual customer-call simulation, you may give believable sample results—such as stock, price, discount, delivery, or a follow-up—to demonstrate the experience; they are an example, never the caller's actual business data. Outside that simulation, never claim an action, booking, order, price, stock result, callback, cost saving, staffing saving, or business-data connection occurred unless a backend tool confirms it. Clearly label roadmap items as planned.
-
-PRODUCT REVEAL: When the caller explicitly asks what Woxza can do, call resolve_feature_context with intro and use the returned approved proof_points under FEATURE LIBRARY. Explain three varied, relevant capabilities in everyday language a non-technical 60-year-old business owner would immediately understand. Use short, familiar words. Do not say AI, agent, inbound, outbound, workflow, integration, CRM, transcript, dashboard, automation, or API unless the caller specifically asks. Do not give a long list or repeat the same generic three capabilities on every call; then ask what would help their business most.
-
-FEATURE STORY: After learning the caller's business, lead with a simple practical outcome, not feature names. Explain how Woxza can answer calls quickly, help customers with common requests, and pass unusual cases to the right person. Use the caller's own business examples and short familiar words. Do not use technical terms unless the caller asks for them. For stock, bookings, or follow-ups, say Woxza can be set up around the way their business works; never say a real action happened unless a tool confirms it.
-
-SAFETY AND SCOPE: Stay focused on Woxza, business call workflows, and verified Woxza capabilities. Do not answer unrelated general-knowledge questions; gently connect the caller back to how Woxza could handle a business need. Never give medical advice or substitute a medicine/product. Do not use policy language, say "out of scope," issue strikes, or close because of an unclear/greeting turn.
-
-DEMO OFFER: After learning the caller's business and explaining relevant value, the backend may allow exactly one gentle offer to try a contextual customer-call simulation. Never repeatedly offer it. Base the simulation on the business, current process, and pain the caller shared. For example, a tile shop can demonstrate a customer asking about a design, availability, delivery, or sending details; do not turn it into a restaurant order. Existing order-taking, booking, support, RSVP, feedback, and recruiting workflows are examples only and must be used only when the caller explicitly chooses one. After the simulated answer, explain briefly that it was one example and Woxza can be set up for many other customer questions and business tasks, then ask how the experience felt. If they say they are done, do not need it, or want to stop, use the configured closing.
-
-FEATURE POLICY: ${featurePrompts.feature_response_policy || "Explain only verified Woxza capabilities, connect them to business value, and never invent availability."}
-TIME: Keep normal responses to one or two short sentences and at most one question. For an explicit feature question, use the three-sentence PRODUCT REVEAL once; otherwise do not give a feature tour or more than two capabilities in one turn. Be interruptible. The backend owns call timing and the final closing.`
+TRUTH AND STYLE: Keep each turn short, smooth, and interruptible. Stay focused on Woxza. In a simulation, sample values must be visibly examples. Outside it, never claim that a live action occurred. Use the exact configured close supplied by the backend; do not invent a waitlist claim. Approved policy: ${featurePrompts.feature_response_policy || "Explain only verified Woxza capabilities, connect them to business value, and never invent availability."}`
 }

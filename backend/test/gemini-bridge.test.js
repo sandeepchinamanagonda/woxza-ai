@@ -1,10 +1,10 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
-import { createPcmSpeechDetector, createStreamingPcmResampler, resamplePcm, swapPcm16Endianness } from "../src/demo/audio-codec.js"
+import { createPcmSpeechDetector, createSpeechSegmentBuffer, createStreamingPcmResampler, resamplePcm, swapPcm16Endianness } from "../src/demo/audio-codec.js"
 import { createOpeningController } from "../src/demo/opening-controller.js"
 import { beginContextualDemo, completeContextualDemo, createContextualDemoState, prepareContextualDemoResponse } from "../src/demo/contextual-demo-state.js"
-import { advanceScopeRedirect, containsOrderConfirmation, createCallerSilenceMonitor, createDemoOrderState, createPacedMuLawWriter, createScopeRedirectState, decodePlivoInboundAudio, describeGeminiLiveError, geminiCapacityRetryDelay, isConversationEndRequest, isGeminiCapacityClose, isOrderAffirmative, isOrderCorrection, isPostOrderActionQuestion, looksLikeOrderConfirmationQuestion, missingOrderDetails, openGeminiSessionWithRetry, resolveNumericOpeningChoice } from "../src/demo/gemini-bridge.js"
+import { advanceScopeRedirect, containsOrderConfirmation, createApprovedActionSpeechWatchdog, createCallerSilenceMonitor, createDemoOrderState, createScopeRedirectState, decodePlivoInboundAudio, describeGeminiLiveError, geminiCapacityRetryDelay, isConversationEndRequest, isGeminiCapacityClose, isOrderAffirmative, isOrderCorrection, isPostOrderActionQuestion, looksLikeOrderConfirmationQuestion, missingOrderDetails, openGeminiSessionWithRetry, resolveNumericOpeningChoice } from "../src/demo/gemini-bridge.js"
 
 test("converts PCM samples between little-endian and L16 network byte order", () => {
   const littleEndian = Buffer.from([0x34, 0x12, 0xfe, 0xff, 0x00, 0x80])
@@ -51,20 +51,64 @@ test("caller energy detection reacts to speech but ignores carrier silence", () 
   assert.equal(detector.push(Buffer.alloc(320)), false)
 })
 
-test("opening controller gives the caller a short first-speech window", () => {
+test("opening buffer retains speech with short context but drops long silence", () => {
+  const buffer = createSpeechSegmentBuffer({ preRollFrames:1, postRollFrames:2, threshold:500 })
+  const silence = Buffer.alloc(320)
+  const speech = Buffer.alloc(320)
+  for (let index = 0; index < 160; index += 1) speech.writeInt16LE(index % 2 ? 3000 : -3000, index * 2)
+  for (let index = 0; index < 20; index += 1) buffer.push(silence)
+  buffer.push(speech)
+  buffer.push(silence)
+  buffer.push(silence)
+  const frames = buffer.drain().flat()
+  assert.equal(frames.length, 4)
+  assert.deepEqual(frames[1], speech)
+})
+
+test("approved action watchdog retries only when output has not started", () => {
+  let timer
+  const retried = []
+  const watchdog = createApprovedActionSpeechWatchdog({
+    schedule:callback => (timer = { callback, unref() {} }),
+    cancel:() => { timer = undefined },
+    onTimeout:action => retried.push(action.action)
+  })
+  watchdog.arm({ action:"ask_missing_business_detail" })
+  timer.callback()
+  assert.deepEqual(retried, ["ask_missing_business_detail"])
+  watchdog.arm({ action:"clarify" })
+  watchdog.noteOutput()
+  assert.equal(timer, undefined)
+  assert.deepEqual(retried, ["ask_missing_business_detail"])
+})
+
+test("opening controller reports caller speech only while its atomic greeting is active", () => {
   let timer
   const events = []
+  let completionSource
   const controller = createOpeningController({
-    callerFirstWindowMs:200,
     schedule:callback => (timer = { callback, unref() {} }),
     cancel:() => { timer = undefined },
     onCallerFirst:() => events.push("caller"),
+    onGreetingComplete:({ source } = {}) => { completionSource = source },
     onWoxzaFirst:() => events.push("woxza")
   })
   controller.start()
+  controller.markGreetingAudioStarted()
   assert.equal(controller.noteCallerSpeech(), true)
-  assert.deepEqual(events, ["caller"])
+  assert.deepEqual(events, ["woxza", "caller"])
+  timer.callback()
+  assert.equal(completionSource, "fallback_timeout")
   assert.equal(controller.noteCallerSpeech(), false)
+
+  const explicitEvents = []
+  const explicit = createOpeningController({
+    onGreetingComplete:({ source } = {}) => explicitEvents.push(source)
+  })
+  explicit.start()
+  assert.equal(explicit.completeGreeting(), true)
+  assert.equal(explicit.completeGreeting(), false)
+  assert.deepEqual(explicitEvents, ["carrier_playback_complete"])
 
   const secondEvents = []
   const second = createOpeningController({
@@ -73,6 +117,7 @@ test("opening controller gives the caller a short first-speech window", () => {
     onWoxzaFirst:() => secondEvents.push("woxza")
   })
   second.start()
+  second.markGreetingAudioStarted()
   timer.callback()
   assert.deepEqual(secondEvents, ["woxza"])
 })
@@ -177,7 +222,7 @@ test("requires the complete restaurant order before confirmation", () => {
   assert.deepEqual(missingOrderDetails({ restaurant:"Viceroy", item:"biryani", variant:"chicken", quantity:"2" }), [])
 })
 
-test("legacy scope helper remains isolated from the conversational prompt", async () => {
+test("legacy scope helper remains isolated from the orchestrator prompt", async () => {
   const state = createScopeRedirectState()
   const result = advanceScopeRedirect(state, { language:"en", currentUseCase:"order_taking", category:"general", ending:"ENDING" })
   assert.equal(result.action, "set_boundary")
@@ -185,52 +230,21 @@ test("legacy scope helper remains isolated from the conversational prompt", asyn
   assert.doesNotMatch(discoverResult.sayExactly, /undefined/i)
   const source = await readFile(new URL("../src/demo/prompt.js", import.meta.url), "utf8")
   assert.doesNotMatch(source, /OUT-OF-SCOPE HANDLING/)
-  assert.match(source, /never redirect or penalize them/)
+  assert.match(source, /THE ORCHESTRATOR IS THE AUTHORITY/)
+  assert.match(source, /Never repeat an interrupted sentence/)
 })
 
-test("paces irregular Gemini output into short carrier-safe frames", () => {
-  let now = 0
-  let nextId = 0
-  const timers = new Map()
-  const schedule = (callback, delay) => {
-    const timer = { id:++nextId, due:now + delay, callback, unref() {} }
-    timers.set(timer.id, timer)
-    return timer
-  }
-  const cancel = timer => timers.delete(timer?.id)
-  const advance = milliseconds => {
-    const target = now + milliseconds
-    while (true) {
-      const timer = [...timers.values()].sort((left, right) => left.due - right.due)[0]
-      if (!timer || timer.due > target) break
-      timers.delete(timer.id)
-      now = timer.due
-      timer.callback()
-    }
-    now = target
-  }
-  const frames = []
-  const writer = createPacedMuLawWriter({ onFrame:frame => frames.push({ at:now, frame:Buffer.from(frame) }), schedule, cancel })
-  writer.push(Buffer.alloc(100, 1))
-  writer.push(Buffer.alloc(380, 2))
-  assert.equal(frames.length, 1)
-  advance(40)
-  assert.equal(frames.length, 3)
-  assert.deepEqual(frames.map(entry => entry.at), [0, 20, 40])
-  assert.ok(frames.every(entry => entry.frame.length === 160))
-  writer.push(Buffer.alloc(81, 3))
-  writer.flush()
-  advance(20)
-  assert.equal(frames.at(-1).frame.length, 160)
-  writer.clear()
-})
-
-test("production bridge delegates playback buffering to Plivo and preserves lifecycle guards", async () => {
+test("production bridge forwards approved carrier audio directly and preserves lifecycle guards", async () => {
   const source = await readFile(new URL("../src/demo/gemini-bridge.js", import.meta.url), "utf8")
   assert.match(source, /createStreamingOutputSafetyGuard/)
   assert.match(source, /holdMs:120/)
-  assert.equal((source.match(/createPacedMuLawWriter/g) || []).length, 1)
-  assert.match(source, /push\(value\)[\s\S]*plivoStream\.playAudio\(value\)/)
+  assert.doesNotMatch(source, /createPacedMuLawWriter/)
+  assert.match(source, /plivoStream\.playAudio\(value\)/)
+  assert.match(source, /delayMs:150/)
+  assert.doesNotMatch(source, /callerTurnFinalizing \|\| !authorizedAudioActionId/)
+  assert.doesNotMatch(source, /outputWithoutApproval/)
+  assert.doesNotMatch(source, /audioChunkDeduplicator\.shouldForward/)
+  assert.doesNotMatch(source, /liveTurnGate\.claim/)
   assert.match(source, /audioWriter\.push\(muLaw8k\)/)
   assert.match(source, /name:"update_booking_state"/)
   assert.match(source, /name:"handle_scope_redirect"/)
@@ -253,6 +267,9 @@ test("production bridge delegates playback buffering to Plivo and preserves life
   assert.match(source, /streamingGuard\.push/)
   assert.match(source, /caller_transcription_received/)
   assert.match(source, /first_model_audio_received/)
+  assert.match(source, /const pendingAction = result\.pending_session\.pending_action/)
+  assert.match(source, /action_id:pendingAction\.action_id/)
+  assert.doesNotMatch(source, /eventType:"turn_normalized"/)
   assert.match(source, /onClosingComplete\?\.\(\{ playbackDelayMs:completedAudioDurationMs \+ 150 \}\)/)
   assert.match(source, /acceptingCallerAudio = false/)
   assert.match(source, /Do not cut an active workflow short/)

@@ -66,6 +66,55 @@ export function createPcmSpeechDetector({ threshold=650, consecutiveFrames=2 } =
   }
 }
 
+export function isPcmAudible(input, { threshold=180 } = {}) {
+  const samples = new Int16Array(input.buffer, input.byteOffset, Math.floor(input.length / 2))
+  if (!samples.length) return false
+  let energy = 0
+  for (const sample of samples) energy += sample * sample
+  return Math.sqrt(energy / samples.length) >= threshold
+}
+
+// Keeps only caller speech with enough surrounding audio for reliable STT.
+// It deliberately drops long quiet stretches accumulated while the welcome is
+// playing, which otherwise turn into a delayed 20+ second replay.
+export function createSpeechSegmentBuffer({ preRollFrames=15, postRollFrames=30, threshold=650 } = {}) {
+  let preRoll = []
+  let active = null
+  let quietFrames = 0
+  const completed = []
+  const audible = input => isPcmAudible(input, { threshold })
+  const finish = () => {
+    if (active?.length) completed.push(active)
+    active = null
+    quietFrames = 0
+  }
+  return {
+    push(frame) {
+      const value = Buffer.from(frame)
+      if (!active) {
+        if (!audible(value)) {
+          preRoll.push(value)
+          if (preRoll.length > preRollFrames) preRoll.shift()
+          return
+        }
+        active = [...preRoll, value]
+        preRoll = []
+        quietFrames = 0
+        return
+      }
+      active.push(value)
+      if (audible(value)) quietFrames = 0
+      else if (++quietFrames >= postRollFrames) finish()
+    },
+    drain() {
+      finish()
+      const value = completed.splice(0)
+      return value
+    },
+    get frameCount() { return completed.reduce((count, segment) => count + segment.length, 0) + (active?.length || 0) }
+  }
+}
+
 export function swapPcm16Endianness(input) {
   const output = Buffer.from(input)
   return swapBytes16(output)

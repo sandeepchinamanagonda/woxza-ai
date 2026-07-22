@@ -63,5 +63,5 @@ export function createDemoRuntime(db) {
     try { queues = queue?.getJobCounts ? await queue.getJobCounts("waiting", "active", "delayed", "failed") : {} } catch (error) { queues = { error:error.message } }
     return { redis:redisHealth, queues }
   }
-  return { service, health, close:async () => { await worker?.close(); await queue?.close?.(); await redis?.quit(); redis=null } }
+  return { service, redis, health, close:async () => { await worker?.close(); await queue?.close?.(); await redis?.quit(); redis=null } }
 }

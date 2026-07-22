@@ -1,183 +1,386 @@
 {
   "_notes": "Approved capability claims for live pitch composition. All entries in this library are approved for the live agent.",
+  "_vocabulary": {
+    "verticals": ["pharma_wholesale", "retail_general", "restaurant", "appointment_services", "real_estate", "universal"],
+    "pain_tags": ["missed_calls", "follow_up_loss", "staffing_cost", "inconsistent_answers", "after_hours_gap", "manual_data_entry", "slow_response_time", "none"],
+    "workflow_tags": ["inventory_orders", "pricing_discounts", "delivery_fulfilment", "catalogue_quotes", "lead_follow_up", "appointment_enquiries", "patient_enquiries", "call_routing_handoff", "after_hours_coverage", "manual_data_entry", "high_call_volume", "customer_specific_rules"]
+  },
+
   "hero_value_prop": {
     "claim": "Woxza answers every call, understands intent, and takes action so the team can focus on what matters — covering never missing a call, human-like conversation, operational action, and multilingual service.",
     "truth_level": "live",
     "tags": ["positioning", "core-value", "multilingual", "never-miss", "automation"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["missed_calls", "staffing_cost", "after_hours_gap", "inconsistent_answers"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "active_now_features": {
     "claim": "Woxza can use current business information, fit into connected systems, keep calls and follow-ups moving, act during a conversation, and surface unanswered questions for improvement.",
     "truth_level": "live",
     "tags": ["real-time", "integration", "never-miss", "automation", "learning"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["follow_up_loss", "inconsistent_answers", "manual_data_entry", "slow_response_time"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "integration_ecosystem": {
     "claim": "Woxza can be configured to connect with tools teams already use, including CRM, calendar, messaging, and collaboration systems.",
     "truth_level": "live",
     "tags": ["integration", "crm", "calendar", "messaging"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["manual_data_entry", "staffing_cost"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "industry_coverage_CONFLICT": {
     "claim": "Woxza supports customer-call workflows across healthcare, education, professional services, retail, manufacturing, travel, finance, restaurants, distribution, and enterprise teams.",
     "truth_level": "live",
     "tags": ["industry", "flexibility"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["none"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved",
+    "_flag": "Name suggests an unresolved conflict (CONFLICT suffix). Claims coverage across many verticals you may not want stated as broadly as written, especially 'healthcare' and 'finance' if not actually piloted there. Recommend confirming this claim's wording before using it live, independent of tagging."
   },
+
   "approach_workflow_metrics": {
     "claim": "For front-desk, operations, and revenue workflows, Woxza can keep every request moving with a confirmed next action, clear ownership, and follow-up while customer intent is fresh.",
     "truth_level": "live",
     "tags": ["impact", "workflow", "metrics"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["follow_up_loss", "slow_response_time", "staffing_cost", "inconsistent_answers"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "no_code_agent_building": {
     "claim": "Launch specialised agents yourself, without developers.",
     "truth_level": "live",
     "tags": ["onboarding", "self-serve"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["staffing_cost"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "operational_impact_stats": {
     "claim": "Woxza reduces repetitive manual follow-up by keeping calls moving around the clock, resolving requests faster, and ensuring every request has a next step.",
     "truth_level": "live",
     "tags": ["impact", "stats"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["follow_up_loss", "slow_response_time", "after_hours_gap", "missed_calls", "staffing_cost"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "contact_channels": {
     "claim": "Reach Woxza directly by phone at +91 81258 69888 or by email at support@woxza.io.",
     "truth_level": "live",
     "tags": ["support", "contact"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["none"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved",
+    "_flag": "This is contact info, not a pitch capability claim — it will likely never get selected by pain/vertical matching logic. Consider excluding it from selectPitchPoints() entirely and only surfacing it at call-close, handled separately from the pitch selector."
   },
+
   "no_code_multi_agent": {
     "claim": "You can build and launch your own AI voice agents with no code and no developer, including different agents for different business roles.",
     "truth_level": "live",
     "tags": ["onboarding", "self-serve", "flexibility"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["staffing_cost"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "per_call_billing": {
     "claim": "Billing is per call, not per agent, so running multiple agents does not add a per-agent charge.",
     "truth_level": "live",
     "tags": ["pricing", "flexibility"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["staffing_cost"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "industry_agnostic": {
     "claim": "Woxza can be adapted to different industries and customer-call workflows.",
     "truth_level": "live",
     "tags": ["flexibility", "any-industry"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["none"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "pharma_pilot_scale": {
-    "claim": "Live pharma and wholesale orders across 1,500+ products, handled in real time, every day.",
+    "claim": "Live pharma and wholesale orders across 1,500+ products, handled in real time every day, with zero missed calls.",
     "truth_level": "live",
     "tags": ["proof", "scale", "inventory", "distribution"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["pharma_wholesale"],
+    "applicable_pain": ["manual_data_entry", "staffing_cost", "missed_calls"],
+    "has_verified_metric": true,
+    "metric_value": "1,500+ products, zero missed calls",
+    "review_status": "approved",
+    "_flag": "Added 'zero missed calls' from woxza.io live site copy (fetched 2026-07-20). Confirm this is still accurate for the current pilot before relying on it in live calls — 'zero' is an absolute claim and easy to falsify if a single call is ever missed."
   },
+
+  "named_integrations_list": {
+    "claim": "Woxza connects with tools businesses already use, including Salesforce, HubSpot, Zoho CRM, Odoo, Slack, Microsoft Teams, Google Chat, Zoom, WhatsApp, SendGrid, Gmail, Google Calendar, Calendly, Microsoft 365, Notion, Zapier, and GitHub.",
+    "truth_level": "live",
+    "tags": ["integration", "crm", "calendar", "messaging", "named-tools"],
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["manual_data_entry", "staffing_cost"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved",
+    "_flag": "Sourced from woxza.io site copy (fetched 2026-07-20), not previously in this file. This is a marketing logo list — confirm each of these is an actually built/supported integration today before the voice agent states specific vendor names on a live call. If only some are real, trim the list or split into 'currently supported' vs 'roadmap' before approving for live use. Naming a partner integration that doesn't exist yet is a stronger, more falsifiable claim than the generic integration_ecosystem entry."
+  },
+
   "inbound_outbound": {
     "claim": "Agents answer incoming calls and can place follow-up calls for abandoned orders, appointment confirmations, and quiet leads.",
     "truth_level": "live",
     "tags": ["calls", "follow-up", "never-miss", "outbound"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["follow_up_loss", "missed_calls", "after_hours_gap", "slow_response_time"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "software_integration": {
     "claim": "Woxza can be configured with the CRM, calendars, and databases a business already uses, while the owner controls agent data directly.",
     "truth_level": "live",
     "tags": ["integration", "crm", "self-serve"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["manual_data_entry", "staffing_cost"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "answers_from_real_data": {
     "claim": "A Woxza deployment can use connected live systems or uploaded catalog, pricing, and FAQ information so the agent answers from business information rather than a generic script.",
     "truth_level": "live",
     "tags": ["inventory", "catalog", "accuracy"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["pharma_wholesale", "retail_general", "restaurant", "appointment_services"],
+    "applicable_pain": ["inconsistent_answers", "slow_response_time"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "stock_aware_order_receiving": {
     "claim": "Once connected to the business's stock rules, Woxza can receive customer orders using the available quantity, so customers are not promised items the business cannot fulfil.",
     "truth_level": "live",
     "tags": ["inventory", "orders", "availability", "retail", "distribution"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["pharma_wholesale", "retail_general", "restaurant"],
+    "applicable_pain": ["inconsistent_answers", "manual_data_entry"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "configured_prices_and_discounts": {
     "claim": "A business can configure its own prices, discount rules, and minimum-to-maximum order limits, including different terms for different customers or suppliers; Woxza then follows those rules during the call.",
     "truth_level": "live",
     "tags": ["pricing", "discounts", "orders", "suppliers", "retail", "distribution"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["pharma_wholesale", "retail_general", "restaurant"],
+    "applicable_pain": ["inconsistent_answers", "manual_data_entry"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "proactive_customer_supplier_touchpoints": {
     "claim": "Woxza can be set up to call customers, clients, or suppliers for follow-ups, reorder reminders, confirmations, updates, and information collection, so important conversations do not depend on someone remembering to make each call.",
     "truth_level": "live",
     "tags": ["follow-up", "customers", "suppliers", "reorders", "proactive"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["pharma_wholesale", "retail_general", "restaurant", "appointment_services", "real_estate"],
+    "applicable_pain": ["follow_up_loss", "staffing_cost", "slow_response_time"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "configure_once_business_rules": {
     "claim": "After the business sets the information, rules, and handoff choices it wants, Woxza can handle those routine conversations consistently while the team focuses on the work that needs people.",
     "truth_level": "live",
     "tags": ["configuration", "business-rules", "consistency", "automation"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["staffing_cost", "inconsistent_answers"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "automated_touchpoint_stock_discount_workflow": {
     "claim": "Woxza can automatically touch base with a business's customers, clients, or suppliers, receive orders based on live stock quantity, and apply the prices and discount rules that have been configured — including different minimum-to-maximum order terms for different customers or suppliers — so once the rules are designed once, Woxza keeps running that workflow without manual follow-up.",
     "truth_level": "live",
     "tags": ["proactive", "stock-aware", "pricing", "discounts", "customers", "suppliers", "automation", "pitch-highlight"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["pharma_wholesale", "retail_general"],
+    "applicable_pain": ["follow_up_loss", "manual_data_entry", "staffing_cost"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved",
+    "_flag": "This heavily overlaps with 'proactive_customer_supplier_touchpoints', 'stock_aware_order_receiving', and 'configured_prices_and_discounts' combined into one. Since pitch variety depends on distinct points, consider a dedup rule: if this entry is selected, exclude those three component entries from the same pitch call so Gemini doesn't restate the same idea four times."
   },
+
   "appointments_and_crm_actions": {
     "claim": "With a connected calendar and CRM, Woxza can be configured to book appointments and record customer details during the call.",
     "truth_level": "live",
     "tags": ["appointments", "crm", "automation", "healthcare"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["appointment_services", "real_estate", "restaurant"],
+    "applicable_pain": ["manual_data_entry", "missed_calls"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved",
+    "_flag": "Broadened beyond appointment_services to real_estate (property viewing bookings) and restaurant (table reservations), since the underlying capability (calendar + CRM booking) genuinely fits those use cases. Confirm this matches how you'd actually want the demo/pitch to describe it for those two verticals."
   },
+
   "multilingual_codeswitch": {
     "claim": "Woxza handles English, Hindi, Telugu, Tamil, Kannada, and more, including natural mid-conversation language switching.",
     "truth_level": "live",
     "tags": ["multilingual", "natural"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["inconsistent_answers"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "natural_conversation": {
     "claim": "The agent can handle interruptions and natural conversational turns rather than reading a fixed script.",
     "truth_level": "live",
     "tags": ["natural", "voice-quality"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["none"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "callers_dont_notice_ai": {
     "claim": "Most callers do not realise they are talking to AI until told.",
     "truth_level": "live",
     "tags": ["natural", "voice-quality"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["none"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "graceful_handoff": {
     "claim": "When a conversation needs human help, Woxza can be configured to hand off, collect details for follow-up, and surface unanswered questions for improvement.",
     "truth_level": "live",
     "tags": ["escalation", "trust", "learning"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["inconsistent_answers", "follow_up_loss"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "fast_implementation": {
     "claim": "You can sign up, upload business information, and create an agent without waiting on a developer or vendor implementation cycle.",
     "truth_level": "live",
     "tags": ["onboarding", "speed", "self-serve"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["staffing_cost"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "data_security_dpdp": {
     "claim": "Customer data is encrypted in transit and at rest, isolated per account, and built with India's DPDP Act in mind, with access limited to authorised team members.",
     "truth_level": "live",
     "tags": ["security", "compliance", "healthcare", "enterprise"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["none"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "scales_with_demand": {
     "claim": "Woxza scales cloud call capacity to handle concurrent calls and demand spikes without adding a per-agent staffing burden.",
     "truth_level": "live",
     "tags": ["scale", "concurrency", "enterprise"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["missed_calls", "staffing_cost", "after_hours_gap"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "analytics_and_recordings": {
     "claim": "Calls can be recorded, transcribed, summarised, and sent to connected systems through APIs and webhooks.",
     "truth_level": "live",
     "tags": ["analytics", "reporting"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["manual_data_entry"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   },
+
   "ongoing_support": {
     "claim": "Enterprise deployments can include dedicated solutions support as the business changes.",
     "truth_level": "live",
     "tags": ["support", "enterprise"],
-    "status": "approved"
+    "status": "approved",
+    "applicable_verticals": ["universal"],
+    "applicable_pain": ["none"],
+    "has_verified_metric": false,
+    "metric_value": null,
+    "review_status": "approved"
   }
 }

@@ -18,7 +18,12 @@ export function normalizeProofPoints(value) {
       id:String(id || entry.id || entry.statement || entry.claim).trim(),
       statement:String(entry.statement || entry.claim).trim(),
       truth_level:entry.truth_level,
-      tags:[...new Set((Array.isArray(entry.tags) ? entry.tags : []).map(tag => String(tag).trim().toLowerCase()).filter(Boolean))]
+      tags:[...new Set((Array.isArray(entry.tags) ? entry.tags : []).map(tag => String(tag).trim().toLowerCase()).filter(Boolean))],
+      applicable_verticals:Array.isArray(entry.applicable_verticals) ? entry.applicable_verticals : [],
+      applicable_pain:Array.isArray(entry.applicable_pain) ? entry.applicable_pain : [],
+      has_verified_metric:entry.has_verified_metric === true,
+      metric_value:entry.has_verified_metric === true ? entry.metric_value : null,
+      review_status:entry.review_status || entry.status || "pending_review"
     }))
 }
 

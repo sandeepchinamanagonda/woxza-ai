@@ -1,67 +1,57 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { buildDemoPrompt, LANGUAGES, USE_CASES, localizedDemoEnding, localizedIdentityHandshake, localizedIdentityOpening, localizedPostCompletionOffer, localizedPostOrderActionCapability } from "../src/demo/prompt.js"
+import { buildDemoPrompt, LANGUAGES, localizedCompleteOpening, localizedDemoEnding, localizedDemoRoleHandoff, localizedOpeningDiscoveryQuestion, localizedPostOrderActionCapability, normalizeUseCase } from "../src/demo/prompt.js"
 
-test("an unset entry hint starts a pure discover conversation", async () => {
+test("the live prompt makes the orchestrator the sole phase and role authority", async () => {
   const prompt = await buildDemoPrompt({ language:"en" })
-  assert.ok(USE_CASES.has("discover"))
-  assert.match(prompt, /ENTRY HINT: none/)
-  assert.match(prompt, /discover, explain, or demonstrate/)
-  assert.match(prompt, /never redirect or penalize them/)
-  assert.match(prompt, /Do not call a tool for hello, small talk, clarification/)
-  assert.match(prompt, /Call offer_demo immediately before one gentle proactive contextual-demo offer/)
-  assert.match(prompt, /FEATURE LIBRARY/)
-  assert.match(prompt, /Do not always fall back to/)
-  assert.match(prompt, /Would you like to try a demo/)
+  assert.match(prompt, /THE ORCHESTRATOR IS THE AUTHORITY/)
+  assert.match(prompt, /submit_turn_interpretation exactly once/)
+  assert.match(prompt, /If it returns no_op, say nothing/)
+  assert.match(prompt, /never reintroduce Woxza|Hello, welcome to Woxza! Thanks for trying our demo/)
+  assert.match(prompt, /never infer that an unclear shop is a medical shop/i)
 })
 
-test("an optional entry hint primes but never locks the conversation", async () => {
-  const prompt = await buildDemoPrompt({ language:"te", entryHint:"order_taking" })
-  assert.match(prompt, /ENTRY HINT: The website optionally suggested order taking/)
-  assert.match(prompt, /only a soft signal/)
-  assert.match(prompt, /do not.*force it/i)
-  assert.match(prompt, /మీరు ఒక డెమో ప్రయత్నించాలనుకుంటున్నారా/)
+test("carrier-owned opening never permits a second welcome", async () => {
+  const prompt = await buildDemoPrompt({ language:"en", openingAlreadyHandled:true })
+  assert.match(prompt, /carrier is playing the complete welcome and first business question/i)
+  assert.match(prompt, /Never greet again/i)
+  assert.doesNotMatch(prompt, /say exactly: ‘Hello, welcome to Woxza!/)
 })
 
-test("action requests preserve the active workflow while contextual demos may use sample outcomes", async () => {
+test("the prompt preserves the caller-as-customer demo contract and pitch safety", async () => {
   const prompt = await buildDemoPrompt({ language:"en" })
-  assert.match(prompt, /action question is an interrupt, not a new mode/)
-  assert.match(prompt, /resolve_action_capability/)
-  assert.match(prompt, /contextual customer-call simulation, you may give believable sample results/)
-  assert.match(prompt, /Outside that simulation, never claim an action.*cost saving.*connection occurred/)
+  assert.match(prompt, /caller is always the CUSTOMER/i)
+  assert.match(prompt, /Do not become the customer/i)
+  assert.match(prompt, /PITCH_CONTEXT contains only backend-approved, relevant and unused facts/)
+  assert.match(prompt, /never add a metric unless it appears in approved metrics/i)
+  assert.match(prompt, /Pitch-first: deliver pitch, ask whether they want a demo; if yes, run the demo, collect feedback, then ask only whether they need anything else/)
 })
 
-test("FAQ claims remain in the feature catalog rather than bloating the live system prompt", async () => {
-  const prompt = await buildDemoPrompt({ language:"en" })
-  assert.doesNotMatch(prompt, /without code.*launch in minutes/)
-  assert.doesNotMatch(prompt, /DPDP Act in mind/)
-  assert.match(prompt, /Outside that simulation, never claim an action.*cost saving.*connection occurred/)
+test("all configured languages retain a localized language instruction and safe shared contract", async () => {
+  for (const [code, name] of LANGUAGES) {
+    const prompt = await buildDemoPrompt({ language:code })
+    assert.match(prompt, new RegExp(`Speak warmly and naturally in ${name}`))
+    assert.match(prompt, /Never repeat an interrupted sentence/)
+    assert.ok(localizedDemoEnding(code).includes("Woxza"))
+    assert.ok(localizedPostOrderActionCapability(code).includes("Woxza") || code === "te")
+  }
 })
 
-test("identity opening and callback explanation are localized for Telugu", () => {
-  assert.match(localizedIdentityOpening("te"), /మీరు ఒక డెమో ప్రయత్నించాలనుకుంటున్నారా/)
-  assert.equal(localizedIdentityHandshake("te"), "నమస్కారం. Woxzaకి స్వాగతం.")
-  assert.match(localizedPostCompletionOffer("te"), /ఈ డెమో మీకు ఎలా అనిపించింది/)
-  assert.match(localizedDemoEnding("te"), /Join the waitlist/)
-  assert.match(localizedPostOrderActionCapability("te"), /లైవ్ ధరను చెక్ చేయలేను/)
-  for (const language of LANGUAGES.keys()) assert.ok(localizedPostOrderActionCapability(language).includes("Woxza") || language === "te")
+test("every configured language has a non-empty opening discovery bridge", () => {
+  for (const language of LANGUAGES.keys()) {
+    assert.ok(localizedOpeningDiscoveryQuestion(language).trim())
+    assert.ok(localizedCompleteOpening(language).includes(localizedOpeningDiscoveryQuestion(language)))
+  }
 })
 
-test("the opening uses a short handshake before the full welcome", async () => {
-  const prompt = await buildDemoPrompt({ language:"en" })
-  assert.match(prompt, /Hello, welcome to Woxza\./)
-  assert.match(prompt, /When the caller next says anything, give exactly this full welcome/)
-  assert.match(prompt, /ORDER-TAKING STRATEGY/)
-  assert.match(prompt, /OPENING CHOICE ROUTING/)
-  assert.match(prompt, /Understand the caller's reply naturally/)
-  assert.match(prompt, /word "too" does not mean "two"/)
-  assert.match(prompt, /non-technical 60-year-old business owner/)
-  assert.match(prompt, /WORKFLOW STRATEGIES/)
-  assert.match(prompt, /start_contextual_demo/)
-  assert.match(prompt, /tile shop can demonstrate/)
-  assert.match(prompt, /This is a short showcase, not a real order form/)
-  assert.match(prompt, /immediately create sensible sample business data for any missing facts/)
-  assert.match(prompt, /Do not repeat a claim or a near-paraphrase already used earlier in the call/)
-  for (const workflow of ["customer support", "lead qualification", "appointment booking", "event RSVP", "feedback survey", "recruiting screening"]) assert.match(prompt, new RegExp(`- ${workflow}:`))
-  assert.doesNotMatch(localizedIdentityOpening("en"), /I'm Woxza/)
+test("every configured language has a backend-owned role handoff", () => {
+  for (const language of LANGUAGES.keys()) {
+    const handoff = localizedDemoRoleHandoff(language, "Test Business")
+    assert.ok(handoff.includes("Test Business"), language)
+    assert.ok(handoff.length > "Test Business".length + 10, language)
+  }
+})
+
+test("restaurant legacy routing uses the order workflow, not appointment booking", () => {
+  assert.equal(normalizeUseCase("restaurant"), "order_taking")
 })

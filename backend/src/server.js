@@ -13,7 +13,7 @@ const allowedOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:3456")
 const db = await createDatabase();
 const demoRuntime = createDemoRuntime(db);
 const server = createServer(createApp({ db, demoService: demoRuntime.service, debugRuntime:demoRuntime, allowedOrigins }));
-attachDemoGeminiBridge(server, { db });
+attachDemoGeminiBridge(server, { db, redis:demoRuntime.redis });
 
 server.listen(port, () => {
   console.log(`Woxza lead API listening on http://localhost:${port}`);

@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "test:workflow": "node --test test/orchestrator.test.js test/production-workflow.integration.test.js test/adversarial-workflow.test.js test/turn-normalizer.test.js test/approved-action-renderer.test.js test/output-guardrail.test.js test/live-transcript-buffer.test.js test/live-turn-gate.test.js test/deterministic-demo-engine.test.js"
   },
   "dependencies": {
     "@google/genai": "^1.42.0",
