@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import pg from "pg";
 import { seedFeatures } from "./features.js";
+import { seedAdminUsers } from "./admin-auth.js";
 
 const { Pool } = pg;
 const schemaUrls = [
@@ -19,7 +20,10 @@ const schemaUrls = [
   new URL("../migrations/013_conversation_entry_hint.sql", import.meta.url),
   new URL("../migrations/014_faq_feature_catalog.sql", import.meta.url),
   new URL("../migrations/015_demo_feature_story.sql", import.meta.url),
-  new URL("../migrations/017_call_debug_dashboard.sql", import.meta.url)
+  new URL("../migrations/017_call_debug_dashboard.sql", import.meta.url),
+  new URL("../migrations/018_admin_auth_and_engagement.sql", import.meta.url),
+  new URL("../migrations/019_call_usage_tokens.sql", import.meta.url),
+  new URL("../migrations/020_expand_call_event_types.sql", import.meta.url)
 ];
 
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -58,6 +62,7 @@ export async function createDatabase({
         await pool.query(schema);
       }
       await seedFeatures(pool);
+      await seedAdminUsers(pool);
       return pool;
     } catch (error) {
       lastError = error;

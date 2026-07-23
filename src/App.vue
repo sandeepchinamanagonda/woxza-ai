@@ -1,26 +1,30 @@
 <template>
   <div id="app">
 
-    <Navigation />
+    <Navigation v-if="!isAdmin" />
 
     <main class="site-content">
       <RouterView />
     </main>
 
-    <Footer />
+    <Footer v-if="!isAdmin" />
 
   </div>
 </template>
 
 <script setup>
-import { nextTick, onMounted, onUnmounted, watch } from "vue"
-import { RouterView } from "vue-router"
+import { computed, nextTick, onMounted, onUnmounted, watch } from "vue"
+import { RouterView, useRoute } from "vue-router"
 import Navigation from "@/components/Navigation.vue"
 import Footer from "@/components/Footer.vue"
 import { scrollSectionIntoView } from "@/utils/sectionScroll"
 import { useI18n } from "@/composables/useI18n"
+import { useEngagementTracking } from "@/composables/useEngagementTracking"
 
 const { language, startPageTranslation, translatePage } = useI18n()
+const route = useRoute()
+const isAdmin = computed(() => route.path.startsWith('/admin'))
+useEngagementTracking()
 
 const alignHashTarget = async () => {
   if (!window.location.hash) return

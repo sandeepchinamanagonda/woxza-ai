@@ -961,6 +961,13 @@ function openGeminiSession({ socket, call, language, demoCallId, db, orchestrato
       callbacks:{
         onmessage:onLiveMessage = async message => {
           const content = message.serverContent
+          const usage = message.usageMetadata || content?.usageMetadata || message.usage_metadata
+          if (usage) {
+            const inputTokens = Number(usage.promptTokenCount ?? usage.inputTokenCount ?? usage.input_tokens) || 0
+            const outputTokens = Number(usage.responseTokenCount ?? usage.outputTokenCount ?? usage.output_tokens) || 0
+            const totalTokens = Number(usage.totalTokenCount ?? usage.total_tokens) || inputTokens + outputTokens
+            if (inputTokens || outputTokens || totalTokens) logCallEvent(db, { callId:demoCallId, demoCallId, eventType:"llm_response", payload:{ component:"gemini", usage:{ input_tokens:inputTokens, output_tokens:outputTokens, total_tokens:totalTokens }, input_tokens:inputTokens, output_tokens:outputTokens, total_tokens:totalTokens } })
+          }
           if (content?.interrupted) {
             authorizedAudioActionId = null
             liveTurnGate.clearAction()

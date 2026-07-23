@@ -13,7 +13,7 @@ The Compose stack runs the Vue site, Node API, and PostgreSQL together. The API 
    nano .env.production
    ```
 
-   Set a strong `POSTGRES_PASSWORD`, `ADMIN_API_TOKEN`, and `UNSUBSCRIBE_SIGNING_SECRET`. Use `https://api.woxza.io` for `PUBLIC_API_URL`, and `https://woxza.io` for `WEBSITE_URL` and `CORS_ORIGINS`.
+   Set a strong `POSTGRES_PASSWORD`, `ADMIN_SESSION_SECRET`, and `UNSUBSCRIBE_SIGNING_SECRET`. Use `https://api.woxza.io` for `PUBLIC_API_URL`, and `https://woxza.io` for `WEBSITE_URL` and `CORS_ORIGINS`.
 
 4. Build and start the production stack:
 

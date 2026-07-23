@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { validatePreferences, validateRegistration, validateSalesInquiry, validateWaitlistSubmission } from "./validation.js";
 import { listFeatures, listTags, normalizeTags } from "./features.js";
-import { getDebugCall, growthMetrics, listDebugCalls, searchDebugCalls } from "./admin-debug.js";
+import { debugCallSummary, getDebugCall, growthMetrics, growthRecords, listDebugCalls, searchDebugCalls, websiteMetrics } from "./admin-debug.js";
+import { authenticateAdmin, clearSessionCookie, sessionCookie, sessionFor } from "./admin-auth.js";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
@@ -68,11 +69,7 @@ async function readForm(req) {
 }
 
 const csvCell = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
-const hasAdminAccess = (req, adminToken, localAdminMode, localAdminToken) =>
-  Boolean(
-    (adminToken && req.headers.authorization === `Bearer ${adminToken}`) ||
-    (localAdminMode && localAdminToken && req.headers.authorization === `Bearer ${localAdminToken}`)
-  );
+const hasAdminAccess = (req, adminToken) => Boolean(sessionFor(req, adminToken));
 
 function validateFeature(input) {
   const errors = [];
@@ -88,11 +85,10 @@ export function createApp({
   db,
   demoService,
   debugRuntime,
-  adminToken = process.env.ADMIN_API_TOKEN,
-  localAdminMode = process.env.LOCAL_ADMIN_MODE === "true",
-  localAdminToken = process.env.LOCAL_ADMIN_TOKEN,
+  adminToken = process.env.ADMIN_SESSION_SECRET,
   allowedOrigins = ["http://localhost:3456"]
 }) {
+  const loginAttempts = new Map();
   return async function app(req, res) {
     const cors = corsHeaders(req, allowedOrigins);
     if (req.method === "OPTIONS") {
@@ -108,32 +104,63 @@ export function createApp({
         return sendJson(res, 200, { status: "ok" }, cors);
       }
 
+      if (url.pathname === "/api/admin/login" && req.method === "POST") {
+        const input = await readJson(req); const email=String(input.email || "").trim().toLowerCase(); const now=Date.now();
+        const attempt=loginAttempts.get(email); if(attempt?.count >= 5 && now-attempt.started < 900000) return sendJson(res,429,{error:"Too many failed attempts. Try again later."},cors);
+        const user = await authenticateAdmin(db, email, input.password);
+        if (!user) { const next=(!attempt || now-attempt.started>=900000)?{count:1,started:now}:{...attempt,count:attempt.count+1}; loginAttempts.set(email,next); return sendJson(res,401,{error:"Invalid email or password"},cors); }
+        loginAttempts.delete(email); return sendJson(res,200,{email:user.email},{...cors,"set-cookie":sessionCookie(user,adminToken,process.env.NODE_ENV === "production")});
+      }
+      if (url.pathname === "/api/admin/logout" && req.method === "POST") return sendJson(res,200,{ok:true},{...cors,"set-cookie":clearSessionCookie(process.env.NODE_ENV === "production")});
+      if (url.pathname === "/api/admin/session" && req.method === "GET") { const session=sessionFor(req,adminToken); return session ? sendJson(res,200,{email:session.email},cors) : sendJson(res,401,{error:"Unauthorized"},cors); }
+
       if (url.pathname === "/api/admin/debug/calls" && req.method === "GET") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         return sendJson(res, 200, await listDebugCalls(db, url), cors);
       }
+      if (url.pathname === "/api/admin/debug/summary" && req.method === "GET") {
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        return sendJson(res, 200, await debugCallSummary(db, url), cors);
+      }
       if (url.pathname === "/api/admin/debug/errors" && req.method === "GET") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         return sendJson(res, 200, await listDebugCalls(db, url, { errorsOnly:true }), cors);
       }
       if (url.pathname === "/api/admin/debug/search" && req.method === "GET") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         return sendJson(res, 200, await searchDebugCalls(db, url.searchParams.get("q")), cors);
       }
       if (url.pathname === "/api/admin/debug/health" && req.method === "GET") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const inProgress = await db.query("SELECT count(*)::int AS count FROM calls WHERE status='in_progress'");
         return sendJson(res, 200, { inProgressCalls:inProgress.rows[0].count, postgres:{ total:db.totalCount, idle:db.idleCount, waiting:db.waitingCount }, ...(await debugRuntime?.health?.() || { redis:{ available:false }, queues:{} }) }, cors);
       }
       const debugCallPath = url.pathname.match(/^\/api\/admin\/debug\/calls\/([^/]+)$/);
       if (debugCallPath && req.method === "GET") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const call = await getDebugCall(db, decodeURIComponent(debugCallPath[1]));
         return call ? sendJson(res, 200, call, cors) : sendJson(res, 404, { error:"Call not found" }, cors);
       }
       if (url.pathname === "/api/admin/growth" && req.method === "GET") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
-        return sendJson(res, 200, await growthMetrics(db), cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        return sendJson(res, 200, await growthMetrics(db, url), cors);
+      }
+      if (url.pathname === "/api/admin/growth/records" && req.method === "GET") {
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        const records = await growthRecords(db, url);
+        return records ? sendJson(res, 200, records, cors) : sendJson(res, 422, { error:"Unknown growth record type" }, cors);
+      }
+      if (url.pathname === "/api/admin/website" && req.method === "GET") {
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        return sendJson(res, 200, await websiteMetrics(db, url), cors);
+      }
+
+      if (url.pathname === "/api/track/engagement" && req.method === "POST") {
+        const input=await readJson(req); const sections=Array.isArray(input.sections) ? input.sections : [];
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(input.session_id||"")) || typeof input.landing_page!=="string" || input.landing_page.length>500 || sections.length>40 || !Number.isInteger(input.total_seconds) || input.total_seconds<0 || input.total_seconds>86400 || sections.some(item=>!item || typeof item.name!=="string" || item.name.length>80 || !Number.isFinite(item.seconds) || item.seconds<0 || item.seconds>86400)) return sendJson(res,422,{error:"Invalid engagement payload"},cors);
+        const ip=String(req.headers["x-forwarded-for"]||req.socket.remoteAddress||"").split(",")[0].trim(); const key=`${ip}:${new Date().toISOString().slice(0,16)}`; const count=(loginAttempts.get(key)?.count||0)+1; loginAttempts.set(key,{count,started:Date.now()}); if(count>30)return sendJson(res,429,{error:"Rate limited"},cors);
+        await db.query("INSERT INTO page_engagement (session_id,landing_page,referrer,total_seconds,section_breakdown) VALUES ($1,$2,$3,$4,$5::jsonb) ON CONFLICT (session_id,landing_page) DO UPDATE SET total_seconds=GREATEST(page_engagement.total_seconds,EXCLUDED.total_seconds), section_breakdown=CASE WHEN jsonb_array_length(EXCLUDED.section_breakdown)>0 THEN EXCLUDED.section_breakdown ELSE page_engagement.section_breakdown END, referrer=COALESCE(NULLIF(EXCLUDED.referrer,''),page_engagement.referrer)",[input.session_id,input.landing_page,String(input.referrer||"").slice(0,2048),input.total_seconds,JSON.stringify(sections)]);
+        return sendJson(res,202,{ok:true},cors);
       }
 
       if (req.method === "POST" && (url.pathname === "/api/demo-call" || url.pathname === "/api/demo/call")) {
@@ -198,7 +225,7 @@ export function createApp({
       }
 
       if (req.method === "GET" && url.pathname === "/api/leads") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error: "Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error: "Unauthorized" }, cors);
         const page = Math.max(1, Number.parseInt(url.searchParams.get("page") || "1", 10));
         const pageSize = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("pageSize") || "25", 10)));
         const filters = [url.searchParams.get("use_case"), url.searchParams.get("contact_status"), url.searchParams.get("from"), url.searchParams.get("to")];
@@ -217,18 +244,18 @@ export function createApp({
       }
 
       if (url.pathname === "/api/admin/features" && req.method === "GET") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const items = await listFeatures(db, { tag:url.searchParams.get("tag"), search:url.searchParams.get("search"), includeInactive:url.searchParams.get("includeInactive") === "true" });
         return sendJson(res, 200, { items }, cors);
       }
 
       if (url.pathname === "/api/admin/feature-tags" && req.method === "GET") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         return sendJson(res, 200, { items:await listTags(db) }, cors);
       }
 
       if (url.pathname === "/api/admin/features" && req.method === "POST") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const input = await readJson(req); const errors = validateFeature(input);
         if (errors.length) return sendJson(res, 422, { error:"Validation failed", details:errors }, cors);
         const result = await db.query(`INSERT INTO features (id,title,description,business_tags,priority,status,active) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`, [randomUUID(), input.title.trim(), input.description.trim(), normalizeTags(input.businessTags), Number(input.priority), input.status, input.active !== false]);
@@ -237,14 +264,14 @@ export function createApp({
 
       const featurePath = url.pathname.match(/^\/api\/admin\/features\/([0-9a-f-]+)$/i);
       if (featurePath && req.method === "PATCH") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const input = await readJson(req); const errors = validateFeature(input);
         if (errors.length) return sendJson(res, 422, { error:"Validation failed", details:errors }, cors);
         const result = await db.query(`UPDATE features SET title=$2,description=$3,business_tags=$4,priority=$5,status=$6,active=$7,updated_at=NOW() WHERE id=$1 RETURNING *`, [featurePath[1], input.title.trim(), input.description.trim(), normalizeTags(input.businessTags), Number(input.priority), input.status, input.active !== false]);
         return result.rowCount ? sendJson(res, 200, result.rows[0], cors) : sendJson(res, 404, { error:"Feature not found" }, cors);
       }
       if (featurePath && req.method === "DELETE") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         if (url.searchParams.get("hard") === "true") {
           const result = await db.query("DELETE FROM features WHERE id=$1 RETURNING id", [featurePath[1]]);
           return result.rowCount ? sendJson(res, 200, { deleted:true, hard:true }, cors) : sendJson(res, 404, { error:"Feature not found" }, cors);
@@ -255,12 +282,12 @@ export function createApp({
 
       const promptPath = url.pathname.match(/^\/api\/admin\/prompt-templates\/([a-z0-9_-]+)$/i);
       if (promptPath && req.method === "GET") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const result = await db.query("SELECT key,title,body,active,created_at,updated_at FROM agent_prompt_templates WHERE key=$1", [promptPath[1]]);
         return result.rowCount ? sendJson(res, 200, result.rows[0], cors) : sendJson(res, 404, { error:"Prompt not found" }, cors);
       }
       if (promptPath && req.method === "PATCH") {
-        if (!hasAdminAccess(req, adminToken, localAdminMode, localAdminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const input = await readJson(req);
         if (typeof input.body !== "string" || !input.body.trim() || input.body.length > 6000) return sendJson(res, 422, { error:"body is required and must be 6000 characters or fewer" }, cors);
         const result = await db.query("UPDATE agent_prompt_templates SET body=$2,active=$3,updated_at=NOW() WHERE key=$1 RETURNING key,title,body,active,created_at,updated_at", [promptPath[1], input.body.trim(), input.active !== false]);
