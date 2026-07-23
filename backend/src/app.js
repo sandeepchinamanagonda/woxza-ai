@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { validatePreferences, validateRegistration, validateSalesInquiry, validateWaitlistSubmission } from "./validation.js";
 import { listFeatures, listTags, normalizeTags } from "./features.js";
 import { debugCallSummary, getDebugCall, growthMetrics, growthRecords, listDebugCalls, searchDebugCalls, websiteMetrics } from "./admin-debug.js";
-import { authenticateAdmin, clearSessionCookie, sessionCookie, sessionFor } from "./admin-auth.js";
+import { authenticateAdmin, changeAdminPassword, clearSessionCookie, sessionCookie, sessionFor } from "./admin-auth.js";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
@@ -69,7 +69,7 @@ async function readForm(req) {
 }
 
 const csvCell = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
-const hasAdminAccess = (req, adminToken) => Boolean(sessionFor(req, adminToken));
+const hasAdminAccess = (req, adminToken) => Boolean(sessionFor(req, adminToken) && !sessionFor(req, adminToken).mustChangePassword);
 
 function validateFeature(input) {
   const errors = [];
@@ -109,10 +109,11 @@ export function createApp({
         const attempt=loginAttempts.get(email); if(attempt?.count >= 5 && now-attempt.started < 900000) return sendJson(res,429,{error:"Too many failed attempts. Try again later."},cors);
         const user = await authenticateAdmin(db, email, input.password);
         if (!user) { const next=(!attempt || now-attempt.started>=900000)?{count:1,started:now}:{...attempt,count:attempt.count+1}; loginAttempts.set(email,next); return sendJson(res,401,{error:"Invalid email or password"},cors); }
-        loginAttempts.delete(email); return sendJson(res,200,{email:user.email},{...cors,"set-cookie":sessionCookie(user,adminToken,process.env.NODE_ENV === "production")});
+        loginAttempts.delete(email); return sendJson(res,200,{email:user.email,mustChangePassword:user.must_change_password},{...cors,"set-cookie":sessionCookie(user,adminToken,process.env.NODE_ENV === "production")});
       }
       if (url.pathname === "/api/admin/logout" && req.method === "POST") return sendJson(res,200,{ok:true},{...cors,"set-cookie":clearSessionCookie(process.env.NODE_ENV === "production")});
-      if (url.pathname === "/api/admin/session" && req.method === "GET") { const session=sessionFor(req,adminToken); return session ? sendJson(res,200,{email:session.email},cors) : sendJson(res,401,{error:"Unauthorized"},cors); }
+      if (url.pathname === "/api/admin/session" && req.method === "GET") { const session=sessionFor(req,adminToken); return session ? sendJson(res,200,{email:session.email,mustChangePassword:Boolean(session.mustChangePassword)},cors) : sendJson(res,401,{error:"Unauthorized"},cors); }
+      if (url.pathname === "/api/admin/password" && req.method === "POST") { const session=sessionFor(req,adminToken); if(!session)return sendJson(res,401,{error:"Unauthorized"},cors); try { const user=await changeAdminPassword(db,session,(await readJson(req)).password); if(!user)return sendJson(res,401,{error:"Unauthorized"},cors); return sendJson(res,200,{email:user.email},{...cors,"set-cookie":sessionCookie(user,adminToken,process.env.NODE_ENV === "production")}); } catch(error) { return sendJson(res,400,{error:error.message},cors); } }
 
       if (url.pathname === "/api/admin/debug/calls" && req.method === "GET") {
         if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);

@@ -23,7 +23,8 @@ const schemaUrls = [
   new URL("../migrations/017_call_debug_dashboard.sql", import.meta.url),
   new URL("../migrations/018_admin_auth_and_engagement.sql", import.meta.url),
   new URL("../migrations/019_call_usage_tokens.sql", import.meta.url),
-  new URL("../migrations/020_expand_call_event_types.sql", import.meta.url)
+  new URL("../migrations/020_expand_call_event_types.sql", import.meta.url),
+  new URL("../migrations/021_admin_password_change.sql", import.meta.url)
 ];
 
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));

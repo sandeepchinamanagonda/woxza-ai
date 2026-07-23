@@ -11,9 +11,11 @@ import AdminFeatures from './views/AdminFeatures.vue'
 import AdminPrompts from './views/AdminPrompts.vue'
 import AdminDebug from './views/AdminDebug.vue'
 import AdminLogin from './views/AdminLogin.vue'
+import AdminChangePassword from './views/AdminChangePassword.vue'
 
 const routes = [
   { path:'/admin/login', name:'AdminLogin', component:AdminLogin, meta:{ title:'Woxza | Admin sign in' } },
+  { path:'/admin/change-password', name:'AdminChangePassword', component:AdminChangePassword, meta:{ title:'Woxza | Set admin password' } },
   {
     path: '/admin/debug',
     name: 'AdminDebug',
@@ -78,7 +80,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   document.title = to.meta.title || 'Woxza'
   if (to.path.startsWith('/admin/') && to.path !== '/admin/login') {
-    try { if (!(await fetch('/api/admin/session')).ok) return next({ path:'/admin/login', query:{ next:to.fullPath } }) } catch { return next({ path:'/admin/login', query:{ next:to.fullPath } }) }
+    try { const response=await fetch('/api/admin/session'); if (!response.ok) return next({ path:'/admin/login', query:{ next:to.fullPath } }); const session=await response.json(); if (session.mustChangePassword && to.path !== '/admin/change-password') return next('/admin/change-password'); if (!session.mustChangePassword && to.path === '/admin/change-password') return next('/admin/debug'); } catch { return next({ path:'/admin/login', query:{ next:to.fullPath } }) }
   }
   next()
 })
