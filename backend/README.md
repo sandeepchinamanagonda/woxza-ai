@@ -30,7 +30,7 @@ For an incoming Twilio demo call, configure the Voice webhook as `POST https://y
 
 The public endpoint is `POST /api/demo/call`. It accepts `use_case`, `language`, `name`, `country_code`, `phone_number`, optional `email`, and `consent: true`; the legacy `/api/demo-call` route remains available for the existing site flow. `backend/demo_agent/woxza_faq.md` is read again for each answered call, so content updates do not require redeployment. Phone attempts are stored in PostgreSQL and capped at three in rolling 24 hours; a secondary five-per-hour IP limit and the form honeypot deter automated abuse.
 
-Demo lead review is available at `GET /api/leads` with `Authorization: Bearer $ADMIN_API_TOKEN`. It accepts `page`, `pageSize`, `use_case`, `contact_status`, `from`, `to`, and `format=csv`.
+Demo lead review is available at `GET /api/leads` to an authenticated admin session. It accepts `page`, `pageSize`, `use_case`, `contact_status`, `from`, `to`, and `format=csv`.
 
 ### View local data in IntelliJ IDEA
 

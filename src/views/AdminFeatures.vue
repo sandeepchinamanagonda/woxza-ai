@@ -1,8 +1,7 @@
 <template>
   <main class="admin-shell">
     <header><RouterLink to="/">← Woxza</RouterLink><h1>Feature management</h1><p>Manage the live and roadmap capabilities Woxza can discuss on calls.</p></header>
-    <section v-if="!token" class="auth-card"><h2>Admin access</h2><input v-model="tokenInput" type="password" placeholder="Admin API token" @keyup.enter="signIn"><button @click="signIn">Continue</button><p v-if="error" class="error">{{ error }}</p></section>
-    <template v-else>
+    <template>
       <div class="toolbar"><input v-model="search" placeholder="Search features" @input="load"><select v-model="tag" @change="load"><option value="">All business tags</option><option v-for="item in tags" :key="item">{{ item }}</option></select><label><input v-model="includeInactive" type="checkbox" @change="load"> Show inactive</label><button @click="startCreate">Add feature</button><RouterLink class="button secondary" to="/admin/prompts">Edit prompts</RouterLink></div>
       <p v-if="error" class="error">{{ error }}</p>
       <section v-if="editing" class="feature-form"><div><h2>{{ editing.id ? 'Edit feature' : 'Add feature' }}</h2><button class="plain" @click="cancel">Close</button></div><label>Title<input v-model="editing.title" maxlength="160"></label><label>Description<textarea v-model="editing.description" maxlength="1000"></textarea></label><label>Business tags</label><div class="tag-input"><span v-for="item in editing.businessTags" :key="item">{{ item }} <button @click="removeTag(item)">×</button></span><input v-model="tagDraft" placeholder="Add a tag" @keydown.enter.prevent="addTag"></div><small>Press Enter to create a new tag.</small><div class="form-grid"><label>Priority<input v-model.number="editing.priority" type="number"></label><label>Status<select v-model="editing.status"><option value="live">Live</option><option value="roadmap">Roadmap</option></select></label><label class="check"><input v-model="editing.active" type="checkbox"> Active</label></div><button @click="save">Save feature</button></section>
@@ -13,12 +12,10 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-const localAdminToken = import.meta.env.VITE_LOCAL_ADMIN_MODE === 'true' ? import.meta.env.VITE_LOCAL_ADMIN_TOKEN : ''
-const token = ref(localAdminToken || sessionStorage.getItem('woxza_admin_token') || ''), tokenInput = ref(''), items = ref([]), tags = ref([]), tag = ref(''), search = ref(''), includeInactive = ref(false), editing = ref(null), tagDraft = ref(''), error = ref('')
+const token = ref('session'), items = ref([]), tags = ref([]), tag = ref(''), search = ref(''), includeInactive = ref(false), editing = ref(null), tagDraft = ref(''), error = ref('')
 const headers = () => ({ 'content-type':'application/json', authorization:`Bearer ${token.value}` })
 async function api(url, options = {}) { const response = await fetch(url, { ...options, headers:{ ...headers(), ...options.headers } }); const body = await response.json(); if (!response.ok) throw new Error(body.details?.join(', ') || body.error || 'Request failed'); return body }
-async function load() { if (!token.value) return; try { error.value=''; const query = new URLSearchParams({ includeInactive:String(includeInactive.value) }); if (tag.value) query.set('tag', tag.value); if (search.value) query.set('search', search.value); const [features, allTags] = await Promise.all([api(`/api/admin/features?${query}`),api('/api/admin/feature-tags')]); items.value=features.items; tags.value=allTags.items } catch (err) { error.value=err.message } }
-function signIn() { token.value=tokenInput.value.trim(); sessionStorage.setItem('woxza_admin_token', token.value); load() }
+async function load() { try { error.value=''; const query = new URLSearchParams({ includeInactive:String(includeInactive.value) }); if (tag.value) query.set('tag', tag.value); if (search.value) query.set('search', search.value); const [features, allTags] = await Promise.all([api(`/api/admin/features?${query}`),api('/api/admin/feature-tags')]); items.value=features.items; tags.value=allTags.items } catch (err) { error.value=err.message } }
 function startCreate() { editing.value={ title:'', description:'', businessTags:[], priority:100, status:'live', active:true } }
 function edit(feature) { editing.value={ id:feature.id, title:feature.title, description:feature.description, businessTags:[...feature.business_tags], priority:feature.priority, status:feature.status, active:feature.active }; tagDraft.value='' }
 function cancel() { editing.value=null; tagDraft.value='' }

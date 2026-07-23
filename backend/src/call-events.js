@@ -3,9 +3,7 @@ import { randomUUID } from "node:crypto";
 const DEFAULT_ORG_ID = "woxza";
 const deployVersion = () => process.env.DEPLOY_VERSION || process.env.GIT_SHA || "local";
 const instanceId = () => process.env.INSTANCE_ID || process.env.HOSTNAME || "local";
-const SENSITIVE_KEYS = new Set([
-  "phone", "phone_number", "phoneNumber", "from", "to", "name", "customer_name", "customerName", "email"
-]);
+const PHONE_KEYS = new Set(["phone", "phone_number", "phoneNumber", "from", "to"]);
 
 export function maskPhoneNumber(phone) {
   const value = String(phone || "");
@@ -16,7 +14,7 @@ export function maskPhoneNumber(phone) {
 // the diagnostic shape (error, request/response, tool args) but replace known
 // identity fields wherever they occur, including inside provider payloads.
 export function redactCallPayload(value, key = "") {
-  if (SENSITIVE_KEYS.has(key)) return key.toLowerCase().includes("phone") || key === "from" || key === "to" ? maskPhoneNumber(value) : "[redacted]";
+  if (PHONE_KEYS.has(key)) return maskPhoneNumber(value);
   if (Array.isArray(value)) return value.map(item => redactCallPayload(item));
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([childKey, childValue]) => [childKey, redactCallPayload(childValue, childKey)]));
   return value;
@@ -71,6 +69,11 @@ export function logCallEvent(db, {
       );
     } else if (eventType === "turn_end") {
       await db.query("UPDATE calls SET turn_count=turn_count+1 WHERE call_id=$1", [event.callId]);
+    } else if (event.payload?.input_tokens !== undefined || event.payload?.output_tokens !== undefined || event.payload?.total_tokens !== undefined) {
+      await db.query(
+        `UPDATE calls SET input_tokens=GREATEST(input_tokens,$2), output_tokens=GREATEST(output_tokens,$3), total_tokens=GREATEST(total_tokens,$4) WHERE call_id=$1`,
+        [event.callId, Number(event.payload.input_tokens) || 0, Number(event.payload.output_tokens) || 0, Number(event.payload.total_tokens) || 0]
+      );
     } else if (severity === "error") {
       // An error event is diagnostic, not a terminal provider outcome. The
       // lifecycle owner records completed/failed through call_ended instead.

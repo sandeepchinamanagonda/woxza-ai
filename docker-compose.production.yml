@@ -8,7 +8,20 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a long random POSTGRES_PASSWORD in .env.production}
 
   api:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD:?Set a long random POSTGRES_PASSWORD in .env.production}
-      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:?Set ADMIN_API_TOKEN in .env.production}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:?Set a 32+ character ADMIN_SESSION_SECRET in .env.production}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
       UNSUBSCRIBE_SIGNING_SECRET: ${UNSUBSCRIBE_SIGNING_SECRET:?Set a 32+ character UNSUBSCRIBE_SIGNING_SECRET in .env.production}
+
+  web:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
