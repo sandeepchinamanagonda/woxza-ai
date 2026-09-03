@@ -5,6 +5,7 @@ import { woxzaLanguageFromSarvamCode } from "./sarvam-api.js"
 import { createSarvamRealtimeStt, createSarvamStreamingTts } from "./sarvam-realtime.js"
 import { createSarvamConversation } from "./sarvam-conversation.js"
 import { createOpenAiConversation } from "./openai-conversation.js"
+import { createAnthropicConversation } from "./anthropic-conversation.js"
 import { createWordBoundaryBuffer } from "./phrase-buffer.js"
 import { logCallEvent } from "../call-events.js"
 
@@ -14,7 +15,16 @@ const welcome = language => ({ en:"Hello, I’m Woxza’s AI assistant. Thanks f
 
 // V3 is deliberately separate from V2. Set VOICE_PIPELINE=v3 to opt in;
 // changing it back to v2 restores the previous bridge without a code rollback.
-export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealtimeStt(), tts=createSarvamStreamingTts(), brain=(process.env.V3_BRAIN_PROVIDER || "sarvam").toLowerCase() === "openai" ? createOpenAiConversation() : createSarvamConversation() }={}) {
+const configuredBrainProvider = () => (process.env.V3_BRAIN_PROVIDER || "sarvam").toLowerCase()
+const configuredBrain = () => {
+  const provider = configuredBrainProvider()
+  if (provider === "openai") return createOpenAiConversation()
+  if (provider === "anthropic") return createAnthropicConversation()
+  return createSarvamConversation()
+}
+const configuredBrainModel = provider => provider === "openai" ? (process.env.V3_OPENAI_MODEL || "gpt-4.1-mini") : provider === "anthropic" ? (process.env.V3_ANTHROPIC_MODEL || "claude-sonnet-4-6") : (process.env.SARVAM_CHAT_MODEL || "sarvam-105b-conversations")
+
+export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealtimeStt(), tts=createSarvamStreamingTts(), brain=configuredBrain() }={}) {
   const wss = new WebSocketServer({ noServer:true })
   server.on("upgrade", (request, socket, head) => {
     const url = new URL(request.url, "http://localhost")
@@ -88,7 +98,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         replyText = replyText.trim(); if (!replyText || closed || turnEpoch !== epoch) return
         history.push({ role:"assistant", content:replyText }); memory.turns.push({ turn:memory.turns.length + 1, caller:text, agent:replyText }); memory.turns = memory.turns.slice(-16)
         persist(db, demoCallId, "agent", replyText)
-        log("llm_response", { provider:"sarvam-conversations", model:process.env.SARVAM_CHAT_MODEL || "sarvam-105b-conversations" }, Date.now() - started)
+        log("llm_response", { provider:brain.provider || configuredBrainProvider(), model:brain.model || configuredBrainModel(configuredBrainProvider()) }, Date.now() - started)
       } catch (error) { if (!controller.signal.aborted) log("error", { component:"v3_turn", message:error.message }, Date.now() - started) }
       finally { if (activeTurn === controller) activeTurn = undefined }
     }
@@ -99,7 +109,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     const close = () => { if (closed) return; closed = true; sttSession?.close(); discardTts(); stopAgent("call_closed") }
     socket.on("close", close)
     socket.on("message", raw => { try { const event = JSON.parse(raw.toString()); if (event.event === "stop") return close(); if (event.event === "media" && event.media?.payload) sttSession.push(decodePlivoInboundAudio(event.media.payload, process.env.PLIVO_STREAM_CONTENT_TYPE || "audio/x-l16;rate=16000", process.env.PLIVO_L16_BYTE_ORDER || "little")) } catch (error) { log("error", { component:"v3_plivo_input", message:error.message }) } })
-    log("call_started", { provider:"plivo", agentId:"sarvam-streaming-v3", brain_provider:(process.env.V3_BRAIN_PROVIDER || "sarvam").toLowerCase(), brain_model:(process.env.V3_BRAIN_PROVIDER || "sarvam").toLowerCase() === "openai" ? (process.env.V3_OPENAI_MODEL || "gpt-4.1-mini") : (process.env.SARVAM_CHAT_MODEL || "sarvam-105b-conversations"), stt_model:process.env.V3_STT_MODEL || "saaras:v3-realtime", tts_model:process.env.SARVAM_TTS_MODEL || "bulbul:v3" })
+    log("call_started", { provider:"plivo", agentId:"sarvam-streaming-v3", brain_provider:configuredBrainProvider(), brain_model:brain.model || configuredBrainModel(configuredBrainProvider()), stt_model:process.env.V3_STT_MODEL || "saaras:v3-realtime", tts_model:process.env.SARVAM_TTS_MODEL || "bulbul:v3" })
     const greeting = welcome(requestedLanguage); history.push({ role:"assistant", content:greeting })
     try {
       // If the caller begins speaking during the TTS handshake, never send a
