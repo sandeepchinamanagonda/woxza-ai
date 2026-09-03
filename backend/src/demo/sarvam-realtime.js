@@ -3,6 +3,14 @@ import { sarvamLanguageCode } from "./sarvam-api.js"
 
 const SARVAM_API = "wss://api.sarvam.ai"
 
+// This is intentionally an opt-in experiment.  The established V3 value is
+// still V3_STT_SILENCE_MS, so removing this change restores its 500ms behavior
+// even if the local environment retains the experiment variable.
+export function v3EndpointSilenceMs({ experiment=process.env.V3_LATENCY_CHERRY_VAD_MS, baseline=process.env.V3_STT_SILENCE_MS }={}) {
+  const value = Number(experiment || baseline || "500")
+  return Number.isFinite(value) && value >= 250 && value <= 1200 ? Math.floor(value) : 500
+}
+
 const parseMessage = raw => {
   try { return JSON.parse(raw.toString()) } catch { return null }
 }
@@ -44,7 +52,7 @@ export function createSarvamRealtimeStt({ apiKey=process.env.SARVAM_API_KEY, Web
         model:process.env.V3_STT_MODEL || "saaras:v3-realtime",
         mode:process.env.V3_STT_MODE || "codemix",
         streamType:process.env.V3_STT_STREAM_TYPE || "fast",
-        silenceDurationMs:Number(process.env.V3_STT_SILENCE_MS || "500"),
+        silenceDurationMs:v3EndpointSilenceMs(),
         minSpeechDurationMs:Number(process.env.V3_STT_MIN_SPEECH_MS || "250")
       }), apiKey)
       ws.on("message", raw => {

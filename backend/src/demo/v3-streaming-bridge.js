@@ -101,8 +101,11 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     log("call_started", { provider:"plivo", agentId:"sarvam-streaming-v3", stt_model:process.env.V3_STT_MODEL || "saaras:v3-realtime", tts_model:process.env.SARVAM_TTS_MODEL || "bulbul:v3" })
     const greeting = welcome(requestedLanguage); history.push({ role:"assistant", content:greeting })
     try {
+      // If the caller begins speaking during the TTS handshake, never send a
+      // delayed welcome afterwards. That would overlap their first response.
+      const welcomeEpoch = epoch
       const session = await prepareTts(requestedLanguage)
-      if (session) { ttsPlayback = { epoch, startedAt:Date.now(), firstAudioSent:false }; session.send(greeting); session.flush() }
+      if (session && !closed && welcomeEpoch === epoch) { ttsPlayback = { epoch:welcomeEpoch, startedAt:Date.now(), firstAudioSent:false }; session.send(greeting); session.flush() }
     } catch (error) { log("error", { component:"v3_welcome_tts", message:error.message }) }
   })
 }
