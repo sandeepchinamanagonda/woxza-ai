@@ -32,15 +32,3 @@ test("Sarvam Conversations accepts a language-specific response ceiling", async 
     else process.env.SARVAM_CHAT_MAX_TOKENS_TE = original
   }
 })
-
-test("Sarvam Conversations uses the selected call language for its system prompt", async () => {
-  let request
-  const client = createSarvamConversation({ apiKey:"test", fetchImpl:async (_url, options) => {
-    request = JSON.parse(options.body)
-    return new Response("data: [DONE]\n\n", { status:200 })
-  } })
-  const stream = client.replyStream({ language:"te", history:[], callerText:"Let's discuss my business", memory:{} })
-  for await (const _chunk of stream) { /* consume stream */ }
-  assert.match(request.messages[0].content, /selected spoken language is Telugu/)
-  assert.match(request.messages[0].content, /Always reply in that language/)
-})

@@ -3,14 +3,6 @@ import { sarvamLanguageCode } from "./sarvam-api.js"
 
 const SARVAM_API = "wss://api.sarvam.ai"
 
-// Keep the experiment separate from the established V3 setting.  Removing
-// the latency-cherry commit makes V3 fall back to V3_STT_SILENCE_MS exactly
-// as it behaved before, even if a local .env still contains the experiment.
-export function v3SilenceDuration({ latencyCherry=process.env.V3_LATENCY_CHERRY_VAD_MS, baseline=process.env.V3_STT_SILENCE_MS }={}) {
-  const configured = Number(latencyCherry || baseline || "500")
-  return Number.isFinite(configured) && configured >= 250 && configured <= 1200 ? Math.floor(configured) : 500
-}
-
 const parseMessage = raw => {
   try { return JSON.parse(raw.toString()) } catch { return null }
 }
@@ -52,7 +44,7 @@ export function createSarvamRealtimeStt({ apiKey=process.env.SARVAM_API_KEY, Web
         model:process.env.V3_STT_MODEL || "saaras:v3-realtime",
         mode:process.env.V3_STT_MODE || "codemix",
         streamType:process.env.V3_STT_STREAM_TYPE || "fast",
-        silenceDurationMs:v3SilenceDuration(),
+        silenceDurationMs:Number(process.env.V3_STT_SILENCE_MS || "500"),
         minSpeechDurationMs:Number(process.env.V3_STT_MIN_SPEECH_MS || "250")
       }), apiKey)
       ws.on("message", raw => {
@@ -105,7 +97,6 @@ export function createSarvamStreamingTts({ apiKey=process.env.SARVAM_API_KEY, We
       return {
         send(text) { if (ws.readyState === WebSocketImpl.OPEN && String(text || "").trim()) ws.send(JSON.stringify({ type:"text", data:{ text:String(text).trim() } })) },
         flush() { if (ws.readyState === WebSocketImpl.OPEN) ws.send(JSON.stringify({ type:"flush" })) },
-        isOpen() { return ws.readyState === WebSocketImpl.OPEN },
         close() { if (ws.readyState === WebSocketImpl.OPEN) ws.close() }
       }
     }

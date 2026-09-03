@@ -38,9 +38,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       log("barge_in", { reason })
     }
     const prepareTts = speechLanguage => {
-      // Reuse the warm socket for every normal turn.  If Sarvam closed it in
-      // the background, reconnect instead of silently sending audio nowhere.
-      if (ttsSession?.isOpen?.() && ttsLanguage === speechLanguage) return Promise.resolve(ttsSession)
+      if (ttsSession && ttsLanguage === speechLanguage) return Promise.resolve(ttsSession)
       if (ttsOpening && ttsLanguage === speechLanguage) return ttsOpening
       discardTts(); const connectionId = ++ttsConnectionId; ttsLanguage = speechLanguage
       ttsOpening = tts.open({ language:speechLanguage, onAudio:result => {
@@ -68,7 +66,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     const processFinal = async ({ text, languageCode, requestId, metrics }) => {
       if (!text || closed) return
       const turnEpoch = epoch, started = Date.now(), controller = new AbortController(); activeTurn = controller
-        const detectedLanguage = woxzaLanguageFromSarvamCode(languageCode)
+      const language = woxzaLanguageFromSarvamCode(languageCode)
       persist(db, demoCallId, "caller", text); history.push({ role:"user", content:text })
       log("stt_final", { provider:"sarvam-saaras-realtime", request_id:requestId, language:languageCode, text_length:text.length, metrics }, 0)
       try {
@@ -79,10 +77,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         const ttsReady = prepareTts(speechLanguage)
         const words = createWordBoundaryBuffer({ minimumCharacters:Number(process.env.V3_TTS_MIN_BUFFER_CHARS || "30") })
         let replyText = "", firstToken = true
-        // STT may correctly report an English or code-mixed utterance inside
-        // a Telugu call.  That is useful telemetry, but the website choice is
-        // the caller's requested *spoken output* language for the full call.
-        for await (const chunk of brain.replyStream({ language:requestedLanguage, detectedLanguage, history, callerText:text, memory, signal:controller.signal })) {
+        for await (const chunk of brain.replyStream({ language, history, callerText:text, memory, signal:controller.signal })) {
           if (firstToken) { firstToken = false; log("llm_first_token", {}, Date.now() - started) }
           replyText += chunk.text
           for (const textChunk of words.push(chunk.text)) await sendTtsChunk({ sessionReady:ttsReady, text:textChunk, turnEpoch, startedAt:started })
