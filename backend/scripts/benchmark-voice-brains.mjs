@@ -69,7 +69,7 @@ const providers = {
   sarvam:{ key:"SARVAM_API_KEY", model:process.env.SARVAM_CHAT_MODEL || "sarvam-105b-conversations" },
   anthropic:{ key:"ANTHROPIC_API_KEY", model:process.env.V3_ANTHROPIC_MODEL || "claude-sonnet-4-6" },
   gemini:{ key:"GEMINI_API_KEY", model:process.env.BENCHMARK_GEMINI_MODEL || "gemini-2.5-flash" },
-  gemini_lite:{ key:"GEMINI_API_KEY", model:process.env.BENCHMARK_GEMINI_LITE_MODEL || "gemini-2.5-flash-lite" },
+  gemini_lite:{ key:"GEMINI_API_KEY", model:process.env.BENCHMARK_GEMINI_LITE_MODEL || "gemini-3.5-flash-lite" },
   openai:{ key:"OPENAI_API_KEY", model:process.env.V3_OPENAI_MODEL || "gpt-4.1-mini" },
   mistral:{ key:"MISTRAL_API_KEY", model:process.env.BENCHMARK_MISTRAL_MODEL || "mistral-medium-latest" }
 }
@@ -79,6 +79,7 @@ const selectedLanguages = (args.languages || Object.keys(languageScenarios).join
 const turnsPerConversation = Math.max(1, Math.min(languageScenarios.en.length, Number(args.turns || languageScenarios.en.length)))
 const maxTokens = Math.max(32, Math.min(256, Number(process.env.VOICE_RESPONSE_MAX_TOKENS_TE || "120")))
 const requestTimeoutMs = Math.max(5_000, Math.min(120_000, Number(args.timeout_ms || process.env.BENCHMARK_REQUEST_TIMEOUT_MS || "45000")))
+const geminiThinkingBudget = Math.max(0, Number(args.gemini_thinking_budget || process.env.BENCHMARK_GEMINI_THINKING_BUDGET || "0"))
 const scriptFor = language => ({ en:/[A-Za-z]/u, te:/[\u0C00-\u0C7F]/u, hi:/[\u0900-\u097F]/u, ta:/[\u0B80-\u0BFF]/u }[language])
 const terminal = text => /[.!?…。！？]$/u.test(String(text || "").trim())
 const now = () => performance.now()
@@ -117,7 +118,7 @@ async function streamedReply(providerName, language, history, facts) {
   } else if (providerName === "gemini" || providerName === "gemini_lite") {
     const contents = history.map(message => ({ role:message.role === "assistant" ? "model" : "user", parts:[{ text:message.content }] }))
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(provider.model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(process.env[provider.key])}`
-    const response = await timedFetch(url, { method:"POST", headers:{ "content-type":"application/json" }, body:JSON.stringify({ systemInstruction:{ parts:[{ text:system(language, facts) }] }, contents, generationConfig:{ temperature:0.2, maxOutputTokens:maxTokens } }) })
+    const response = await timedFetch(url, { method:"POST", headers:{ "content-type":"application/json" }, body:JSON.stringify({ systemInstruction:{ parts:[{ text:system(language, facts) }] }, contents, generationConfig:{ temperature:0.2, maxOutputTokens:maxTokens, thinkingConfig:{ thinkingBudget:geminiThinkingBudget } } }) })
     await readSse(response, event => { noteText(event.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("")); stopReason ||= event.candidates?.[0]?.finishReason || null; usage = event.usageMetadata || usage })
   } else {
     const endpoint = providerName === "openai" ? "https://api.openai.com/v1/chat/completions" : "https://api.mistral.ai/v1/chat/completions"
@@ -157,7 +158,7 @@ const summary = Object.values(records.filter(row => !row.skipped && !row.error).
   return { provider:group.provider, model:group.model, language:group.language, responses:rows.length, first_token_ms:{ mean:mean(first), p50:percentile(first, .5), p95:percentile(first, .95) }, full_response_ms:{ mean:mean(full), p50:percentile(full, .5), p95:percentile(full, .95) }, terminal_completion_rate:Number((rows.filter(row => row.terminal_punctuation).length / rows.length).toFixed(3)), target_script_rate:Number((rows.filter(row => row.target_script_present).length / rows.length).toFixed(3)), errors:records.filter(row => row.provider === group.provider && row.language === group.language && row.error).map(row => row.error) }
 })
 
-const report = { generated_at:new Date().toISOString(), scope:{ runs_per_language:runs, languages:selectedLanguages, turns_per_conversation:turnsPerConversation, max_tokens:maxTokens, request_timeout_ms:requestTimeoutMs, providers:selectedProviders }, historical_live_reference:{ sarvam_v3_best_first_audio_ms:2510, sarvam_v3_endpoint_tuned_first_audio_ms:2650, claude_sonnet_latest_first_audio_ms:3284, note:"Historical live numbers include STT, TTS, and carrier playback; this report measures text-brain streaming only." }, summary, skipped:records.filter(row => row.skipped), records }
+const report = { generated_at:new Date().toISOString(), scope:{ runs_per_language:runs, languages:selectedLanguages, turns_per_conversation:turnsPerConversation, max_tokens:maxTokens, request_timeout_ms:requestTimeoutMs, gemini_thinking_budget:geminiThinkingBudget, providers:selectedProviders }, historical_live_reference:{ sarvam_v3_best_first_audio_ms:2510, sarvam_v3_endpoint_tuned_first_audio_ms:2650, claude_sonnet_latest_first_audio_ms:3284, note:"Historical live numbers include STT, TTS, and carrier playback; this report measures text-brain streaming only." }, summary, skipped:records.filter(row => row.skipped), records }
 const outputDir = resolve(root, "backend/data/benchmarks"); await mkdir(outputDir, { recursive:true })
 const output = resolve(outputDir, `voice-brain-benchmark-${new Date().toISOString().replace(/[:.]/g, "-")}.json`)
 await writeFile(output, JSON.stringify(report, null, 2))
