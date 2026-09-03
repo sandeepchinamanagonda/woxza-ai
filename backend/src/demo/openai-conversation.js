@@ -1,13 +1,9 @@
 import { buildWoxzaConversationPrompt } from "./openrouter-conversation.js"
+import { voiceResponseTokenLimit } from "./conversation-limits.js"
 
 const OPENAI_API = "https://api.openai.com/v1/chat/completions"
 
 const safeHistory = history => history.slice(-4).map(item => ({ role:item.role, content:item.content }))
-const tokenLimitFor = language => {
-  const configured = language === "te" ? process.env.SARVAM_CHAT_MAX_TOKENS_TE : null
-  const value = Number(configured || process.env.SARVAM_CHAT_MAX_TOKENS || (language === "te" ? 64 : 56))
-  return Number.isFinite(value) ? Math.max(16, Math.min(256, Math.floor(value))) : (language === "te" ? 64 : 56)
-}
 const systemWithMemory = (language, memory={}) => `${buildWoxzaConversationPrompt(language)}\n\nCALL_STATE_JSON (authoritative facts and already-covered topics from this call):\n${JSON.stringify(memory)}`
 
 // Direct OpenAI adapter for an apples-to-apples V3 brain benchmark.  Audio
@@ -23,7 +19,7 @@ export function createOpenAiConversation({ apiKey=process.env.OPENAI_API_KEY, mo
           model,
           messages:[{ role:"system", content:systemWithMemory(language, memory) }, ...safeHistory(history), { role:"user", content:callerText }],
           temperature:0.55,
-          max_tokens:tokenLimitFor(language),
+          max_tokens:voiceResponseTokenLimit(language),
           stream:true
         })
       })

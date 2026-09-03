@@ -1,13 +1,9 @@
 import { buildWoxzaConversationPrompt } from "./openrouter-conversation.js"
+import { voiceResponseTokenLimit } from "./conversation-limits.js"
 
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages"
 
 const safeHistory = history => history.slice(-4).map(item => ({ role:item.role, content:item.content }))
-const tokenLimitFor = language => {
-  const configured = language === "te" ? process.env.SARVAM_CHAT_MAX_TOKENS_TE : null
-  const value = Number(configured || process.env.SARVAM_CHAT_MAX_TOKENS || (language === "te" ? 64 : 56))
-  return Number.isFinite(value) ? Math.max(16, Math.min(256, Math.floor(value))) : (language === "te" ? 64 : 56)
-}
 const systemWithMemory = (language, memory={}) => `${buildWoxzaConversationPrompt(language)}\n\nCALL_STATE_JSON (authoritative facts and already-covered topics from this call):\n${JSON.stringify(memory)}`
 
 // Direct Anthropic adapter for an apples-to-apples V3 brain benchmark. Audio
@@ -26,7 +22,7 @@ export function createAnthropicConversation({ apiKey=process.env.ANTHROPIC_API_K
           system:systemWithMemory(language, memory),
           messages:[...safeHistory(history), { role:"user", content:callerText }],
           temperature:0.55,
-          max_tokens:tokenLimitFor(language),
+          max_tokens:voiceResponseTokenLimit(language),
           stream:true
         })
       })

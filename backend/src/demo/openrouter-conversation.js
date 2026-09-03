@@ -46,7 +46,7 @@ export function createOpenRouterConversation({ apiKey=process.env.OPENROUTER_API
           method:"POST", signal,
           headers:{ authorization:`Bearer ${apiKey}`, "content-type":"application/json", "HTTP-Referer":process.env.WEBSITE_URL || "https://woxza.ai", "X-OpenRouter-Title":"Woxza voice demo" },
           // Never let a reasoning model put its private planning in the phone audio.
-          body:JSON.stringify({ model:activeModel, messages:[{ role:"system", content:system }, ...safeHistory(history), { role:"user", content:callerText }], reasoning:{ effort:"none", exclude:true }, temperature:0.55, max_tokens:80 })
+          body:JSON.stringify({ model:activeModel, messages:[{ role:"system", content:system }, ...safeHistory(history), { role:"user", content:callerText }], reasoning:{ effort:"none", exclude:true }, temperature:0.55, max_tokens:voiceResponseTokenLimit(language) })
         })
         if (!response.ok) throw new Error(`OpenRouter ${activeModel} failed (${response.status}): ${(await response.text()).slice(0, 300)}`)
         return response.json()
@@ -65,3 +65,4 @@ export function createOpenRouterConversation({ apiKey=process.env.OPENROUTER_API
     }
   }
 }
+import { voiceResponseTokenLimit } from "./conversation-limits.js"

@@ -19,8 +19,8 @@ test("Sarvam Conversations disables thinking for short phone replies", async () 
 
 test("Sarvam Conversations accepts a language-specific response ceiling", async () => {
   let request
-  const original = process.env.SARVAM_CHAT_MAX_TOKENS_TE
-  process.env.SARVAM_CHAT_MAX_TOKENS_TE = "80"
+  const original = process.env.VOICE_RESPONSE_MAX_TOKENS_TE
+  process.env.VOICE_RESPONSE_MAX_TOKENS_TE = "80"
   try {
     const client = createSarvamConversation({ apiKey:"test", fetchImpl:async (_url, options) => {
       request = JSON.parse(options.body)
@@ -29,7 +29,7 @@ test("Sarvam Conversations accepts a language-specific response ceiling", async 
     await client.reply({ language:"te", history:[], callerText:"హలో" })
     assert.equal(request.max_tokens, 80)
   } finally {
-    if (original === undefined) delete process.env.SARVAM_CHAT_MAX_TOKENS_TE
-    else process.env.SARVAM_CHAT_MAX_TOKENS_TE = original
+    if (original === undefined) delete process.env.VOICE_RESPONSE_MAX_TOKENS_TE
+    else process.env.VOICE_RESPONSE_MAX_TOKENS_TE = original
   }
 })
