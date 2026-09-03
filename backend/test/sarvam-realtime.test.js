@@ -1,6 +1,12 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { realtimeSttUrl, streamingTtsUrl } from "../src/demo/sarvam-realtime.js"
+import { realtimeSttUrl, streamingTtsUrl, v3SilenceDuration } from "../src/demo/sarvam-realtime.js"
+
+test("latency cherry can shorten V3 endpointing without changing the baseline setting", () => {
+  assert.equal(v3SilenceDuration({ latencyCherry:"350", baseline:"500" }), 350)
+  assert.equal(v3SilenceDuration({ latencyCherry:"", baseline:"500" }), 500)
+  assert.equal(v3SilenceDuration({ latencyCherry:"100", baseline:"500" }), 500)
+})
 
 test("realtime STT URL preserves low-latency and multilingual call settings", () => {
   const url = new URL(realtimeSttUrl({ language:"auto", model:"saaras:v3-realtime", mode:"codemix", streamType:"fast", silenceDurationMs:420, minSpeechDurationMs:180 }))
