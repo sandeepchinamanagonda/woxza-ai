@@ -87,8 +87,10 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         const speechLanguage = requestedLanguage
         const ttsReady = prepareTts(speechLanguage)
         const words = createWordBoundaryBuffer({ minimumCharacters:Number(process.env.V3_TTS_MIN_BUFFER_CHARS || "30") })
-        let replyText = "", firstToken = true
+        let replyText = "", firstToken = true, completion = null
         for await (const chunk of brain.replyStream({ language, history, callerText:text, memory, signal:controller.signal })) {
+          if (chunk.completion) completion = { ...(completion || {}), ...chunk.completion }
+          if (!chunk.text) continue
           if (firstToken) { firstToken = false; log("llm_first_token", {}, Date.now() - started) }
           replyText += chunk.text
           for (const textChunk of words.push(chunk.text)) await sendTtsChunk({ sessionReady:ttsReady, text:textChunk, turnEpoch, startedAt:started })
@@ -98,7 +100,13 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         replyText = replyText.trim(); if (!replyText || closed || turnEpoch !== epoch) return
         history.push({ role:"assistant", content:replyText }); memory.turns.push({ turn:memory.turns.length + 1, caller:text, agent:replyText }); memory.turns = memory.turns.slice(-16)
         persist(db, demoCallId, "agent", replyText)
-        log("llm_response", { provider:brain.provider || configuredBrainProvider(), model:brain.model || configuredBrainModel(configuredBrainProvider()) }, Date.now() - started)
+        log("llm_response", {
+          provider:brain.provider || configuredBrainProvider(),
+          model:brain.model || configuredBrainModel(configuredBrainProvider()),
+          completion,
+          response_characters:replyText.length,
+          response_has_terminal_punctuation:/[.!?…。！？]$/u.test(replyText)
+        }, Date.now() - started)
       } catch (error) { if (!controller.signal.aborted) log("error", { component:"v3_turn", message:error.message }, Date.now() - started) }
       finally { if (activeTurn === controller) activeTurn = undefined }
     }

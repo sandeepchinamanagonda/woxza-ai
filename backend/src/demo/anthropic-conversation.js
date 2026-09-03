@@ -33,6 +33,15 @@ export function createAnthropicConversation({ apiKey=process.env.ANTHROPIC_API_K
         const data = eventBlock.split(/\r?\n/).filter(line => line.startsWith("data:")).map(line => line.slice(5).trim()).join("\n")
         if (!data) return []
         const event = JSON.parse(data)
+        // Anthropic sends the authoritative completion outcome in the final
+        // message_delta event. Preserve it even though it has no audible text:
+        // a stop_reason of max_tokens proves a clipped answer is a token-budget
+        // issue, whereas end_turn means prompt/model behavior needs attention.
+        if (event.type === "message_delta") return [{ completion:{
+          stopReason:event.delta?.stop_reason || null,
+          stopSequence:event.delta?.stop_sequence || null,
+          usage:event.usage || {}
+        } }]
         const text = event.type === "content_block_delta" ? event.delta?.text || "" : ""
         return text ? [{ text, usage:event.usage || {} }] : []
       }
