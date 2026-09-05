@@ -18,6 +18,10 @@ import { assessCallerPartial, assessCallerTurn } from "./turn-quality-policy.js"
 import { callerFirstPresencePrompt, configuredCallStartPolicy } from "./call-start-policy.js"
 import { createPlaybackEchoDetector } from "./playback-echo-detector.js"
 import { configuredLanguageSwitchPolicy, createLanguageSwitchController, languageSwitchQuestion } from "./language-switch-policy.js"
+import { configuredOpeningDeliveryPolicy } from "./opening-delivery-policy.js"
+import { createConversationTurnStore } from "./conversation-turn-store.js"
+import { configuredStreamResumePolicy } from "./stream-resume-policy.js"
+import { randomUUID } from "node:crypto"
 
 const findCall = async (db, id) => (await db.query("SELECT id,language FROM demo_calls WHERE id=$1 AND status IN ('ringing','connected')", [id])).rows[0]
 const welcome = language => ({ en:"Hello, I’m Woxza’s AI assistant. Thanks for trying the demo. What would you like to talk about today?", te:"నమస్కారం, నేను Woxza AI అసిస్టెంట్‌ని. మా డెమో ప్రయత్నించినందుకు ధన్యవాదాలు. ఈరోజు మీరు ఏ విషయం గురించి మాట్లాడాలనుకుంటున్నారు?", hi:"नमस्ते, मैं Woxza का AI सहायक हूँ। डेमो आज़माने के लिए धन्यवाद। आज आप किस बारे में बात करना चाहेंगे?", ta:"வணக்கம், நான் Woxza-வின் AI உதவியாளர். இந்த டெமோவை முயற்சித்ததற்கு நன்றி. இன்று நீங்கள் எதைப் பற்றி பேச விரும்புகிறீர்கள்?" }[language] || "Hello, I’m Woxza’s AI assistant. Thanks for trying the demo. What would you like to talk about today?")
@@ -76,6 +80,17 @@ export const configuredWoxzaPhraseBuffer = (env=process.env) => ({
 })
 const maximumSpokenCharacters = () => Number(process.env.V3_PHONE_REPLY_MAX_CHARS || "240")
 const inboundSampleRate = () => Number(String(process.env.PLIVO_STREAM_CONTENT_TYPE || "audio/x-l16;rate=16000").match(/rate=(\d+)/i)?.[1] || 16_000)
+const createTtsPlayback = values => {
+  let resolveCompletion
+  const completion = new Promise(resolve => { resolveCompletion = resolve })
+  return { ...values, firstAudioSent:false, settled:false, completion, resolveCompletion }
+}
+const settleTtsPlayback = (playback, outcome) => {
+  if (!playback || playback.settled) return
+  playback.settled = true
+  playback.onComplete?.({ ...outcome, firstAudioSent:playback.firstAudioSent })
+  playback.resolveCompletion?.({ ...outcome, firstAudioSent:playback.firstAudioSent })
+}
 export const configuredTurnControl = (env=process.env) => {
   const value = String(env.V3_TURN_CONTROL || "provider").trim().toLowerCase()
   return ["provider", "shadow", "bridge", "hybrid"].includes(value) ? value : "provider"
@@ -88,6 +103,10 @@ export const configuredTurnControlSettings = (env=process.env) => ({
 
 export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealtimeStt(), tts=configuredTts(), sarvamTts=createSarvamStreamingTts(), brain=configuredBrain() }={}) {
   const wss = new WebSocketServer({ noServer:true })
+  // Process-local ownership prevents two simultaneous media sockets from
+  // speaking for one call. PostgreSQL remains the source of truth for the
+  // completed-turn history that is restored on reconnect or process restart.
+  const streamLeases = new Map()
   server.on("upgrade", (request, socket, head) => {
     const url = new URL(request.url, "http://localhost")
     if (url.pathname !== "/telephony/plivo/v3/stream") return
@@ -97,24 +116,57 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     const demoCallId = url.searchParams.get("demoCallId"), requestedLanguage = url.searchParams.get("lang") || "en"
     if (!demoCallId || !LANGUAGES.has(requestedLanguage) || !stt || !tts || !brain) return socket.close(1011, "V3 providers are not configured")
     if (!await findCall(db, demoCallId).catch(() => null)) return socket.close(1008, "Unknown demo call")
+    const resumePolicy = configuredStreamResumePolicy()
+    const previousLease = streamLeases.get(demoCallId)
+    if (previousLease?.active) return socket.close(1013, "Demo call already has an active media stream")
+    const withinResumeWindow = Boolean(resumePolicy.enabled && previousLease?.expiresAt > Date.now())
+    const connectionId = randomUUID()
+    if (previousLease?.expiryTimer) clearTimeout(previousLease.expiryTimer)
+    streamLeases.set(demoCallId, { connectionId, active:true, expiresAt:0 })
+    const conversationTurns = createConversationTurnStore({ db })
+    let restoredTurns = []
+    if (withinResumeWindow) {
+      try {
+        restoredTurns = await conversationTurns.loadLatestCompletedTurns({ demoCallId, limit:resumePolicy.historyTurns })
+      } catch (error) {
+        streamLeases.delete(demoCallId)
+        return socket.close(1011, "Unable to restore demo call")
+      }
+    }
     let closed = false, epoch = 0, activeTurn, ttsSession, ttsLanguage, ttsOpening, ttsConnectionId = 0, ttsPlayback
     const turnControl = configuredTurnControl()
     const turnControlSettings = configuredTurnControlSettings()
     const callStart = configuredCallStartPolicy()
+    const openingDeliveryPolicy = configuredOpeningDeliveryPolicy()
     const pendingManualUtterances = []
     const echoDetector = createPlaybackEchoDetector({ sampleRate:inboundSampleRate() })
     const candidateEcho = new Map()
-    const languageSwitch = createLanguageSwitchController({ selectedLanguage:requestedLanguage, mode:configuredLanguageSwitchPolicy() })
-    const history = [], memory = { opening_delivered:callStart.speakFirst, call_start_mode:callStart.speakFirst ? "agent_first" : "caller_first", language_policy:languageSwitch.snapshot(), turns:[] }
-    let firstCallerTurnSeen = false, callerFirstTimer
+    const restoredPolicy = restoredTurns.at(-1)?.language_policy || {}
+    const restoredLanguage = restoredPolicy.active_language || restoredTurns.at(-1)?.language || requestedLanguage
+    const languageSwitch = createLanguageSwitchController({ selectedLanguage:requestedLanguage, activeLanguage:withinResumeWindow ? restoredLanguage : null, mode:configuredLanguageSwitchPolicy() })
+    // This stays false until Plivo has actually received the first greeting
+    // audio frame. A TTS socket opening is not evidence that a caller heard it.
+    const history = restoredTurns.flatMap(turn => [{ role:"user", content:turn.caller_text }, { role:"assistant", content:turn.agent_text }])
+    const memory = {
+      opening_delivered:withinResumeWindow,
+      call_start_mode:withinResumeWindow ? "resumed" : (callStart.speakFirst ? "agent_first" : "caller_first"),
+      language_policy:languageSwitch.snapshot(),
+      turns:restoredTurns.map(turn => ({ turn:turn.turn_sequence, caller:turn.caller_text, agent:turn.agent_text }))
+    }
+    let firstCallerTurnSeen = withinResumeWindow, callerFirstTimer, completedTurnSequence = restoredTurns.at(-1)?.turn_sequence || 0
+    let openingDelivery, openingDeliveryTimer, openingDeliverySequence = 0
     const callUsage = { inputTokens:0, cachedInputTokens:0, outputTokens:0, visibleOutputTokens:0, thinkingTokens:0, totalTokens:0, estimatedGeminiCostUsd:0, sttAudioSeconds:0, ttsCharacters:0, ttsProvider:tts.provider || (configuredTtsProvider() === "indic" ? "ai4bharat-indic-tts" : "sarvam-bulbul-streaming"), llmProvider:configuredBrainProvider(), llmModel:configuredBrainModel(configuredBrainProvider()) }
     const log = (eventType, payload={}, latencyMs=null) => logCallEvent(db, { callId:demoCallId, demoCallId, eventType, payload:{ pipeline:"v3-streaming", ...payload }, latencyMs })
     const transcripts = createTranscriptWriter({ db, demoCallId, onError:(error, turn) => log("error", { component:"transcript", message:error.message, speaker:turn.speaker }) })
-    const recordTtsUsage = (sentText, source) => {
+    const recordTtsUsage = (sentText, source, session) => {
       const characters = [...String(sentText || "")].length
       if (!characters) return
       callUsage.ttsCharacters += characters
-      log("tts_usage", { source, characters, call_tts_characters:callUsage.ttsCharacters })
+      log("tts_usage", {
+        source, characters, call_tts_characters:callUsage.ttsCharacters,
+        tts_voice:session?.speaker || null, tts_pace:session?.pace ?? null,
+        tts_temperature:session?.temperature ?? null, tts_language:session?.language || ttsLanguage || null
+      })
     }
     const clearCallerFirstTimer = () => { if (callerFirstTimer) { clearTimeout(callerFirstTimer); callerFirstTimer = undefined } }
     const noteFirstCallerTurn = source => {
@@ -141,11 +193,31 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     }
     const sendAudio = result => {
       if (result.audio?.length) echoDetector.noteOutgoing(result.audio, result.sampleRate)
-      if (socket.readyState === socket.OPEN && result.audio?.length) socket.send(JSON.stringify({ event:"playAudio", media:{ contentType:result.contentType, sampleRate:result.sampleRate, payload:result.audio.toString("base64") } }))
+      if (socket.readyState !== socket.OPEN || !result.audio?.length) return false
+      socket.send(JSON.stringify({ event:"playAudio", media:{ contentType:result.contentType, sampleRate:result.sampleRate, payload:result.audio.toString("base64") } }))
+      return true
     }
-    const discardTts = () => { ttsConnectionId += 1; ttsOpening = undefined; ttsSession?.close(); ttsSession = undefined; ttsLanguage = undefined; ttsPlayback = undefined }
+    const clearOpeningDeliveryTimer = () => { if (openingDeliveryTimer) { clearTimeout(openingDeliveryTimer); openingDeliveryTimer = undefined } }
+    const cancelOpeningDelivery = reason => {
+      if (!openingDelivery || openingDelivery.delivered || openingDelivery.cancelled) return false
+      openingDelivery.cancelled = true
+      clearOpeningDeliveryTimer()
+      log("opening_delivery_cancelled", { opening_id:openingDelivery.id, attempt:openingDelivery.attempt, reason })
+      return true
+    }
+    const confirmOpeningDelivery = ({ openingId, attempt, requestId }) => {
+      if (!openingDelivery || openingDelivery.id !== openingId || openingDelivery.attempt !== attempt || openingDelivery.delivered || openingDelivery.cancelled) return
+      openingDelivery.delivered = true
+      clearOpeningDeliveryTimer()
+      memory.opening_delivered = true
+      history.push({ role:"assistant", content:openingDelivery.text })
+      void transcripts.write("agent", openingDelivery.text)
+      log("opening_delivery_confirmed", { opening_id:openingId, attempt, source:openingDelivery.source, request_id:requestId, elapsed_ms:Date.now() - openingDelivery.startedAt })
+    }
+    const discardTts = () => { settleTtsPlayback(ttsPlayback, { status:"cancelled" }); ttsConnectionId += 1; ttsOpening = undefined; ttsSession?.close(); ttsSession = undefined; ttsLanguage = undefined; ttsPlayback = undefined }
     const stopAgent = reason => {
       epoch += 1; activeTurn?.abort(reason); activeTurn = undefined
+      cancelOpeningDelivery(reason)
       // Sarvam cannot cancel an in-progress TTS response. Close only when it
       // is actively generating; an idle, pre-warmed connection is reusable.
       if (ttsPlayback) discardTts()
@@ -159,13 +231,19 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       const openTts = (provider, fallback=false) => provider.open({ language:speechLanguage, onAudio:result => {
         const playback = ttsPlayback
         if (closed || connectionId !== ttsConnectionId || !playback || playback.epoch !== epoch) return
-        sendAudio(result)
+        const deliveredToCarrier = sendAudio(result)
+        if (!deliveredToCarrier) return
         if (!playback.firstAudioSent) {
           playback.firstAudioSent = true
           log("first_audio_sent", { provider:ttsSession?.provider || callUsage.ttsProvider, request_id:result.requestId }, Date.now() - playback.startedAt)
+          if (playback.openingDeliveryId) confirmOpeningDelivery({ openingId:playback.openingDeliveryId, attempt:playback.openingAttempt, requestId:result.requestId })
         }
       }, onComplete:() => {
-        if (connectionId === ttsConnectionId) ttsPlayback = undefined
+        if (connectionId === ttsConnectionId) {
+          const playback = ttsPlayback
+          settleTtsPlayback(playback, { status:"completed" })
+          ttsPlayback = undefined
+        }
       }, onError:error => log("error", { component:"v3_tts", provider:provider.provider, message:error.message, fallback }) })
       ttsOpening = openTts(tts).catch(async error => {
         const canFallback = configuredTtsProvider() === "indic" && process.env.V3_TTS_FALLBACK !== "none" && sarvamTts && tts !== sarvamTts
@@ -206,28 +284,54 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       }).finally(() => { if (connectionId === ttsConnectionId) ttsOpening = undefined })
       return ttsOpening
     }
-    const sendTtsChunk = async ({ sessionReady, text, turnEpoch, startedAt }) => {
+    const sendTtsChunk = async ({ sessionReady, text, turnEpoch, startedAt, playback=null }) => {
       const session = await sessionReady
       if (!session || closed || turnEpoch !== epoch) return
-      if (!ttsPlayback || ttsPlayback.epoch !== turnEpoch) ttsPlayback = { epoch:turnEpoch, startedAt, firstAudioSent:false }
+      if (!ttsPlayback || ttsPlayback.epoch !== turnEpoch) ttsPlayback = playback || createTtsPlayback({ epoch:turnEpoch, startedAt })
       const sentText = await session.send(text)
-      recordTtsUsage(sentText, "agent_turn")
+      recordTtsUsage(sentText, "agent_turn", session)
     }
-    const speakCallStartPrompt = async ({ text, source }) => {
-      const openingEpoch = epoch
-      memory.opening_delivered = true
-      history.push({ role:"assistant", content:text })
-      void transcripts.write("agent", text)
-      log("call_start_prompt", { source, mode:memory.call_start_mode, characters:[...text].length })
+    const scheduleOpeningAttempt = async (delivery, reason="initial") => {
+      if (closed || delivery.cancelled || delivery.delivered) return
+      if (delivery.attempt >= openingDeliveryPolicy.maxAttempts) {
+        log("opening_delivery_failed", { opening_id:delivery.id, attempts:delivery.attempt, source:delivery.source, reason })
+        return
+      }
+      clearOpeningDeliveryTimer()
+      discardTts()
+      delivery.attempt += 1
+      const attempt = delivery.attempt, openingEpoch = epoch
+      log("opening_delivery_attempt", { opening_id:delivery.id, attempt, source:delivery.source, reason, timeout_seconds:openingDeliveryPolicy.timeoutSeconds })
+      if (openingDeliveryPolicy.enabled) {
+        openingDeliveryTimer = setTimeout(() => {
+          openingDeliveryTimer = undefined
+          if (!closed && !delivery.cancelled && !delivery.delivered && openingDelivery === delivery && delivery.attempt === attempt) {
+            log("opening_delivery_timeout", { opening_id:delivery.id, attempt, source:delivery.source, timeout_seconds:openingDeliveryPolicy.timeoutSeconds })
+            scheduleOpeningAttempt(delivery, "first_audio_timeout")
+          }
+        }, openingDeliveryPolicy.timeoutSeconds * 1_000)
+      }
       try {
         const session = await prepareTts(requestedLanguage)
-        if (session && !closed && openingEpoch === epoch) {
-          ttsPlayback = { epoch:openingEpoch, startedAt:Date.now(), firstAudioSent:false }
-          const spoken = await session.send(text)
-          recordTtsUsage(spoken, source)
+        if (session && !closed && !delivery.cancelled && !delivery.delivered && openingDelivery === delivery && delivery.attempt === attempt && openingEpoch === epoch) {
+          ttsPlayback = createTtsPlayback({ epoch:openingEpoch, startedAt:Date.now(), openingDeliveryId:delivery.id, openingAttempt:attempt })
+          const spoken = await session.send(delivery.text)
+          recordTtsUsage(spoken, delivery.source, session)
           session.flush()
         }
-      } catch (error) { log("error", { component:"v3_call_start_tts", source, message:error.message }) }
+      } catch (error) {
+        log("error", { component:"v3_call_start_tts", source:delivery.source, attempt, message:error.message })
+        if (!closed && !delivery.cancelled && !delivery.delivered && openingDelivery === delivery && delivery.attempt === attempt) scheduleOpeningAttempt(delivery, "tts_error")
+      }
+    }
+    const speakCallStartPrompt = ({ text, source }) => {
+      // There is only one introductory prompt per call. A caller who speaks
+      // before it reaches the carrier gets a normal first reply instead.
+      if (closed || openingDelivery) return
+      const delivery = { id:`opening-${++openingDeliverySequence}`, text, source, attempt:0, startedAt:Date.now(), delivered:false, cancelled:false }
+      openingDelivery = delivery
+      log("call_start_prompt", { opening_id:delivery.id, source, mode:memory.call_start_mode, characters:[...text].length })
+      void scheduleOpeningAttempt(delivery)
     }
     const processFinal = async ({ text, languageCode, requestId, metrics, utteranceId=null }) => {
       if (!text || closed) return
@@ -241,8 +345,9 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         candidate_language:languageDecision.candidateLanguage,
         detected_language:detectedLanguage
       })
-      void transcripts.write("caller", text)
+      const callerTranscript = transcripts.write("caller", text)
       const turnAssessment = assessCallerTurn(text)
+      if (turnAssessment.action === "respond" || languageDecision.forceReply) cancelOpeningDelivery("caller_turn_before_opening")
       // A language-switch confirmation can be a short acknowledgement such as
       // “okay”. It is meaningful only while the controller has a pending
       // offer, so let it clear old playback and produce the confirmation turn.
@@ -277,6 +382,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         const chunker = configuredTtsChunker()
         const deliveryMode = configuredTtsDeliveryMode()
         const phraseConfig = configuredWoxzaPhraseBuffer()
+        const voiceDelivery = createTtsPlayback({ epoch:turnEpoch, startedAt:started })
         const words = chunker === "prosody"
           ? createProsodyPhraseBuffer(phraseConfig)
           : createWordBoundaryBuffer({ minimumCharacters:phraseConfig.minimumCharacters })
@@ -296,7 +402,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
               release_reason:phrase.releaseReason || "legacy_boundary",
               phrase_wait_ms:queuedAt - started
             })
-            await sendTtsChunk({ sessionReady:ttsReady, text:phrase.text, turnEpoch, startedAt:started })
+            await sendTtsChunk({ sessionReady:ttsReady, text:phrase.text, turnEpoch, startedAt:started, playback:voiceDelivery })
           })
           return ttsPhraseQueue
         }
@@ -390,7 +496,6 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           const last = words.flush(); if (last) await queuePhrase(typeof last === "string" ? { text:last, releaseReason:"legacy_final_flush" } : last)
         }
         await ttsPhraseQueue
-        const session = await ttsReady; if (session && !closed && turnEpoch === epoch) session.flush()
         replyText = replyText.trim(); if (!replyText || closed || turnEpoch !== epoch) return
         const provider = brain.provider || configuredBrainProvider()
         callUsage.llmProvider = provider
@@ -403,9 +508,32 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         callUsage.thinkingTokens += turnUsage.thinkingTokens
         callUsage.totalTokens += turnUsage.totalTokens
         if (provider === "gemini") callUsage.estimatedGeminiCostUsd = Number((callUsage.estimatedGeminiCostUsd + geminiCostUsd(turnUsage)).toFixed(8))
-        history.push({ role:"assistant", content:replyText })
-        memory.turns.push({ turn:memory.turns.length + 1, caller:callerText, agent:replyText }); memory.turns = memory.turns.slice(-16)
-        void transcripts.write("agent", replyText)
+        const agentTranscript = transcripts.write("agent", replyText)
+        const turnSequence = ++completedTurnSequence, turnId = randomUUID()
+        // Snapshot state now. The next caller turn may update language policy
+        // before this asynchronous durable write runs.
+        const languagePolicy = structuredClone(memory.language_policy || {})
+        // This callback runs only after Sarvam confirms the TTS turn ended.
+        // It updates in-memory continuity immediately, then persists the
+        // compact pair asynchronously so the caller never waits on Postgres.
+        voiceDelivery.onComplete = outcome => {
+          if (outcome.status !== "completed" || !outcome.firstAudioSent) {
+            log("conversation_turn_not_persisted", { turn_id:turnId, turn_sequence:turnSequence, reason:outcome.status || "no_audio" })
+            return
+          }
+          history.push({ role:"assistant", content:replyText })
+          memory.turns.push({ turn:turnSequence, caller:callerText, agent:replyText }); memory.turns = memory.turns.slice(-16)
+          void Promise.all([callerTranscript, agentTranscript]).then(([callerRow, agentRow]) => conversationTurns.completeTurn({
+            turnId, demoCallId, turnSequence, callerText, agentText:replyText, language,
+            languagePolicy,
+            callerTranscriptTurnId:callerRow?.id || null, agentTranscriptTurnId:agentRow?.id || null
+          })).then(saved => {
+            if (saved) log("conversation_turn_persisted", { turn_id:turnId, turn_sequence:turnSequence, language })
+          }).catch(error => log("error", { component:"conversation_turn_store", turn_id:turnId, message:error.message }))
+        }
+        // Arm persistence before flushing. Sarvam can emit its final event
+        // immediately after a flush, and that event is the delivery proof.
+        const session = await ttsReady; if (session && !closed && turnEpoch === epoch) session.flush()
         log("llm_response", {
           provider,
           model:callUsage.llmModel,
@@ -518,11 +646,37 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         }
       })
     }
-    const close = () => { if (closed) return; closed = true; clearCallerFirstTimer(); candidateEcho.clear(); echoDetector.reset(); bridgeTurnController?.reset(); pendingManualUtterances.length = 0; sttSession?.close(); discardTts(); stopAgent("call_closed"); void transcripts.flush().finally(() => persistUsage("stream_closed")) }
-    socket.on("close", close)
-    socket.on("message", raw => { try { const event = JSON.parse(raw.toString()); if (event.event === "stop") return close(); if (event.event === "media" && event.media?.payload) { const pcm = decodePlivoInboundAudio(event.media.payload, process.env.PLIVO_STREAM_CONTENT_TYPE || "audio/x-l16;rate=16000", process.env.PLIVO_L16_BYTE_ORDER || "little"); callUsage.sttAudioSeconds += pcm.length / 2 / inboundSampleRate(); if (bridgeTurnController) bridgeTurnController.push(pcm); else sttSession.push(pcm) } } catch (error) { log("error", { component:"v3_plivo_input", message:error.message }) } })
-    log("call_started", { provider:"plivo", agentId:"sarvam-streaming-v3", brain_provider:configuredBrainProvider(), brain_model:brain.model || configuredBrainModel(configuredBrainProvider()), stt_model:process.env.V3_STT_MODEL || "saaras:v3-realtime", tts_provider:callUsage.ttsProvider, tts_model:tts.model || (configuredTtsProvider() === "indic" ? "indic-tts-fastpitch-hifigan" : process.env.SARVAM_TTS_MODEL || "bulbul:v3"), turn_control:turnControl, turn_control_settings:turnControlSettings, language_switch_policy:configuredLanguageSwitchPolicy(), call_start:callStart })
-    if (callStart.speakFirst) {
+    const close = ({ resumable=false, reason="stream_closed" }={}) => {
+      if (closed) return
+      closed = true
+      clearCallerFirstTimer(); clearOpeningDeliveryTimer(); candidateEcho.clear(); echoDetector.reset(); bridgeTurnController?.reset(); pendingManualUtterances.length = 0
+      sttSession?.close(); discardTts(); stopAgent(reason)
+      const lease = streamLeases.get(demoCallId)
+      if (lease?.connectionId === connectionId) {
+        if (resumable && resumePolicy.enabled) {
+          lease.active = false
+          lease.expiresAt = Date.now() + resumePolicy.graceSeconds * 1_000
+          lease.expiryTimer = setTimeout(() => {
+            const current = streamLeases.get(demoCallId)
+            if (current?.connectionId === connectionId && !current.active) {
+              streamLeases.delete(demoCallId)
+              log("stream_resume_expired", { grace_seconds:resumePolicy.graceSeconds })
+            }
+          }, resumePolicy.graceSeconds * 1_000)
+          // The timer is only cleanup state; it must not keep a server process
+          // alive after the call infrastructure has otherwise shut down.
+          lease.expiryTimer.unref?.()
+          log("stream_resume_waiting", { grace_seconds:resumePolicy.graceSeconds })
+        } else streamLeases.delete(demoCallId)
+      }
+      void transcripts.flush().finally(() => persistUsage(reason))
+    }
+    socket.on("close", () => close({ resumable:true, reason:"media_socket_closed" }))
+    socket.on("message", raw => { try { const event = JSON.parse(raw.toString()); if (event.event === "stop") return close({ reason:"provider_stream_stopped" }); if (event.event === "media" && event.media?.payload) { const pcm = decodePlivoInboundAudio(event.media.payload, process.env.PLIVO_STREAM_CONTENT_TYPE || "audio/x-l16;rate=16000", process.env.PLIVO_L16_BYTE_ORDER || "little"); callUsage.sttAudioSeconds += pcm.length / 2 / inboundSampleRate(); if (bridgeTurnController) bridgeTurnController.push(pcm); else sttSession.push(pcm) } } catch (error) { log("error", { component:"v3_plivo_input", message:error.message }) } })
+    log("call_started", { provider:"plivo", agentId:"sarvam-streaming-v3", brain_provider:configuredBrainProvider(), brain_model:brain.model || configuredBrainModel(configuredBrainProvider()), stt_model:process.env.V3_STT_MODEL || "saaras:v3-realtime", tts_provider:callUsage.ttsProvider, tts_model:tts.model || (configuredTtsProvider() === "indic" ? "indic-tts-fastpitch-hifigan" : process.env.SARVAM_TTS_MODEL || "bulbul:v3"), turn_control:turnControl, turn_control_settings:turnControlSettings, language_switch_policy:configuredLanguageSwitchPolicy(), call_start:callStart, resumed:withinResumeWindow })
+    if (withinResumeWindow) {
+      log("stream_resumed", { restored_turns:restoredTurns.length, restored_language:languageSwitch.snapshot().active_language, next_turn_sequence:completedTurnSequence + 1 })
+    } else if (callStart.speakFirst) {
       // If the caller begins speaking during the TTS handshake, never send a
       // delayed welcome afterwards. That would overlap their first response.
       void speakCallStartPrompt({ text:welcome(requestedLanguage), source:"agent_first_welcome" })

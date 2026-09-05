@@ -2,17 +2,10 @@ import { buildWoxzaConversationPrompt } from "./openrouter-conversation.js"
 import { voiceRepairTokenLimit, voiceResponseTokenLimit } from "./conversation-limits.js"
 
 const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models"
-const safeHistory = history => history.slice(-4).map(item => ({ role:item.role === "assistant" ? "model" : "user", parts:[{ text:item.content }] }))
-// Gemini requires the final content item to be a user turn. V3 deliberately
-// persists a caller turn only after its reply is complete, so the current
-// caller text must be appended to the request rather than waiting for history.
-const requestContents = (history, callerText) => {
-  const contents = safeHistory(history)
-  if (!callerText) return contents
-  const last = contents.at(-1)
-  if (last?.role === "user" && last.parts?.[0]?.text === callerText) return contents
-  return [...contents, { role:"user", parts:[{ text:callerText }] }]
-}
+// V3 uses CALL_STATE_JSON.turns as the single structured history source.
+// Keep the new caller sentence as Gemini's actual user input, but do not send
+// a second overlapping chat-history representation on every request.
+const requestContents = (_history, callerText) => callerText ? [{ role:"user", parts:[{ text:callerText }] }] : []
 const repairInstruction = draft => `Your previous answer was cut off before it was useful on a phone call. Replace it with one concise, self-contained answer to the caller's latest question, followed by at most one natural next question. Do not mention token limits, drafts, or this instruction. Do not repeat the caller verbatim. Previous cut-off draft:\n${draft}`
 const systemWithMemory = (language, memory={}) => `${buildWoxzaConversationPrompt(language)}\n\nCALL_STATE_JSON (authoritative facts and already-covered topics from this call):\n${JSON.stringify(memory)}`
 

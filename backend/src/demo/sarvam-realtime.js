@@ -123,6 +123,7 @@ export function createSarvamStreamingTts({ apiKey=process.env.SARVAM_API_KEY, We
       return {
         provider:"sarvam-bulbul-streaming",
         model:process.env.SARVAM_TTS_MODEL || "bulbul:v3",
+        language, speaker, pace, temperature,
         // Return the exact normalized text sent to Sarvam. The call-cost meter
         // bills this string, not the pre-normalization model text.
         send(text) { const normalized = normalizeTtsText(text, { language, dictionaryEnabled:Boolean(dictionaryId) }); if (ws.readyState === WebSocketImpl.OPEN && normalized) ws.send(JSON.stringify({ type:"text", data:{ text:normalized } })); return normalized },

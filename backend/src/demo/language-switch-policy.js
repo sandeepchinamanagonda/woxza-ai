@@ -67,10 +67,13 @@ export function isSubstantiveLanguageChange({ text, detectedLanguage, activeLang
 const isAffirmative = text => AFFIRMATIVE.has(normalize(text))
 const isNegative = text => NEGATIVE.has(normalize(text))
 
-export function createLanguageSwitchController({ selectedLanguage="en", mode="locked" }={}) {
+export function createLanguageSwitchController({ selectedLanguage="en", activeLanguage:restoredActiveLanguage=null, mode="locked" }={}) {
   const selected = SUPPORTED.has(selectedLanguage) ? selectedLanguage : "en"
   const policy = mode === "confirm" ? "confirm" : "locked"
-  let activeLanguage = selected
+  // Resume only the confirmed active language. A pending consent question is
+  // intentionally not restored: it belongs to a previous live turn and must
+  // never be replayed after a transport interruption.
+  let activeLanguage = SUPPORTED.has(restoredActiveLanguage) ? restoredActiveLanguage : selected
   let pendingLanguage = null
   let foreignLanguage = null
   let foreignTurnCount = 0

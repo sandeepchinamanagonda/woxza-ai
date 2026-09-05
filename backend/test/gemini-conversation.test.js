@@ -16,7 +16,7 @@ test("V3 Gemini is a text-only stream with thinking disabled and final usage tel
   for await (const event of client.replyStream({ language:"en", history:[{ role:"assistant", content:"Welcome." }], callerText:"I run a shop.", memory:{ opening_delivered:true, turns:[] } })) events.push(event)
   assert.equal(request.generationConfig.thinkingConfig.thinkingBudget, 0)
   assert.equal(request.generationConfig.maxOutputTokens, 56)
-  assert.equal(request.contents.length, 2)
+  assert.equal(request.contents.length, 1)
   assert.deepEqual(request.contents.at(-1), { role:"user", parts:[{ text:"I run a shop." }] })
   assert.equal(events[0].text, "Hello there.")
   assert.deepEqual(events.at(-1).completion, { usage:{ promptTokenCount:100, candidatesTokenCount:8, totalTokenCount:108 }, stopReason:"STOP" })
