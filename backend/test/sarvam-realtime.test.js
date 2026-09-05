@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { realtimeSttUrl, streamingTtsUrl, v3EndpointSilenceMs } from "../src/demo/sarvam-realtime.js"
+import { realtimeSttUrl, streamingTtsUrl, v3EndpointSilenceMs, v3SarvamTtsBufferSize } from "../src/demo/sarvam-realtime.js"
 
 test("the endpointing experiment shortens V3 silence without changing its baseline", () => {
   assert.equal(v3EndpointSilenceMs({ experiment:"350", baseline:"500" }), 350)
@@ -19,9 +19,20 @@ test("realtime STT URL preserves low-latency and multilingual call settings", ()
   assert.equal(url.searchParams.get("silence_duration_ms"), "420")
 })
 
+test("uses manual endpointing only when Woxza owns the turn boundary", () => {
+  const url = new URL(realtimeSttUrl({ endpointing:"manual" }))
+  assert.equal(url.searchParams.get("endpointing"), "manual")
+})
+
 test("streaming TTS URL requests completion events for per-turn lifecycle", () => {
   const url = new URL(streamingTtsUrl({ model:"bulbul:v3" }))
   assert.equal(url.pathname, "/text-to-speech/ws")
   assert.equal(url.searchParams.get("model"), "bulbul:v3")
   assert.equal(url.searchParams.get("send_completion_event"), "true")
+})
+
+test("Sarvam's socket buffer is independently configurable from Woxza phrase buffering", () => {
+  assert.equal(v3SarvamTtsBufferSize({ configured:"42", legacy:"60" }), 42)
+  assert.equal(v3SarvamTtsBufferSize({ configured:"", legacy:"60" }), 60)
+  assert.equal(v3SarvamTtsBufferSize({ configured:"12", legacy:"60" }), 30)
 })

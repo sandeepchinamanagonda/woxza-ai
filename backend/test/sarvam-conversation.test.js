@@ -13,7 +13,7 @@ test("Sarvam Conversations disables thinking for short phone replies", async () 
   assert.equal(request.reasoning_effort, null)
   assert.equal(request.stream, false)
   assert.equal(request.max_tokens, 64)
-  assert.match(request.messages[0].content, /complete, useful first clause/)
+  assert.match(request.messages[0].content, /one brief acknowledgement and one useful question/)
   assert.equal(reply.provider, "sarvam-conversations")
 })
 

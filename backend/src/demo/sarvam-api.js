@@ -1,11 +1,29 @@
+import { normalizeTtsText } from "./tts-text-normalizer.js"
+
 const SARVAM_API = "https://api.sarvam.ai"
 
-const WOXZA_TO_SARVAM_LANGUAGE = { en:"en-IN", hi:"hi-IN", te:"te-IN", ta:"ta-IN", kn:"kn-IN", ml:"ml-IN", mr:"mr-IN", gu:"gu-IN", bn:"bn-IN", pa:"pa-IN", or:"or-IN" }
+const WOXZA_TO_SARVAM_LANGUAGE = { as:"as-IN", bn:"bn-IN", en:"en-IN", gu:"gu-IN", hi:"hi-IN", kn:"kn-IN", ml:"ml-IN", mr:"mr-IN", pa:"pa-IN", ta:"ta-IN", te:"te-IN", ur:"ur-IN", or:"or-IN" }
 const SARVAM_TO_WOXZA_LANGUAGE = Object.fromEntries(Object.entries(WOXZA_TO_SARVAM_LANGUAGE).map(([woxza, sarvam]) => [sarvam, woxza]))
 
 export const sarvamLanguageCode = language => WOXZA_TO_SARVAM_LANGUAGE[language] || "en-IN"
 export const woxzaLanguageFromSarvamCode = languageCode => SARVAM_TO_WOXZA_LANGUAGE[String(languageCode || "").toLowerCase().replace(/^([a-z]{2})/, (_, value) => value.toLowerCase()).replace(/-in$/i, "-IN")] || SARVAM_TO_WOXZA_LANGUAGE[languageCode] || "en"
 const languageSetting = (name, language, fallback) => process.env[`${name}_${String(language || "").toUpperCase()}`] || process.env[name] || fallback
+
+// Keep the agent's voice stable for an entire call. A comma-separated order
+// gives operations two female alternatives and one male contingency without
+// randomly rotating voices between turns. The first configured voice is used;
+// a caller never hears a sudden voice change just because a new reply starts.
+export const resolveTtsSpeaker = (language="en") => {
+  const suffix = String(language).toUpperCase()
+  // A named language override is an intentional operator choice made after a
+  // voice audition. It must beat the score-ranked policy; otherwise setting
+  // `SARVAM_TTS_SPEAKER_TE=ritu` silently continues to use Priya.
+  const configured = process.env[`SARVAM_TTS_SPEAKER_${suffix}`]
+    || process.env[`SARVAM_TTS_SPEAKER_ORDER_${suffix}`]
+    || process.env.SARVAM_TTS_SPEAKER
+    || "ritu"
+  return configured.split(",").map(value => value.trim()).find(Boolean) || "ritu"
+}
 
 function wavFromPcm16(pcm, sampleRate=16_000) {
   const header = Buffer.alloc(44)
@@ -43,12 +61,16 @@ export function createSarvamApi({ apiKey=process.env.SARVAM_API_KEY, fetchImpl=g
       // preserves much more voice detail than legacy 8 kHz mu-law.
       const codec = process.env.V2_TTS_CODEC || "linear16"
       const sampleRate = Number(process.env.V2_TTS_SAMPLE_RATE || "16000")
-      const speaker = languageSetting("SARVAM_TTS_SPEAKER", language, "ritu")
+      const speaker = resolveTtsSpeaker(language)
       const pace = Number(languageSetting("SARVAM_TTS_PACE", language, "1.15"))
       const temperature = Number(languageSetting("SARVAM_TTS_TEMPERATURE", language, "0.70"))
+      const dictionaryId = languageSetting("SARVAM_TTS_PRONUNCIATION_DICT_ID", language, "")
+      const normalizedText = normalizeTtsText(text, { language, dictionaryEnabled:Boolean(dictionaryId) })
+      const requestBody = { text:normalizedText, language_code:sarvamLanguageCode(language), model:process.env.SARVAM_TTS_MODEL || "bulbul:v3", speaker, pace, temperature, speech_sample_rate:sampleRate, output_audio_codec:codec }
+      if (dictionaryId) requestBody.dict_id = dictionaryId
       const response = await fetchImpl(`${SARVAM_API}/text-to-speech`, {
         method:"POST", headers:{ "api-subscription-key":apiKey, "content-type":"application/json" }, signal,
-        body:JSON.stringify({ text, language_code:sarvamLanguageCode(language), model:process.env.SARVAM_TTS_MODEL || "bulbul:v3", speaker, pace, temperature, speech_sample_rate:sampleRate, output_audio_codec:codec })
+        body:JSON.stringify(requestBody)
       })
       if (!response.ok) await readError(response, "Sarvam TTS")
       const body = await response.json()
@@ -56,7 +78,8 @@ export function createSarvamApi({ apiKey=process.env.SARVAM_API_KEY, fetchImpl=g
       if (!audio) throw new Error("Sarvam TTS returned no audio")
       return {
         audio:Buffer.from(audio, "base64"), requestId:body.request_id, provider:"sarvam-bulbul",
-        contentType:codec === "linear16" ? "audio/x-l16" : "audio/x-mulaw", sampleRate, speaker, pace, temperature
+        contentType:codec === "linear16" ? "audio/x-l16" : "audio/x-mulaw", sampleRate, speaker, pace, temperature,
+        dictionaryId:dictionaryId || null, text:normalizedText
       }
     }
   }

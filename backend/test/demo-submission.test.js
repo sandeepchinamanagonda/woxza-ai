@@ -45,3 +45,21 @@ test("does not cap repeated valid demo attempts", async () => {
   assert.equal(result.status, "calling")
   assert.ok(!queries.some(({ sql }) => sql.includes("SELECT COUNT(*)")))
 })
+
+test("local mode accepts US calls and uses the configured Plivo test carrier", async () => {
+  const queries = []
+  const db = { async query(sql, values = []) { queries.push({ sql, values }); return { rows:[], rowCount:1 } } }
+  let plivoCalled = false
+  const service = createDemoService({
+    db,
+    plivo:{ provider:"plivo", call:async () => { plivoCalled = true; return { providerCallId:"plivo-call" } } },
+    twilio:{ call:async () => { throw new Error("Twilio should not be required locally") } },
+    followupQueue:{ add:async () => {} }, publicUrl:"https://api.example.test", signingSecret:"test", localMode:true
+  })
+
+  const result = await service.create({ use_case:"order_taking", language:"en", name:"Ada", country_code:"+1", phone_number:"312 555 0100", consent:true }, "203.0.113.25")
+
+  assert.equal(result.status, "calling")
+  assert.equal(plivoCalled, true)
+  assert.ok(queries.some(({ sql, values }) => sql.includes("INSERT INTO demo_calls") && values.includes("+13125550100")))
+})

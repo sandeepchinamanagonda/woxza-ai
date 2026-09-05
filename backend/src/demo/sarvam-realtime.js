@@ -1,5 +1,6 @@
 import WebSocket from "ws"
-import { sarvamLanguageCode } from "./sarvam-api.js"
+import { resolveTtsSpeaker, sarvamLanguageCode } from "./sarvam-api.js"
+import { normalizeTtsText } from "./tts-text-normalizer.js"
 
 const SARVAM_API = "wss://api.sarvam.ai"
 
@@ -15,13 +16,13 @@ const parseMessage = raw => {
   try { return JSON.parse(raw.toString()) } catch { return null }
 }
 
-export function realtimeSttUrl({ language="auto", model="saaras:v3-realtime", mode="codemix", streamType="fast", silenceDurationMs=500, minSpeechDurationMs=250 }={}) {
+export function realtimeSttUrl({ language="auto", model="saaras:v3-realtime", mode="codemix", streamType="fast", endpointing="vad", silenceDurationMs=500, minSpeechDurationMs=250 }={}) {
   const url = new URL(`${SARVAM_API}/speech-to-text-realtime/ws`)
   url.searchParams.set("language_code", language === "auto" ? "auto" : sarvamLanguageCode(language))
   url.searchParams.set("model", model)
   url.searchParams.set("mode", mode)
   url.searchParams.set("stream_type", streamType)
-  url.searchParams.set("endpointing", "vad")
+  url.searchParams.set("endpointing", endpointing === "manual" ? "manual" : "vad")
   url.searchParams.set("encoding", "linear16")
   url.searchParams.set("sample_rate", "16000")
   url.searchParams.set("silence_duration_ms", String(silenceDurationMs))
@@ -46,12 +47,13 @@ function openSocket(WebSocketImpl, url, apiKey) {
 export function createSarvamRealtimeStt({ apiKey=process.env.SARVAM_API_KEY, WebSocketImpl=WebSocket }={}) {
   if (!apiKey) return null
   return {
-    async open({ language="auto", onPartial=()=>{}, onFinal=()=>{}, onSpeechStart=()=>{}, onSpeechEnd=()=>{}, onError=()=>{} }={}) {
+    async open({ language="auto", endpointing="vad", onPartial=()=>{}, onFinal=()=>{}, onSpeechStart=()=>{}, onSpeechEnd=()=>{}, onError=()=>{} }={}) {
       const ws = await openSocket(WebSocketImpl, realtimeSttUrl({
         language,
         model:process.env.V3_STT_MODEL || "saaras:v3-realtime",
         mode:process.env.V3_STT_MODE || "codemix",
         streamType:process.env.V3_STT_STREAM_TYPE || "fast",
+        endpointing,
         silenceDurationMs:v3EndpointSilenceMs(),
         minSpeechDurationMs:Number(process.env.V3_STT_MIN_SPEECH_MS || "250")
       }), apiKey)
@@ -65,6 +67,9 @@ export function createSarvamRealtimeStt({ apiKey=process.env.SARVAM_API_KEY, Web
       })
       return {
         push(pcm) { if (ws.readyState === WebSocketImpl.OPEN && pcm?.length) ws.send(JSON.stringify({ event:"audio_input", audio:Buffer.from(pcm).toString("base64") })) },
+        speechStart() { if (ws.readyState === WebSocketImpl.OPEN) ws.send(JSON.stringify({ event:"speech_start" })) },
+        speechEnd() { if (ws.readyState === WebSocketImpl.OPEN) ws.send(JSON.stringify({ event:"speech_end" })) },
+        flush() { if (ws.readyState === WebSocketImpl.OPEN) ws.send(JSON.stringify({ event:"flush" })) },
         close() { if (ws.readyState === WebSocketImpl.OPEN) { ws.send(JSON.stringify({ event:"end" })); ws.close() } }
       }
     }
@@ -78,14 +83,25 @@ export function streamingTtsUrl({ model="bulbul:v3" }={}) {
   return url.toString()
 }
 
+// Woxza's phrase boundaries are an application-level quality decision. This
+// value is deliberately separate from that buffer: it only tells Sarvam when
+// it has enough already-approved text to begin provider-side synthesis.
+// The legacy variable remains a fallback so an existing deployment behaves
+// identically until the new value is explicitly configured.
+export function v3SarvamTtsBufferSize({ configured=process.env.V3_SARVAM_TTS_MIN_BUFFER_CHARS, legacy=process.env.V3_TTS_MIN_BUFFER_CHARS }={}) {
+  const value = Number(configured || legacy || "30")
+  return Number.isFinite(value) && value >= 30 && value <= 500 ? Math.floor(value) : 30
+}
+
 export function createSarvamStreamingTts({ apiKey=process.env.SARVAM_API_KEY, WebSocketImpl=WebSocket }={}) {
   if (!apiKey) return null
   return {
     async open({ language="en", onAudio=()=>{}, onComplete=()=>{}, onError=()=>{} }={}) {
       const ws = await openSocket(WebSocketImpl, streamingTtsUrl({ model:process.env.SARVAM_TTS_MODEL || "bulbul:v3" }), apiKey)
-      const speaker = process.env[`SARVAM_TTS_SPEAKER_${String(language).toUpperCase()}`] || process.env.SARVAM_TTS_SPEAKER || "ritu"
+      const speaker = resolveTtsSpeaker(language)
       const pace = Number(process.env[`SARVAM_TTS_PACE_${String(language).toUpperCase()}`] || process.env.SARVAM_TTS_PACE || "1.15")
       const temperature = Number(process.env[`SARVAM_TTS_TEMPERATURE_${String(language).toUpperCase()}`] || process.env.SARVAM_TTS_TEMPERATURE || "0.70")
+      const dictionaryId = process.env[`SARVAM_TTS_PRONUNCIATION_DICT_ID_${String(language).toUpperCase()}`] || process.env.SARVAM_TTS_PRONUNCIATION_DICT_ID || ""
       ws.on("message", raw => {
         const event = parseMessage(raw); if (!event) return
         if (event.type === "audio" && event.data?.audio) {
@@ -101,9 +117,15 @@ export function createSarvamStreamingTts({ apiKey=process.env.SARVAM_API_KEY, We
       // `language_code`) and requires the model inside the config dictionary.
       // Sending REST field names here was accepted by the socket but rejected
       // by Sarvam after connection, leaving a silent phone call.
-      ws.send(JSON.stringify({ type:"config", data:{ target_language_code:sarvamLanguageCode(language), speaker, pace, temperature, model:process.env.SARVAM_TTS_MODEL || "bulbul:v3", enable_preprocessing:true, min_buffer_size:Number(process.env.V3_TTS_MIN_BUFFER_CHARS || "30"), max_chunk_length:Number(process.env.V3_TTS_MAX_CHUNK_CHARS || "200"), output_audio_codec:process.env.V2_TTS_CODEC || "linear16", output_audio_bitrate:"128k", speech_sample_rate:String(process.env.V2_TTS_SAMPLE_RATE || "16000") } }))
+      const config = { target_language_code:sarvamLanguageCode(language), speaker, pace, temperature, model:process.env.SARVAM_TTS_MODEL || "bulbul:v3", enable_preprocessing:true, min_buffer_size:v3SarvamTtsBufferSize(), max_chunk_length:Number(process.env.V3_TTS_MAX_CHUNK_CHARS || "200"), output_audio_codec:process.env.V2_TTS_CODEC || "linear16", output_audio_bitrate:"128k", speech_sample_rate:String(process.env.V2_TTS_SAMPLE_RATE || "16000") }
+      if (dictionaryId) config.dict_id = dictionaryId
+      ws.send(JSON.stringify({ type:"config", data:config }))
       return {
-        send(text) { if (ws.readyState === WebSocketImpl.OPEN && String(text || "").trim()) ws.send(JSON.stringify({ type:"text", data:{ text:String(text).trim() } })) },
+        provider:"sarvam-bulbul-streaming",
+        model:process.env.SARVAM_TTS_MODEL || "bulbul:v3",
+        // Return the exact normalized text sent to Sarvam. The call-cost meter
+        // bills this string, not the pre-normalization model text.
+        send(text) { const normalized = normalizeTtsText(text, { language, dictionaryEnabled:Boolean(dictionaryId) }); if (ws.readyState === WebSocketImpl.OPEN && normalized) ws.send(JSON.stringify({ type:"text", data:{ text:normalized } })); return normalized },
         flush() { if (ws.readyState === WebSocketImpl.OPEN) ws.send(JSON.stringify({ type:"flush" })) },
         close() { if (ws.readyState === WebSocketImpl.OPEN) ws.close() }
       }

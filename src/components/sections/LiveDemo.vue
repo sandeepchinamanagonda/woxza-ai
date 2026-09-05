@@ -53,15 +53,15 @@
             <div><span>Try Woxza live</span><small>We’ll call you in seconds</small></div>
           </div>
           <label><span>Your name</span><input v-model.trim="form.name" autocomplete="name" maxlength="160" required placeholder="Name" /></label>
-          <label><span>Phone number</span><div class="phone-input"><select v-if="isLocalDemo" v-model="form.countryId" class="country-code" aria-label="Country code" @change="selectCountry"><option v-for="country in countries" :key="country.id" :value="country.id">{{ country.flag }} {{ country.code }}</option></select><span v-else class="country-code country-locked">{{ activeCountry.flag }} {{ activeCountry.code }}</span><input v-model.trim="form.phone" autocomplete="tel-national" inputmode="tel" required placeholder="312 555 0100" /></div></label>
+          <label><span>Phone number</span><div class="phone-input"><select v-if="isLocalDemo" v-model="form.countryId" class="country-code" aria-label="Country code" @change="selectCountry"><option v-for="country in countries" :key="country.id" :value="country.id">{{ country.flag }} {{ country.code }}</option></select><span v-else class="country-code country-locked">{{ activeCountry.flag }} {{ activeCountry.code }}</span><input v-model.trim="form.phone" autocomplete="tel-national" inputmode="numeric" required placeholder="312 555 0100" /></div></label>
           <div class="split-fields">
             <div class="form-field"><span>Language</span><div class="custom-select" @focusout="closeLanguageOnBlur" @keydown.esc="openLanguage = false"><button class="select-trigger" type="button" aria-haspopup="listbox" :aria-expanded="openLanguage" @click="openLanguage = !openLanguage"><span>{{ selectedLanguage.label }}</span><ChevronDown :class="{ rotated: openLanguage }" /></button><div v-if="openLanguage" class="select-menu language-menu" role="listbox" aria-label="Language"><button v-for="language in availableLanguages" :key="language.value" type="button" role="option" :aria-selected="form.language === language.value" :class="{ selected: form.language === language.value }" @click="selectLanguage(language.value)"><span>{{ language.label }}</span><Check v-if="form.language === language.value" /></button></div></div></div>
             <div class="form-field"><span>What would you like to explore? <em>(optional)</em></span><div class="custom-select" @focusout="closeUseCaseOnBlur" @keydown.esc="openUseCase = false"><button class="select-trigger" type="button" aria-haspopup="listbox" :aria-expanded="openUseCase" @click="openUseCase = !openUseCase"><span>{{ selectedUseCase.label }}</span><ChevronDown :class="{ rotated: openUseCase }" /></button><div v-if="openUseCase" class="select-menu use-case-menu" role="listbox" aria-label="Optional call topic"><button v-for="useCase in useCases" :key="useCase.value || 'none'" type="button" role="option" :aria-selected="form.useCase === useCase.value" :class="{ selected: form.useCase === useCase.value }" @click="selectUseCase(useCase.value)"><span>{{ useCase.label }}</span><Check v-if="form.useCase === useCase.value" /></button></div></div></div>
           </div>
           <label class="consent"><input v-model="form.consent" type="checkbox" required /><span>I agree to receive this demo call from Woxza.</span></label>
-          <label class="honeypot" aria-hidden="true"><span>Website</span><input v-model="form.website" name="website" tabindex="-1" autocomplete="off" /></label>
+          <label v-if="!isLocalDemo" class="honeypot" aria-hidden="true"><span>Website</span><input v-model="form.website" name="website" tabindex="-1" autocomplete="off" /></label>
           <p v-if="error" class="form-error" role="alert">{{ error }}</p>
-          <button class="start-call" type="submit"><PhoneCall :size="18" /> Call me now</button>
+          <button class="start-call" type="button" :disabled="busy" @click="submitDemo"><PhoneCall :size="18" /> Call me now</button>
           <small>Carrier rates may apply.</small>
         </form>
         <div class="home-indicator"></div>
@@ -158,7 +158,17 @@ async function poll(callId) {
   } catch { if (!isTerminal.value) pollTimer = window.setTimeout(() => poll(callId), 4000) }
 }
 async function submitDemo() {
-  if (form.website || !isIndiaCallRegion.value) return
+  // Never make a CTA click appear inert. Local password managers and browser
+  // autofill can populate the hidden honeypot, which previously caused a
+  // silent return and made it look like the call button was broken.
+  if (!isLocalDemo && form.website) {
+    error.value = "This form was blocked by browser autofill. Refresh the page and try again."
+    return
+  }
+  if (!isIndiaCallRegion.value) {
+    error.value = "Live calling is not available from this region."
+    return
+  }
   error.value = ""; status.value = "pending"
   try {
     const response = await fetch(`${apiBaseUrl}/api/demo/call`, { method:"POST", headers:{ "content-type":"application/json" }, body:JSON.stringify({ entry_hint:form.useCase || null, language:form.language, name:form.name, country_code:form.countryCode, phone_number:form.phone, consent:form.consent, website:form.website }) })

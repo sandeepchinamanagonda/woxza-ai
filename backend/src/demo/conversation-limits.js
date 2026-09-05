@@ -8,3 +8,13 @@ export function voiceResponseTokenLimit(language) {
   const fallback = language === "te" ? 64 : 56
   return withinSafeRange(Number(configured), fallback)
 }
+
+// Used only after a provider reports that its normal voice turn was cut off.
+// This is deliberately independent of the normal budget: it buys one concise,
+// self-contained repair without making every ordinary call slower or costlier.
+export function voiceRepairTokenLimit(language) {
+  const languageSpecific = process.env[`VOICE_REPAIR_MAX_TOKENS_${String(language).toUpperCase()}`]
+  const configured = languageSpecific || process.env.VOICE_REPAIR_MAX_TOKENS
+  const fallback = language === "te" ? 112 : 72
+  return withinSafeRange(Number(configured), fallback)
+}

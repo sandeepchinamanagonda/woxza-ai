@@ -25,7 +25,10 @@ const schemaUrls = [
   new URL("../migrations/019_call_usage_tokens.sql", import.meta.url),
   new URL("../migrations/020_expand_call_event_types.sql", import.meta.url),
   new URL("../migrations/021_admin_password_change.sql", import.meta.url),
-  new URL("../migrations/022_require_initial_admin_password_change.sql", import.meta.url)
+  new URL("../migrations/022_require_initial_admin_password_change.sql", import.meta.url),
+  new URL("../migrations/026_call_cost_telemetry.sql", import.meta.url),
+  new URL("../migrations/027_gemini_call_cost_telemetry.sql", import.meta.url),
+  new URL("../migrations/028_backfill_historical_v3_event_costs.sql", import.meta.url)
 ];
 
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));

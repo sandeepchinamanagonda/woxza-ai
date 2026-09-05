@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { validatePreferences, validateRegistration, validateSalesInquiry, validateWaitlistSubmission } from "./validation.js";
 import { listFeatures, listTags, normalizeTags } from "./features.js";
-import { debugCallSummary, getDebugCall, growthMetrics, growthRecords, listDebugCalls, searchDebugCalls, websiteMetrics } from "./admin-debug.js";
+import { debugCallSummary, getDebugCall, growthMetrics, growthRecords, listDebugCalls, searchDebugCalls, usageMetrics, websiteMetrics } from "./admin-debug.js";
 import { authenticateAdmin, changeAdminPassword, clearSessionCookie, sessionCookie, sessionFor } from "./admin-auth.js";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
@@ -135,6 +135,10 @@ export function createApp({
         if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const inProgress = await db.query("SELECT count(*)::int AS count FROM calls WHERE status='in_progress'");
         return sendJson(res, 200, { inProgressCalls:inProgress.rows[0].count, postgres:{ total:db.totalCount, idle:db.idleCount, waiting:db.waitingCount }, ...(await debugRuntime?.health?.() || { redis:{ available:false }, queues:{} }) }, cors);
+      }
+      if (url.pathname === "/api/admin/usage" && req.method === "GET") {
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        return sendJson(res, 200, await usageMetrics(db, url), cors);
       }
       const debugCallPath = url.pathname.match(/^\/api\/admin\/debug\/calls\/([^/]+)$/);
       if (debugCallPath && req.method === "GET") {

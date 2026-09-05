@@ -17,7 +17,7 @@ export function createOpenAiConversation({ apiKey=process.env.OPENAI_API_KEY, mo
         headers:{ authorization:`Bearer ${apiKey}`, "content-type":"application/json" },
         body:JSON.stringify({
           model,
-          messages:[{ role:"system", content:systemWithMemory(language, memory) }, ...safeHistory(history), { role:"user", content:callerText }],
+          messages:[{ role:"system", content:systemWithMemory(language, memory) }, ...safeHistory(history)],
           temperature:0.55,
           max_tokens:voiceResponseTokenLimit(language),
           stream:true

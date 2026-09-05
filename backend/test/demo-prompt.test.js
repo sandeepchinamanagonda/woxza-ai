@@ -11,6 +11,15 @@ test("the live prompt makes the orchestrator the sole phase and role authority",
   assert.match(prompt, /never infer that an unclear shop is a medical shop/i)
 })
 
+test("the live prompt requires a business-aware conversation rather than a fixed questionnaire", async () => {
+  const prompt = await buildDemoPrompt({ language:"en" })
+  assert.match(prompt, /not a form, an interviewer, or a scripted sales bot/i)
+  assert.match(prompt, /steel shop, hospital, restaurant, school, salon, hotel, clinic/i)
+  assert.match(prompt, /specific acknowledgement, appreciation, or observation grounded only in what the caller said/i)
+  assert.match(prompt, /not a fixed questionnaire order/i)
+  assert.match(prompt, /Do not use empty praise, pretend local knowledge, claim personal experience, or invent business facts/i)
+})
+
 test("carrier-owned opening never permits a second welcome", async () => {
   const prompt = await buildDemoPrompt({ language:"en", openingAlreadyHandled:true })
   assert.match(prompt, /carrier is playing the complete welcome and first business question/i)

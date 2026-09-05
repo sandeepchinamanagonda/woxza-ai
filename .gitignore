@@ -10,6 +10,7 @@ dist/
 terraform.tfvars
 .runtime/
 backend/data/
+/artifacts/
 .DS_Store
 .idea/
 .pnpm-store/

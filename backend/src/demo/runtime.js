@@ -37,7 +37,7 @@ export function createDemoRuntime(db) {
   const unavailableProvider = name => ({ call:async () => { throw Object.assign(new Error(`${name} is not fully configured`), { status:503 }) } })
   const service = createDemoService({
     db, plivo:plivo || unavailableProvider("Plivo"), twilio:twilio || unavailableProvider("Twilio"), followupQueue:queue,
-    bridgeUrl:process.env.GEMINI_LIVE_BRIDGE_URL || "wss://example.invalid/gemini-live",
+    bridgeUrl:process.env.GEMINI_LIVE_BRIDGE_URL || "wss://example.invalid/gemini-live", localMode:process.env.LOCAL_ADMIN_MODE === "true",
     publicUrl, signingSecret:process.env.UNSUBSCRIBE_SIGNING_SECRET || "development-only-change-me"
   })
 

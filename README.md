@@ -30,11 +30,13 @@ This is safe to re-run, including after switching branches. It will:
 
 Every local run is automatically in **local-admin mode**. Use the printed Admin URL (or open `http://localhost:3456/admin/features`) to manage features and prompts without entering a token. The setup command generates a private local token so that this access is not exposed through the public voice tunnel. Production uses its separate `.env.production` configuration and keeps admin authentication enabled.
 
+For a real end-to-end local smoke test, set `LOCAL_SETUP_TEST_CALL=true` plus an E.164 `LOCAL_SETUP_TEST_PHONE` in `.env`. `./setup.sh` will create that Plivo call and wait for it to connect before it reports success. This makes an outbound call and may incur carrier charges.
+
 Then open [http://localhost:3456](http://localhost:3456). Leave the Terminal window open only while the setup command is working; after it prints “Woxza is running”, Docker keeps the app running in the background.
 
 ### What works without any accounts or keys
 
-The full website, forms, database, Redis, API, and local demo experience run with no external accounts. This is called **local-preview mode**.
+The full website, forms, database, Redis, API, and local demo controls run with no external accounts. This is called **local test mode**. Local mode exposes every country and call-flow option for testing; placing a real phone call still requires valid Gemini, carrier, and ngrok credentials.
 
 ### What needs your own credentials
 

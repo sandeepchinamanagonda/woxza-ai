@@ -20,7 +20,7 @@ export function createAnthropicConversation({ apiKey=process.env.ANTHROPIC_API_K
         body:JSON.stringify({
           model,
           system:systemWithMemory(language, memory),
-          messages:[...safeHistory(history), { role:"user", content:callerText }],
+          messages:safeHistory(history),
           temperature:0.55,
           max_tokens:voiceResponseTokenLimit(language),
           stream:true

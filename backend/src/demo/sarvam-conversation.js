@@ -18,7 +18,7 @@ export function createSarvamConversation({ apiKey=process.env.SARVAM_API_KEY, mo
   if (!apiKey) return null
   return {
     async *replyStream({ language, history, callerText, memory, signal }) {
-      const response = await fetchImpl(`${SARVAM_API}/v1/chat/completions`, { method:"POST", signal, headers:{ "api-subscription-key":apiKey, "content-type":"application/json" }, body:JSON.stringify({ model, messages:[{ role:"system", content:systemWithMemory(language, memory) }, ...safeHistory(history), { role:"user", content:callerText }], reasoning_effort:null, temperature:0.55, max_tokens:voiceResponseTokenLimit(language), stream:true }) })
+      const response = await fetchImpl(`${SARVAM_API}/v1/chat/completions`, { method:"POST", signal, headers:{ "api-subscription-key":apiKey, "content-type":"application/json" }, body:JSON.stringify({ model, messages:[{ role:"system", content:systemWithMemory(language, memory) }, ...safeHistory(history)], reasoning_effort:null, temperature:0.55, max_tokens:voiceResponseTokenLimit(language), stream:true }) })
       if (!response.ok) throw new Error(`Sarvam Conversations stream failed (${response.status}): ${(await response.text()).slice(0, 300)}`)
       const reader = response.body?.getReader(); if (!reader) throw new Error("Sarvam Conversations returned no stream")
       const decoder = new TextDecoder(); let buffered = ""; let usage = {}
@@ -44,7 +44,7 @@ export function createSarvamConversation({ apiKey=process.env.SARVAM_API_KEY, mo
         headers:{ "api-subscription-key":apiKey, "content-type":"application/json" },
         body:JSON.stringify({
           model,
-          messages:[{ role:"system", content:systemWithMemory(language, memory) }, ...safeHistory(history), { role:"user", content:callerText }],
+          messages:[{ role:"system", content:systemWithMemory(language, memory) }, ...safeHistory(history)],
           reasoning_effort:null,
           temperature:0.55,
           // Indic scripts can consume several model tokens per written word.
