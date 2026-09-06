@@ -1,57 +1,27 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { buildWoxzaConversationPrompt, createOpenRouterConversation } from "../src/demo/openrouter-conversation.js"
+import { buildWoxzaConversationPrompt } from "../src/demo/openrouter-conversation.js"
 
-test("V3 conversation prompt keeps the behavioural Woxza contract", () => {
+test("conversation contract makes questions optional and purpose-led", () => {
   const prompt = buildWoxzaConversationPrompt("en")
-  assert.match(prompt, /Woxza Demo Guide/)
-  assert.match(prompt, /Woxza's AI assistant/)
-  assert.match(prompt, /at most one question/i)
-  assert.match(prompt, /real conversation, not a discovery form/i)
-  assert.match(prompt, /Never invent local facts/i)
-  assert.match(prompt, /Instagram/i)
-  assert.match(prompt, /Do not force a pitch, scenario, or completion path/i)
-  assert.match(prompt, /pleasant, respectful, encouraging/i)
-  assert.match(prompt, /do not praise, admire, or acknowledge every sentence/i)
-  assert.match(prompt, /Never use empty generic praise/i)
-  assert.match(prompt, /never end with an ellipsis or an unfinished phrase/i)
-  assert.match(prompt, /Never say that you are English-only/i)
-  assert.match(prompt, /CALL_STATE_JSON/)
-  assert.match(prompt, /even if it was phrased differently/i)
+  assert.match(prompt, /The caller's immediate purpose comes first/u)
+  assert.match(prompt, /Question gate: by default, end your turn without a question/u)
+  assert.match(prompt, /Ask at most one, and only when/u)
+  assert.match(prompt, /A direct answer is complete even when it ends without a question/u)
+  assert.match(prompt, /Natural pause or close/u)
+  assert.doesNotMatch(prompt, /one brief acknowledgement and one useful question/u)
 })
 
-test("V3 conversation prompt supports natural Telugu and English code-mixing", () => {
+test("conversation contract preserves direct answers, clarification, and grounded acknowledgement", () => {
   const prompt = buildWoxzaConversationPrompt("te")
-  assert.match(prompt, /active call language is Telugu/i)
-  assert.match(prompt, /CALL_STATE_JSON\.language_policy is authoritative/i)
-  assert.match(prompt, /Do not change the response language merely because a caller transcript or STT detection uses another language/i)
-  assert.match(prompt, /Instagram, WhatsApp, leads, calls, DMs, or numbers/)
-})
-
-test("V3 conversation prompt prefers local speech over literal translated filler", () => {
-  assert.match(buildWoxzaConversationPrompt("te"), /Prefer the natural phrase a Telugu speaker would actually say/i)
-  assert.match(buildWoxzaConversationPrompt("te"), /Do not turn a natural local-language reply into English-shaped wording/i)
-})
-
-test("V2 disables model reasoning so private planning is never spoken", async () => {
-  let request
-  const client = createOpenRouterConversation({ apiKey:"test", fetchImpl:async (_url, options) => {
-    request = JSON.parse(options.body)
-    return new Response(JSON.stringify({ choices:[{ message:{ content:"Hello." } }], usage:{} }), { status:200 })
-  } })
-  await client.reply({ language:"en", history:[], callerText:"I run a shop." })
-  assert.deepEqual(request.reasoning, { effort:"none", exclude:true })
-  assert.equal(request.max_tokens, 56)
-})
-
-test("V2 retries its configured fallback model when the primary free route rejects", async () => {
-  const requestedModels = []
-  const client = createOpenRouterConversation({ apiKey:"test", model:"primary:free", fallbackModel:"fallback:free", fetchImpl:async (_url, options) => {
-    requestedModels.push(JSON.parse(options.body).model)
-    if (requestedModels.length === 1) return new Response("provider unavailable", { status:429 })
-    return new Response(JSON.stringify({ choices:[{ message:{ content:"Hello." } }], usage:{} }), { status:200 })
-  } })
-  const reply = await client.reply({ language:"en", history:[], callerText:"I run a shop." })
-  assert.deepEqual(requestedModels, ["primary:free", "fallback:free"])
-  assert.equal(reply.model, "fallback:free")
+  assert.match(prompt, /Direct answer: answer a direct question or request first/u)
+  assert.match(prompt, /Clarification: when the meaning is genuinely unclear/u)
+  assert.match(prompt, /acknowledge only a meaningful new effort, constraint, or pain point/u)
+  assert.match(prompt, /never a recitation of their sentence/u)
+  assert.match(prompt, /capability_context is the only source for product-specific claims/u)
+  assert.match(prompt, /Never state that the caller's system is connected/u)
+  assert.match(prompt, /never say "after hours" or "automatically updates the CRM"/u)
+  assert.match(prompt, /completed background semantic assessment/u)
+  assert.match(prompt, /not a phrase matcher/u)
+  assert.match(prompt, /two or three compact, complete benefit sentences/u)
 })

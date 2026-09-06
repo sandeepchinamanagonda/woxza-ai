@@ -94,6 +94,18 @@ const regionalLanguages = {
   US:[{ value:"en", label:"English" }, { value:"es", label:"Spanish" }],
   IN:[{ value:"as", label:"Assamese" }, { value:"bn", label:"Bengali" }, { value:"en", label:"English" }, { value:"gu", label:"Gujarati" }, { value:"hi", label:"Hindi" }, { value:"kn", label:"Kannada" }, { value:"ml", label:"Malayalam" }, { value:"mr", label:"Marathi" }, { value:"pa", label:"Punjabi" }, { value:"ta", label:"Tamil" }, { value:"te", label:"Telugu" }, { value:"ur", label:"Urdu" }]
 }
+// This is the complete language set accepted by the demo API. Local test mode
+// intentionally ignores regional filtering so every configured language can be
+// exercised with every country option, as documented in README.md.
+const universalLanguages = [
+  { value:"en", label:"English" }, { value:"es", label:"Spanish" },
+  { value:"as", label:"Assamese" }, { value:"bn", label:"Bengali" },
+  { value:"gu", label:"Gujarati" }, { value:"hi", label:"Hindi" },
+  { value:"kn", label:"Kannada" }, { value:"ml", label:"Malayalam" },
+  { value:"mr", label:"Marathi" }, { value:"pa", label:"Punjabi" },
+  { value:"ta", label:"Tamil" }, { value:"te", label:"Telugu" },
+  { value:"ur", label:"Urdu" }
+]
 // Docker's production frontend build is also used for the local stack, where
 // local-admin mode deliberately exposes the country picker for testing calls.
 // `import.meta.env.DEV` is false in that build, so it cannot be the only gate.
@@ -113,7 +125,9 @@ const isTerminal = computed(() => ["completed", "no_answer", "failed"].includes(
 const isCheckingCallAvailability = computed(() => !isLocalDemo && !regionResolved.value)
 const isIndiaCallRegion = computed(() => isLocalDemo || (regionResolved.value && detectedRegion.value === "IN"))
 const activeCountry = computed(() => countries.find(country => country.id === form.countryId) || countries[0])
-const availableLanguages = computed(() => regionalLanguages[activeCountry.value.id] || regionalLanguages.US)
+const availableLanguages = computed(() => isLocalDemo
+  ? universalLanguages
+  : (regionalLanguages[activeCountry.value.id] || regionalLanguages.US))
 const selectedLanguage = computed(() => availableLanguages.value.find(language => language.value === form.language) || availableLanguages.value[0])
 const selectedUseCase = computed(() => useCases.find(useCase => useCase.value === form.useCase) || useCases[0])
 const selectCountry = () => {

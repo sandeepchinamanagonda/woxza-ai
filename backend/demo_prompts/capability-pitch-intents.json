@@ -1,0 +1,11 @@
+{
+  "catalogVersion": "v1",
+  "intents": [{
+    "id": "explore_woxza_value",
+    "meaning": "The caller explicitly asks to understand whether, where, or how Woxza could help their business. This includes direct product-value questions, workflow or integration questions, and tailored explanation requests in any supported language or everyday dialect. A caller merely sharing their business, process, channel, pain point, scale, or desired outcome does not express this intent.",
+    "requiredContext": ["business", "current process, channel, pain point, or desired outcome"],
+    "maximumFollowUpQuestions": 2,
+    "nextBehavior": "Prepare only approved capabilities relevant to known caller facts. Ask at most the missing, high-value context questions, then give one grounded tailored pitch.",
+    "reviewStatus": "approved"
+  }]
+}

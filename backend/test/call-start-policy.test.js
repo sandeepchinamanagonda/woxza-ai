@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import { callerFirstPresencePrompt, configuredCallStartPolicy } from "../src/demo/call-start-policy.js"
+import { agentFirstGreeting } from "../src/demo/call-start-messages.js"
 
 test("defaults the website demo to agent-first", () => {
   assert.deepEqual(configuredCallStartPolicy({}), { speakFirst:true, timeoutEnabled:false, timeoutSeconds:6 })
@@ -16,9 +17,8 @@ test("bounds unsafe caller-first timeout values", () => {
   assert.equal(configuredCallStartPolicy({ SPEAK_FIRST:"false", SPEAK_FIRST_TIMEOUT_SECONDS:"600" }).timeoutSeconds, 60)
 })
 
-test("has a concise caller-first presence prompt in supported demo languages", () => {
-  assert.match(callerFirstPresencePrompt("te"), /Woxza/)
-  assert.match(callerFirstPresencePrompt("hi"), /Woxza/)
-  assert.match(callerFirstPresencePrompt("ta"), /Woxza/)
-  assert.match(callerFirstPresencePrompt("en"), /Woxza/)
+test("caller-first timeout and acknowledgement reuse the agent-first greeting", () => {
+  for (const language of ["en", "te", "hi", "ta", "kn", "as"]) {
+    assert.equal(callerFirstPresencePrompt(language), agentFirstGreeting(language))
+  }
 })

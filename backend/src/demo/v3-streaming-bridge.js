@@ -21,10 +21,15 @@ import { configuredLanguageSwitchPolicy, createLanguageSwitchController, languag
 import { configuredOpeningDeliveryPolicy } from "./opening-delivery-policy.js"
 import { createConversationTurnStore } from "./conversation-turn-store.js"
 import { configuredStreamResumePolicy } from "./stream-resume-policy.js"
+import { agentFirstGreeting } from "./call-start-messages.js"
+import { createTurnInterpreter } from "./turn-interpreter.js"
+import { deriveConversationObjective, emptyConversationProfile, mergeConversationProfile, profileCoverage } from "./conversation-profile.js"
+import { getCapabilityCatalog, getConversationIntentCatalog } from "./capability-catalog.js"
+import { applySemanticPitchIntent, consumePostPitchOffer, emptyPitchIntent, pitchReplySnapshot, recordPitchReply } from "./conversation-pitch-state.js"
+import { hasVerifiedValueRequest } from "./value-intent-evidence.js"
 import { randomUUID } from "node:crypto"
 
 const findCall = async (db, id) => (await db.query("SELECT id,language FROM demo_calls WHERE id=$1 AND status IN ('ringing','connected')", [id])).rows[0]
-const welcome = language => ({ en:"Hello, I’m Woxza’s AI assistant. Thanks for trying the demo. What would you like to talk about today?", te:"నమస్కారం, నేను Woxza AI అసిస్టెంట్‌ని. మా డెమో ప్రయత్నించినందుకు ధన్యవాదాలు. ఈరోజు మీరు ఏ విషయం గురించి మాట్లాడాలనుకుంటున్నారు?", hi:"नमस्ते, मैं Woxza का AI सहायक हूँ। डेमो आज़माने के लिए धन्यवाद। आज आप किस बारे में बात करना चाहेंगे?", ta:"வணக்கம், நான் Woxza-வின் AI உதவியாளர். இந்த டெமோவை முயற்சித்ததற்கு நன்றி. இன்று நீங்கள் எதைப் பற்றி பேச விரும்புகிறீர்கள்?" }[language] || "Hello, I’m Woxza’s AI assistant. Thanks for trying the demo. What would you like to talk about today?")
 
 // V3 is deliberately separate from V2. Set VOICE_PIPELINE=v3 to opt in;
 // changing it back to v2 restores the previous bridge without a code rollback.
@@ -79,6 +84,7 @@ export const configuredWoxzaPhraseBuffer = (env=process.env) => ({
   maxWaitMs:Number(env.V3_WOXZA_PHRASE_MAX_WAIT_MS || env.V3_TTS_PHRASE_MAX_WAIT_MS || "0")
 })
 const maximumSpokenCharacters = () => Number(process.env.V3_PHONE_REPLY_MAX_CHARS || "240")
+const maximumPitchCharacters = () => Number(process.env.V3_PHONE_PITCH_MAX_CHARS || "480")
 const inboundSampleRate = () => Number(String(process.env.PLIVO_STREAM_CONTENT_TYPE || "audio/x-l16;rate=16000").match(/rate=(\d+)/i)?.[1] || 16_000)
 const createTtsPlayback = values => {
   let resolveCompletion
@@ -101,8 +107,25 @@ export const configuredTurnControlSettings = (env=process.env) => ({
   preRollFrames:Math.max(0, Number(env.V3_TURN_PRE_ROLL_FRAMES || "10"))
 })
 
-export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealtimeStt(), tts=configuredTts(), sarvamTts=createSarvamStreamingTts(), brain=configuredBrain() }={}) {
+export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealtimeStt(), tts=configuredTts(), sarvamTts=createSarvamStreamingTts(), brain=configuredBrain(), turnInterpreter=process.env.GEMINI_API_KEY ? createTurnInterpreter() : null }={}) {
   const wss = new WebSocketServer({ noServer:true })
+  const capabilityCatalogs = new Map()
+  let conversationIntentCatalog
+  const capabilityCatalogFor = language => {
+    const code = String(language || "en").trim().toLowerCase() || "en"
+    if (!capabilityCatalogs.has(code)) capabilityCatalogs.set(code, getCapabilityCatalog(code).catch(error => {
+      console.warn("Could not load V3 capability catalog", { language:code, error:error.message })
+      return []
+    }))
+    return capabilityCatalogs.get(code)
+  }
+  const conversationIntents = () => {
+    if (!conversationIntentCatalog) conversationIntentCatalog = getConversationIntentCatalog().catch(error => {
+      console.warn("Could not load V3 conversation intent catalog", { error:error.message })
+      return []
+    })
+    return conversationIntentCatalog
+  }
   // Process-local ownership prevents two simultaneous media sockets from
   // speaking for one call. PostgreSQL remains the source of truth for the
   // completed-turn history that is restored on reconnect or process restart.
@@ -147,10 +170,25 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     // This stays false until Plivo has actually received the first greeting
     // audio frame. A TTS socket opening is not evidence that a caller heard it.
     const history = restoredTurns.flatMap(turn => [{ role:"user", content:turn.caller_text }, { role:"assistant", content:turn.agent_text }])
+    const restoredProfile = restoredTurns.at(-1)?.conversation_profile || emptyConversationProfile()
+    const restoredPitchIntent = restoredTurns.at(-1)?.conversation_intent || {}
+    const conversationState = {
+      profile:restoredProfile,
+      discoveryQuestions:restoredTurns.filter(turn => /[?？]$/u.test(String(turn.agent_text || "").trim())).length,
+      explanationDelivered:restoredTurns.some(turn => turn.conversation_objective === "tailored_explanation"),
+      pitchIntent:{ ...emptyPitchIntent(), id:String(restoredPitchIntent.id || ""), status:String(restoredPitchIntent.status || "none"), missingFacts:Array.isArray(restoredPitchIntent.missingFacts) ? restoredPitchIntent.missingFacts : [], candidateCapabilityIds:Array.isArray(restoredPitchIntent.candidateCapabilityIds) ? restoredPitchIntent.candidateCapabilityIds : [], followUpQuestions:Number(restoredPitchIntent.followUpQuestions) || 0, maximumFollowUpQuestions:Number(restoredPitchIntent.maximumFollowUpQuestions) || 2, delivered:Boolean(restoredPitchIntent.delivered), nextStepOffered:Boolean(restoredPitchIntent.nextStepOffered) },
+      discoveryCompleteReady:Boolean(restoredPitchIntent.discoveryCompleteReady),
+      discoveryCompleteOffered:Boolean(restoredPitchIntent.discoveryCompleteOffered)
+    }
+    let profileUpdateQueue = Promise.resolve()
     const memory = {
       opening_delivered:withinResumeWindow,
+      pitch_intent:structuredClone(conversationState.pitchIntent),
       call_start_mode:withinResumeWindow ? "resumed" : (callStart.speakFirst ? "agent_first" : "caller_first"),
       language_policy:languageSwitch.snapshot(),
+      conversation_profile:conversationState.profile,
+      conversation_objective:deriveConversationObjective(conversationState),
+      discovery_complete:{ ready:conversationState.discoveryCompleteReady, awaiting_caller_choice:false },
       turns:restoredTurns.map(turn => ({ turn:turn.turn_sequence, caller:turn.caller_text, agent:turn.agent_text }))
     }
     let firstCallerTurnSeen = withinResumeWindow, callerFirstTimer, completedTurnSequence = restoredTurns.at(-1)?.turn_sequence || 0
@@ -167,6 +205,81 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         tts_voice:session?.speaker || null, tts_pace:session?.pace ?? null,
         tts_temperature:session?.temperature ?? null, tts_language:session?.language || ttsLanguage || null
       })
+    }
+    const updateConversationProfile = ({ callerText, language }) => {
+      if (!turnInterpreter) return Promise.resolve(null)
+      // The interpreter is intentionally asynchronous and serialized. It is
+      // ready for the next caller turn, without adding an extra model round
+      // trip before the current reply can begin streaming.
+      profileUpdateQueue = profileUpdateQueue.then(async () => {
+        const [catalog, intents] = await Promise.all([capabilityCatalogFor(language), conversationIntents()])
+        const capabilityIndex = catalog.map(item => ({
+          id:item.id, title:item.title, claim:item.callerSafeClaim, impact:item.callerImpact,
+          availability:item.availability, requirements:item.requirements
+        }))
+        const factsPromise = turnInterpreter.interpret({
+          turn:{ authoritative_text:callerText }, phase:memory.conversation_objective,
+          businessProfile:conversationState.profile, language
+        })
+        const valueIntentPromise = typeof turnInterpreter.interpretValueIntent === "function"
+          ? turnInterpreter.interpretValueIntent({ callerText, businessProfile:conversationState.profile, language, recentHistory:history, isAlreadyActive:conversationState.pitchIntent.id === "explore_woxza_value", capabilityIndex })
+          : Promise.resolve(null)
+        const [interpreted, valueIntent] = await Promise.all([factsPromise, valueIntentPromise])
+        if (interpreted.raw?.clarity !== "complete") return
+        conversationState.profile = mergeConversationProfile(conversationState.profile, interpreted.raw?.details || {})
+        const routing = valueIntent?.raw || {}
+        const validNewRequest = hasVerifiedValueRequest(routing, history)
+        const coverage = profileCoverage(conversationState.profile)
+        // A classifier can identify an explicit request immediately, but only
+        // the backend may promote it to a pitch after caller-stated context is
+        // actually present. This prevents an under-specified first-turn query
+        // from being treated as a ready tailored explanation.
+        const backendReady = coverage.readyForTailoredPitch
+        const semantic = validNewRequest ? {
+          id:"explore_woxza_value", status:backendReady ? routing.status : "collecting_context",
+          missing_facts:routing.missing_facts, candidate_capability_ids:routing.candidate_capability_ids
+        } : conversationState.pitchIntent.id === "explore_woxza_value" ? {
+          id:"explore_woxza_value", status:backendReady ? routing.status : "collecting_context",
+          missing_facts:routing.missing_facts, candidate_capability_ids:routing.candidate_capability_ids
+        } : {}
+        conversationState.pitchIntent = applySemanticPitchIntent({ previous:conversationState.pitchIntent, semantic, intents, catalog })
+        // A completed discovery is an invitation point, not permission to
+        // pitch. It becomes a neutral caller choice only if no value request
+        // is active and we have not already offered that choice.
+        conversationState.discoveryCompleteReady = coverage.sufficient &&
+          !conversationState.explanationDelivered &&
+          !conversationState.discoveryCompleteOffered &&
+          !conversationState.pitchIntent.id
+        memory.conversation_profile = conversationState.profile
+        memory.pitch_intent = structuredClone(conversationState.pitchIntent)
+        memory.conversation_objective = deriveConversationObjective(conversationState)
+        memory.discovery_complete = { ready:conversationState.discoveryCompleteReady, awaiting_caller_choice:false }
+        const usage = normalizedUsage("gemini", interpreted.usage)
+        const routingUsage = normalizedUsage("gemini", valueIntent?.usage)
+        const interpreterUsage = {
+          inputTokens:usage.inputTokens + routingUsage.inputTokens,
+          cachedInputTokens:usage.cachedInputTokens + routingUsage.cachedInputTokens,
+          outputTokens:usage.outputTokens + routingUsage.outputTokens,
+          visibleOutputTokens:usage.visibleOutputTokens + routingUsage.visibleOutputTokens,
+          thinkingTokens:usage.thinkingTokens + routingUsage.thinkingTokens,
+          totalTokens:usage.totalTokens + routingUsage.totalTokens
+        }
+        callUsage.inputTokens += interpreterUsage.inputTokens
+        callUsage.cachedInputTokens += interpreterUsage.cachedInputTokens
+        callUsage.outputTokens += interpreterUsage.outputTokens
+        callUsage.visibleOutputTokens += interpreterUsage.visibleOutputTokens
+        callUsage.thinkingTokens += interpreterUsage.thinkingTokens
+        callUsage.totalTokens += interpreterUsage.totalTokens
+        callUsage.estimatedGeminiCostUsd = Number((callUsage.estimatedGeminiCostUsd + geminiCostUsd(interpreterUsage)).toFixed(8))
+        log("conversation_profile_updated", {
+          objective:memory.conversation_objective, model:interpreted.model,
+          semantic_intent:{ id:conversationState.pitchIntent.id, status:conversationState.pitchIntent.status, evidence:validNewRequest ? routing.evidence : null, prepared_capabilities:conversationState.pitchIntent.candidateCapabilityIds },
+          coverage:{ business:Boolean(conversationState.profile.business || conversationState.profile.businessName), channels:conversationState.profile.channels.length, workflows:conversationState.profile.workflows.length, pains:conversationState.profile.painPoints.length, effort:Boolean(conversationState.profile.manualEffort), outcome:conversationState.profile.desiredOutcomes.length },
+          usage:{ input_tokens:interpreterUsage.inputTokens, output_tokens:interpreterUsage.outputTokens, total_tokens:interpreterUsage.totalTokens }
+        })
+        return { coverage, pitchIntent:structuredClone(conversationState.pitchIntent), discoveryCompleteReady:conversationState.discoveryCompleteReady }
+      }).catch(error => log("warning", { component:"conversation_profile", message:error.message }))
+      return profileUpdateQueue
     }
     const clearCallerFirstTimer = () => { if (callerFirstTimer) { clearTimeout(callerFirstTimer); callerFirstTimer = undefined } }
     const noteFirstCallerTurn = source => {
@@ -346,7 +459,16 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         detected_language:detectedLanguage
       })
       const callerTranscript = transcripts.write("caller", text)
-      const turnAssessment = assessCallerTurn(text)
+      const assessedTurn = assessCallerTurn(text)
+      // A short "yes" or "okay" immediately after the tailored pitch is a
+      // valid answer to Woxza's contextual invitation. Everywhere else the
+      // conservative noise/acknowledgement protection remains unchanged.
+      const answeringPostPitchOffer = conversationState.pitchIntent.nextStepOffered
+      const answeringDiscoveryChoice = conversationState.discoveryCompleteOffered
+      const answeringContextualOffer = answeringPostPitchOffer || answeringDiscoveryChoice
+      const turnAssessment = answeringContextualOffer && assessedTurn.action !== "respond"
+        ? { action:"respond", reason:answeringPostPitchOffer ? "post_pitch_next_step_answer" : "discovery_complete_choice_answer" }
+        : assessedTurn
       if (turnAssessment.action === "respond" || languageDecision.forceReply) cancelOpeningDelivery("caller_turn_before_opening")
       // A language-switch confirmation can be a short acknowledgement such as
       // “okay”. It is meaningful only while the controller has a pending
@@ -372,6 +494,40 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       // and immediate turn delivery preserves the responsive V3 behaviour.
       const callerText = text
       history.push({ role:"user", content:callerText })
+      if (answeringPostPitchOffer) {
+        conversationState.pitchIntent = consumePostPitchOffer({ pitchIntent:conversationState.pitchIntent })
+        memory.pitch_intent = structuredClone(conversationState.pitchIntent)
+      }
+      if (answeringDiscoveryChoice) conversationState.discoveryCompleteOffered = false
+      memory.conversation_objective = deriveConversationObjective(conversationState)
+      // Snapshot the decision and caller-known facts before the parallel fact
+      // extractor starts.  A later extraction must guide the *next* turn; it
+      // must never relabel this already-generated reply as an explanation.
+      const objectiveForReply = memory.conversation_objective
+      const catalog = await capabilityCatalogFor(language)
+      // The preceding background interpretation is the only route into a
+      // pitch. The reply itself never waits for a second model call; it uses
+      // the last completed semantic snapshot and lets this turn's interpreter
+      // prepare state for the next one.
+      const activePitch = conversationState.pitchIntent
+      const capabilityContext = pitchReplySnapshot({ pitchIntent:activePitch, catalog })
+      const selectedCapabilities = capabilityContext.selected
+      const mustPitchNow = capabilityContext.mode === "value_pitch"
+      memory.pitch_intent = structuredClone(activePitch)
+      memory.capability_context = capabilityContext
+      memory.post_pitch_next_step = { awaiting_caller_choice:answeringPostPitchOffer }
+      memory.discovery_complete = {
+        ready:conversationState.discoveryCompleteReady,
+        awaiting_caller_choice:answeringDiscoveryChoice
+      }
+      if (activePitch.id) log("capability_context_prepared", {
+        objective:objectiveForReply, status:activePitch.status, follow_up_questions:activePitch.followUpQuestions,
+        selected:selectedCapabilities.map(item => item.id), ready_for_reply:mustPitchNow
+      })
+      const memoryForReply = structuredClone(memory)
+      // Discovery facts and value intent remain asynchronous. A phone reply
+      // must never wait behind the serialized background profile queue.
+      void updateConversationProfile({ callerText, language })
       log("stt_final", { provider:"sarvam-saaras-realtime", request_id:requestId, utterance_id:utteranceId, language:languageCode, detected_language:detectedLanguage, response_language:language, language_switch_action:languageDecision.action, text_length:text.length, metrics, turn_control:turnControl }, 0)
       try {
         // Start establishing TTS, but do not await it before the LLM. This
@@ -419,7 +575,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           }, delay)
         }
         let replyText = "", firstToken = true, completion = null
-        for await (const chunk of brain.replyStream({ language, history, callerText, memory, signal:controller.signal })) {
+        for await (const chunk of brain.replyStream({ language, history, callerText, memory:memoryForReply, signal:controller.signal })) {
           if (chunk.completion) completion = { ...(completion || {}), ...chunk.completion }
           if (!chunk.text) continue
           if (firstToken) { firstToken = false; log("llm_first_token", {}, Date.now() - started) }
@@ -433,25 +589,30 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         // `MAX_TOKENS` is a provider-side stop, not a valid sentence boundary.
         // Shape before sending or saving so callers never hear an unfinished
         // phrase and future turns remember exactly what was actually spoken.
+        const isPitchReply = memoryForReply.capability_context?.mode === "value_pitch"
+        const responseCharacterLimit = isPitchReply ? maximumPitchCharacters() : maximumSpokenCharacters()
         let shapedReply = shapePhoneResponse(replyText, {
           language,
-          maximumCharacters:maximumSpokenCharacters(),
+          maximumCharacters:responseCharacterLimit,
           stopReason:completion?.stopReason || null
         })
         // A complete grammatical sentence can still be an abandoned answer.
         // Never speak that fragment when the provider confirms a token cutoff.
         // Gemini repairs only this exceptional turn with a concise replacement;
         // normal turns retain their existing latency and token budget.
-        if (shapedReply.reason === "model_cutoff_trimmed" && typeof brain.repairStream === "function") {
+        // A MAX_TOKENS completion is never a trustworthy finished thought,
+        // even when the phone shaper could preserve a later question. Repair
+        // it rather than speaking a clipped pitch or a dangling example.
+        if (completion?.stopReason === "MAX_TOKENS" && typeof brain.repairStream === "function") {
           log("llm_response_repair_started", { provider:brain.provider || configuredBrainProvider(), raw_characters:[...replyText].length, stop_reason:completion?.stopReason || null })
           let repairedText = "", repairedCompletion = null
-          for await (const chunk of brain.repairStream({ language, history, callerText, memory, draft:replyText, signal:controller.signal })) {
+          for await (const chunk of brain.repairStream({ language, history, callerText, memory:memoryForReply, draft:replyText, signal:controller.signal })) {
             if (chunk.completion) repairedCompletion = { ...(repairedCompletion || {}), ...chunk.completion }
             if (chunk.text) repairedText += chunk.text
           }
           const repaired = shapePhoneResponse(repairedText, {
             language,
-            maximumCharacters:maximumSpokenCharacters(),
+            maximumCharacters:responseCharacterLimit,
             stopReason:repairedCompletion?.stopReason || null
           })
           if (repaired.reason !== "model_cutoff_trimmed") {
@@ -462,7 +623,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           } else {
             // A second cutoff must not turn back into a half-answer. The
             // existing complete recovery is preferable to hanging the caller.
-            shapedReply = shapePhoneResponse("", { language, maximumCharacters:maximumSpokenCharacters(), stopReason:"MAX_TOKENS" })
+            shapedReply = shapePhoneResponse("", { language, maximumCharacters:responseCharacterLimit, stopReason:"MAX_TOKENS" })
             replyText = shapedReply.text
             completion = repairedCompletion || completion
             log("llm_response_repair_failed", { provider:brain.provider || configuredBrainProvider(), reason:"repair_token_cutoff" })
@@ -523,9 +684,30 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           }
           history.push({ role:"assistant", content:replyText })
           memory.turns.push({ turn:turnSequence, caller:callerText, agent:replyText }); memory.turns = memory.turns.slice(-16)
+          if (objectiveForReply === "focused_discovery" && /[?？]$/u.test(replyText)) conversationState.discoveryQuestions += 1
+          if (memoryForReply.pitch_intent?.id === "explore_woxza_value") {
+            if (memoryForReply.capability_context?.mode === "value_pitch") {
+              conversationState.pitchIntent = recordPitchReply({ pitchIntent:conversationState.pitchIntent, mode:"value_pitch", replyText })
+              conversationState.explanationDelivered = true
+            } else if (conversationState.pitchIntent.id === "explore_woxza_value") {
+              conversationState.pitchIntent = recordPitchReply({ pitchIntent:conversationState.pitchIntent, mode:"inactive", replyText })
+            }
+            memory.pitch_intent = structuredClone(conversationState.pitchIntent)
+          }
+          if (memoryForReply.discovery_complete?.ready) {
+            conversationState.discoveryCompleteReady = false
+            conversationState.discoveryCompleteOffered = true
+            memory.discovery_complete = { ready:false, awaiting_caller_choice:false }
+          }
+          memory.conversation_objective = deriveConversationObjective(conversationState)
+          const conversationIntent = {
+            ...conversationState.pitchIntent,
+            discoveryCompleteReady:conversationState.discoveryCompleteReady,
+            discoveryCompleteOffered:conversationState.discoveryCompleteOffered
+          }
           void Promise.all([callerTranscript, agentTranscript]).then(([callerRow, agentRow]) => conversationTurns.completeTurn({
             turnId, demoCallId, turnSequence, callerText, agentText:replyText, language,
-            languagePolicy,
+            languagePolicy, conversationProfile:conversationState.profile, conversationObjective:objectiveForReply, conversationIntent,
             callerTranscriptTurnId:callerRow?.id || null, agentTranscriptTurnId:agentRow?.id || null
           })).then(saved => {
             if (saved) log("conversation_turn_persisted", { turn_id:turnId, turn_sequence:turnSequence, language })
@@ -679,7 +861,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     } else if (callStart.speakFirst) {
       // If the caller begins speaking during the TTS handshake, never send a
       // delayed welcome afterwards. That would overlap their first response.
-      void speakCallStartPrompt({ text:welcome(requestedLanguage), source:"agent_first_welcome" })
+      void speakCallStartPrompt({ text:agentFirstGreeting(requestedLanguage), source:"agent_first_welcome" })
     } else if (callStart.timeoutEnabled) {
       callerFirstTimer = setTimeout(() => {
         callerFirstTimer = undefined

@@ -23,6 +23,17 @@ const schema = {
   required:["intent", "clarity", "details"]
 }
 
+const valueIntentSchema = {
+  type:"OBJECT",
+  properties:{
+    requested:{ type:"BOOLEAN" }, confidence:{ type:"NUMBER" }, evidence:{ type:"STRING" },
+    status:{ type:"STRING", enum:["none", "collecting_context", "ready_for_pitch"] },
+    missing_facts:{ type:"ARRAY", items:{ type:"STRING" } },
+    candidate_capability_ids:{ type:"ARRAY", items:{ type:"STRING" } }
+  },
+  required:["requested", "confidence", "evidence", "status", "missing_facts", "candidate_capability_ids"]
+}
+
 export function createTurnInterpreter({ apiKey=process.env.GEMINI_API_KEY, model=process.env.GEMINI_TURN_INTERPRETER_MODEL || "gemini-2.5-flash" }={}) {
   if (!apiKey) throw new Error("Gemini is not configured")
   const ai = new GoogleGenAI({ apiKey })
@@ -45,7 +56,29 @@ export function createTurnInterpreter({ apiKey=process.env.GEMINI_API_KEY, model
       })
       const text = String(response.text || "").trim()
       if (!text) throw new Error("Turn interpreter returned no structured result")
-      return { raw:JSON.parse(text), model, version:model }
+      return { raw:JSON.parse(text), model, version:model, usage:response.usageMetadata || {} }
+    },
+    async interpretValueIntent({ callerText, businessProfile={}, language="en", recentHistory=[], isAlreadyActive=false, capabilityIndex=[] }) {
+      const prompt = [
+        "You are a strict, structured classifier for an opt-in Woxza product-value pitch. You cannot speak or ask a question.",
+        "Return requested=true only when a caller explicitly asks to understand what Woxza can do, whether/how it can help their business, or whether it supports a Woxza workflow or integration. Interpret the caller's meaning across languages, dialects, code-switching, and transcription variations; do not depend on fixed phrases.",
+        "A caller merely stating their business, customer channels, current process, pain point, scale, or desired outcome is never a request. Neither is a vague phrase such as 'may I know?' unless its actual conversational meaning clearly asks about Woxza. Do not activate a pitch because enough business information is available.",
+        "Set requested=true only when your confidence is at least 0.90. If requested=true, evidence must be an exact, unmodified substring from one caller message in the supplied conversation that itself expresses the request. If requested=false, evidence must be an empty string, status must be none, and both arrays must be empty.",
+        "If a valid request is active from an earlier caller message, isAlreadyActive is true. In that case requested may remain false, but choose relevant approved capability IDs and status from the known facts. Set ready_for_pitch only when the known facts include a business, a real customer channel or workflow, and a caller-stated operating pain, impact, or manual-effort detail. A request to hear how Woxza can help is not itself an operating need. Choose no more than five IDs from the approved capability index; never invent a capability or outcome.",
+        `Configured language: ${language}. isAlreadyActive: ${isAlreadyActive}.`,
+        `Confirmed business profile: ${JSON.stringify(businessProfile)}.`,
+        `Ordered recent conversation: ${JSON.stringify(recentHistory.slice(-16))}.`,
+        `Approved capability index: ${JSON.stringify(capabilityIndex)}.`,
+        `<latest_caller_transcript>${callerText}</latest_caller_transcript>`
+      ].join("\n")
+      const response = await ai.models.generateContent({
+        model,
+        contents:prompt,
+        config:{ responseMimeType:"application/json", responseSchema:valueIntentSchema, temperature:0 }
+      })
+      const text = String(response.text || "").trim()
+      if (!text) throw new Error("Value intent interpreter returned no structured result")
+      return { raw:JSON.parse(text), model, version:model, usage:response.usageMetadata || {} }
     }
   }
 }

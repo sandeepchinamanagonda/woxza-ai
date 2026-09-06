@@ -1,0 +1,102 @@
+{
+  "catalogVersion": "v1",
+  "notes": "V3 caller-facing capability catalog. Every record is independently reviewed. Website copy is an editorial source only; no live call fetches this file from the website.",
+  "capabilities": [
+    {
+      "id": "inbound_enquiry_handling",
+      "title": "Inbound customer enquiries",
+      "callerSafeClaim": "Woxza can answer incoming customer enquiries and keep the next step clear when that workflow is configured.",
+      "callerImpact": "Fewer customer enquiries need to wait for a manual first response, and the team has a clearer next step to handle.",
+      "availability": "configurable",
+      "requirements": ["configured call workflow", "business-approved answers and handoff rules"],
+      "demoMode": "fictional_example_only",
+      "matches": { "businessTerms": ["shop", "retail", "store", "distribution", "restaurant", "hotel", "హోటల్", "clinic", "business"], "workflowTerms": ["enquiry", "inquiry", "customer call", "incoming call", "phone", "whatsapp", "instagram", "కాల్", "కాల్స్", "కస్టమర్"], "painTerms": ["missed call", "slow response", "manage", "reply", "మేనేజ్", "సమాధానం"] },
+      "sourceIds": ["hero_value_prop", "inbound_outbound"],
+      "reviewStatus": "approved"
+    },
+    {
+      "id": "customer_follow_up_updates",
+      "title": "Customer follow-up and updates",
+      "callerSafeClaim": "Woxza can be configured to keep customer follow-ups and updates moving, so they do not depend on someone remembering every call.",
+      "callerImpact": "The team can spend less time chasing routine updates and customers receive clearer, more timely follow-up.",
+      "availability": "configurable",
+      "requirements": ["configured follow-up workflow", "customer contact data"],
+      "demoMode": "fictional_example_only",
+      "matches": { "businessTerms": ["retail", "shop", "distribution", "wholesale", "restaurant", "hotel", "హోటల్", "clinic"], "workflowTerms": ["follow-up", "follow up", "update", "order", "customer", "reply", "whatsapp", "ఆర్డర్", "ఆర్డర్లు", "అప్‌డేట్", "అప్డేట్", "రిప్లై"], "painTerms": ["manual follow-up", "reply", "tracking", "manage", "difficult", "slow response", "మేనేజ్", "కష్టం", "సమాధానం"] },
+      "sourceIds": ["proactive_customer_supplier_touchpoints", "approach_workflow_metrics"],
+      "reviewStatus": "approved"
+    },
+    {
+      "id": "connected_system_workflows",
+      "title": "Connected systems and workflows",
+      "callerSafeClaim": "Woxza can be configured to work with a business's connected systems, such as its CRM, calendar, messaging, or business data.",
+      "callerImpact": "Approved call details can follow the business workflow instead of being copied between systems by hand.",
+      "availability": "configurable",
+      "requirements": ["the relevant system is connected and configured"],
+      "demoMode": "fictional_example_only",
+      "matches": { "businessTerms": ["business", "clinic", "shop", "distribution", "service"], "workflowTerms": ["crm", "calendar", "booking", "message", "whatsapp", "data entry", "record"], "painTerms": ["manual data", "manual entry", "tracking", "update", "duplicate"] },
+      "sourceIds": ["integration_ecosystem", "software_integration"],
+      "reviewStatus": "approved"
+    },
+    {
+      "id": "appointment_enquiries",
+      "title": "Appointment enquiries",
+      "callerSafeClaim": "For an appointment-based business, Woxza can be configured to handle appointment enquiries and use a connected calendar where one is set up.",
+      "callerImpact": "Routine appointment questions can be handled more consistently, leaving staff more time for customers or patients in front of them.",
+      "availability": "configurable",
+      "requirements": ["appointment workflow", "connected calendar when booking is needed"],
+      "demoMode": "fictional_example_only",
+      "matches": { "businessTerms": ["clinic", "doctor", "hospital", "salon", "service", "appointment"], "workflowTerms": ["appointment", "booking", "calendar", "availability", "patient"], "painTerms": ["missed call", "after hours", "booking", "schedule"] },
+      "sourceIds": ["appointments_and_crm_actions"],
+      "reviewStatus": "approved"
+    },
+    {
+      "id": "business_data_answers",
+      "title": "Answers from connected business information",
+      "callerSafeClaim": "Once the right business information is connected, Woxza can answer from approved catalog, pricing, FAQ, or availability information instead of a generic script.",
+      "callerImpact": "Customers can receive more consistent answers without staff repeatedly looking up the same approved information.",
+      "availability": "configurable",
+      "requirements": ["connected or uploaded business information", "business-approved answer rules"],
+      "demoMode": "fictional_example_only",
+      "matches": { "businessTerms": ["shop", "retail", "pharmacy", "distribution", "restaurant", "catalog"], "workflowTerms": ["product", "price", "pricing", "stock", "catalog", "availability", "faq"], "painTerms": ["wrong answer", "inconsistent", "price", "stock", "information"] },
+      "sourceIds": ["answers_from_real_data"],
+      "reviewStatus": "approved"
+    },
+    {
+      "id": "stock_aware_orders",
+      "title": "Stock-aware order enquiries",
+      "callerSafeClaim": "When stock rules are connected, Woxza can receive order enquiries using the available quantity so a caller is not promised something the business cannot fulfil.",
+      "callerImpact": "Customers receive clearer expectations on availability, while the team avoids routine order clarification and preventable mistakes.",
+      "availability": "configurable",
+      "requirements": ["connected stock information", "configured order rules"],
+      "demoMode": "fictional_example_only",
+      "matches": { "businessTerms": ["retail", "shop", "wholesale", "distribution", "pharmacy", "restaurant", "hotel", "హోటల్"], "workflowTerms": ["order", "stock", "inventory", "quantity", "product", "ఆర్డర్", "ఆర్డర్లు", "స్టాక్", "ప్రొడక్ట్"], "painTerms": ["stock", "wrong order", "manual entry", "availability", "స్టాక్", "అందుబాటు"] },
+      "sourceIds": ["stock_aware_order_receiving"],
+      "reviewStatus": "approved"
+    },
+    {
+      "id": "configured_business_rules",
+      "title": "Configured business rules",
+      "callerSafeClaim": "After a business sets its information, rules, and handoff choices, Woxza can handle those routine conversations consistently.",
+      "callerImpact": "The customer experience can stay consistent even when staff are busy, while exceptions still reach the right person.",
+      "availability": "configurable",
+      "requirements": ["business-approved rules and handoff choices"],
+      "demoMode": "fictional_example_only",
+      "matches": { "businessTerms": ["business", "shop", "retail", "distribution", "service"], "workflowTerms": ["rule", "discount", "price", "customer", "handoff"], "painTerms": ["inconsistent", "wrong answer", "staff", "manual"] },
+      "sourceIds": ["configure_once_business_rules", "configured_prices_and_discounts"],
+      "reviewStatus": "approved"
+    },
+    {
+      "id": "multilingual_customer_calls",
+      "title": "Multilingual customer calls",
+      "callerSafeClaim": "Woxza can support customer conversations across the languages a business chooses for its workflow.",
+      "callerImpact": "Customers can communicate in supported languages that feel more comfortable for them.",
+      "availability": "live",
+      "requirements": ["supported language configuration"],
+      "demoMode": "fictional_example_only",
+      "matches": { "businessTerms": ["business", "shop", "clinic", "customer"], "workflowTerms": ["language", "telugu", "hindi", "tamil", "english", "multilingual"], "painTerms": ["language", "understand", "communication"] },
+      "sourceIds": ["multilingual_codeswitch"],
+      "reviewStatus": "approved"
+    }
+  ]
+}

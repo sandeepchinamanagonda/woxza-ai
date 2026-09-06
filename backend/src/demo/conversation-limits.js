@@ -9,6 +9,19 @@ export function voiceResponseTokenLimit(language) {
   return withinSafeRange(Number(configured), fallback)
 }
 
+// A tailored value pitch is intentionally the one longer phone turn. Keeping
+// this separate prevents ordinary discovery replies from becoming slower or
+// more expensive merely because a caller may later request a full pitch.
+export function voicePitchTokenLimit(language) {
+  const languageSpecific = process.env[`VOICE_PITCH_MAX_TOKENS_${String(language).toUpperCase()}`]
+  const configured = languageSpecific || process.env.VOICE_PITCH_MAX_TOKENS
+  // A tailored pitch happens once, unlike the many short discovery turns. A
+  // 220-token ceiling lets Indic scripts finish a grounded two-sentence pitch;
+  // it is a ceiling, not an amount charged on every call.
+  const fallback = ["en", "es"].includes(String(language).toLowerCase()) ? 160 : 220
+  return withinSafeRange(Number(configured), fallback)
+}
+
 // Used only after a provider reports that its normal voice turn was cut off.
 // This is deliberately independent of the normal budget: it buys one concise,
 // self-contained repair without making every ordinary call slower or costlier.

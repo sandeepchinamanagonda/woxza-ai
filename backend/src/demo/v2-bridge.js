@@ -10,13 +10,8 @@ import { logCallEvent } from "../call-events.js"
 import { persistCallCost } from "../call-costs.js"
 import { createTranscriptWriter } from "../transcript-writer.js"
 import { createPhraseBuffer } from "./phrase-buffer.js"
+import { agentFirstGreeting } from "./call-start-messages.js"
 const findCall = async (db, id) => (await db.query("SELECT id,language,name FROM demo_calls WHERE id=$1 AND status IN ('ringing','connected')", [id])).rows[0]
-const localizedV2Welcome = language => ({
-  en:"Hello, I’m Woxza’s AI assistant. Thanks for trying the demo. What would you like to talk about today?",
-  te:"నమస్కారం, నేను Woxza AI అసిస్టెంట్‌ని. మా డెమో ప్రయత్నించినందుకు ధన్యవాదాలు. ఈరోజు మీరు ఏ విషయం గురించి మాట్లాడాలనుకుంటున్నారు?",
-  hi:"नमस्ते, मैं Woxza का AI सहायक हूँ। डेमो आज़माने के लिए धन्यवाद। आज आप किस बारे में बात करना चाहेंगे?",
-  ta:"வணக்கம், நான் Woxza-வின் AI உதவியாளர். இந்த டெமோவை முயற்சித்ததற்கு நன்றி. இன்று நீங்கள் எதைப் பற்றி பேச விரும்புகிறீர்கள்?"
-}[language] || "Hello, I’m Woxza’s AI assistant. Thanks for trying the demo. What would you like to talk about today?")
 const localReplyFallback = (language, callerText) => {
   const greeting = /^(hello|hi|hey|హలో|నమస్కారం|ఎలా ఉన్నారు|వినిపిస్తుందా)/i.test(String(callerText || "").trim())
   if (language === "te") return greeting
@@ -207,7 +202,7 @@ export function attachDemoV2Bridge(server, { db, sarvam=createSarvamApi(), conve
     log("call_started", { provider:"plivo", language, agentId:"sarvam-openrouter-v2", audio_config:audioConfig })
     // V2 starts with an open invitation. It must not place the caller into a
     // discovery, pitch, demo, or simulated-order workflow.
-    const welcome = localizedV2Welcome(language)
+    const welcome = agentFirstGreeting(language)
     history.push({ role:"assistant", content:welcome })
     void transcripts.write("agent", welcome)
     void speak(welcome)
