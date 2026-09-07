@@ -1,0 +1,66 @@
+name: Audit production configuration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Read-only OCI audit
+    runs-on: [self-hosted, Linux, ARM64]
+    environment:
+      name: production
+    steps:
+      - name: Report safe deployment state
+        env:
+          DEPLOY_PATH: ${{ vars.OCI_DEPLOY_PATH }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$DEPLOY_PATH"
+
+          echo "## Deployment"
+          printf 'commit='; git rev-parse --short HEAD
+          printf 'worktree_clean='; git diff --quiet && echo true || echo false
+          test -f .env.production && echo 'env_file=present' || echo 'env_file=missing'
+
+          echo "## V3 configuration"
+          safe_keys=(
+            VOICE_PIPELINE V3_BRAIN_PROVIDER V3_TTS_PROVIDER V3_TTS_FALLBACK
+            SARVAM_CHAT_MODEL V3_STT_MODEL V3_STT_MODE V3_STT_STREAM_TYPE
+            SPEAK_FIRST SPEAK_FIRST_TIMEOUT_ENABLED V3_SEMANTIC_INTENT_ROUTER
+            V3_TTS_CHUNKER V3_TTS_DELIVERY_MODE
+          )
+          secret_keys=(
+            SARVAM_API_KEY GEMINI_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY
+            POSTGRES_PASSWORD ADMIN_SESSION_SECRET UNSUBSCRIBE_SIGNING_SECRET
+          )
+
+          read_value() {
+            local key="$1"
+            sed -n "s/^${key}=//p" .env.production | tail -n 1
+          }
+
+          for key in "${safe_keys[@]}"; do
+            value="$(read_value "$key")"
+            if [[ -n "$value" ]]; then
+              printf '%s=%s\n' "$key" "$value"
+            else
+              printf '%s=MISSING_OR_EMPTY\n' "$key"
+            fi
+          done
+
+          echo "## Secret presence"
+          for key in "${secret_keys[@]}"; do
+            if [[ -n "$(read_value "$key")" ]]; then
+              printf '%s=SET\n' "$key"
+            else
+              printf '%s=MISSING_OR_EMPTY\n' "$key"
+            fi
+          done
+
+          echo "## Runtime"
+          docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.production.yml ps
+          curl --fail --silent --show-error http://127.0.0.1:8787/health
