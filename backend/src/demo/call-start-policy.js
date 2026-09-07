@@ -1,3 +1,5 @@
+import { agentFirstGreeting } from "./call-start-messages.js"
+
 const truthy = value => ["1", "true", "yes", "on"].includes(String(value ?? "").trim().toLowerCase())
 
 // This is deliberately call-start policy rather than a prompt flag. It makes
@@ -14,9 +16,7 @@ export const configuredCallStartPolicy = (env=process.env) => {
   }
 }
 
-export const callerFirstPresencePrompt = language => ({
-  en:"Hello, I’m Woxza’s AI assistant. How may I help?",
-  te:"నమస్కారం, నేను Woxza AI అసిస్టెంట్‌ని. మీకు ఎలా సహాయం చేయగలను?",
-  hi:"नमस्ते, मैं Woxza का AI सहायक हूँ। मैं आपकी कैसे मदद कर सकता हूँ?",
-  ta:"வணக்கம், நான் Woxza-வின் AI உதவியாளர். நான் உங்களுக்கு எப்படி உதவலாம்?"
-}[language] || "Hello, I’m Woxza’s AI assistant. How may I help?")
+// A caller-first timeout and a caller's bare acknowledgement both mean Woxza
+// has not yet delivered an opening. Reuse the same reviewed greeting rather
+// than maintaining a second, inconsistent call-start script.
+export const callerFirstPresencePrompt = agentFirstGreeting

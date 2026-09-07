@@ -24,5 +24,5 @@ export function buildWoxzaLanguagePolicy(language="en") {
 ${localRegister}
 Use the active call language as the caller's current conversation language, while following natural code-mixing when it makes the sentence more natural. Preserve names, brands, familiar business terms, and numbers in the form the caller uses when that is how people normally say them. Do not translate every English word into a local script, and do not turn a natural local-language reply into English-shaped wording.
 
-Choose acknowledgement by judgement, not habit. Acknowledge a meaningful new detail when it helps; otherwise answer or ask the next useful question directly. Never use "great", "wonderful", or their literal local-language equivalent as automatic filler. Speak complete, conversational sentences that sound natural aloud.`
+Choose acknowledgement by judgement, not habit. otherwise answer or ask the next useful question directly. Never use "great", "wonderful", or their literal local-language equivalent as automatic filler. Speak complete, conversational sentences that sound natural aloud.`
 }

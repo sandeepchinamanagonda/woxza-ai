@@ -16,6 +16,7 @@ import { createTranscriptWriter } from "../transcript-writer.js"
 import { createCallerTurnController } from "./caller-turn-controller.js"
 import { assessCallerPartial, assessCallerTurn } from "./turn-quality-policy.js"
 import { callerFirstPresencePrompt, configuredCallStartPolicy } from "./call-start-policy.js"
+import { agentFirstGreeting } from "./call-start-messages.js"
 import { createPlaybackEchoDetector } from "./playback-echo-detector.js"
 import { configuredLanguageSwitchPolicy, createLanguageSwitchController, languageSwitchQuestion } from "./language-switch-policy.js"
 import { configuredOpeningDeliveryPolicy } from "./opening-delivery-policy.js"
@@ -24,8 +25,6 @@ import { configuredStreamResumePolicy } from "./stream-resume-policy.js"
 import { randomUUID } from "node:crypto"
 
 const findCall = async (db, id) => (await db.query("SELECT id,language FROM demo_calls WHERE id=$1 AND status IN ('ringing','connected')", [id])).rows[0]
-const welcome = language => ({ en:"Hello, I’m Woxza’s AI assistant. Thanks for trying the demo. What would you like to talk about today?", te:"నమస్కారం, నేను Woxza AI అసిస్టెంట్‌ని. మా డెమో ప్రయత్నించినందుకు ధన్యవాదాలు. ఈరోజు మీరు ఏ విషయం గురించి మాట్లాడాలనుకుంటున్నారు?", hi:"नमस्ते, मैं Woxza का AI सहायक हूँ। डेमो आज़माने के लिए धन्यवाद। आज आप किस बारे में बात करना चाहेंगे?", ta:"வணக்கம், நான் Woxza-வின் AI உதவியாளர். இந்த டெமோவை முயற்சித்ததற்கு நன்றி. இன்று நீங்கள் எதைப் பற்றி பேச விரும்புகிறீர்கள்?" }[language] || "Hello, I’m Woxza’s AI assistant. Thanks for trying the demo. What would you like to talk about today?")
-
 // V3 is deliberately separate from V2. Set VOICE_PIPELINE=v3 to opt in;
 // changing it back to v2 restores the previous bridge without a code rollback.
 const configuredBrainProvider = () => (process.env.V3_BRAIN_PROVIDER || "sarvam").toLowerCase()
@@ -78,7 +77,16 @@ export const configuredWoxzaPhraseBuffer = (env=process.env) => ({
   maximumCharacters:Number(env.V3_WOXZA_PHRASE_MAX_CHARS || env.V3_TTS_PHRASE_MAX_CHARS || "140"),
   maxWaitMs:Number(env.V3_WOXZA_PHRASE_MAX_WAIT_MS || env.V3_TTS_PHRASE_MAX_WAIT_MS || "0")
 })
-const maximumSpokenCharacters = () => Number(process.env.V3_PHONE_REPLY_MAX_CHARS || "240")
+// Ordinary turns stay short for cost and latency. A full-picture answer is
+// detected after generation by its multi-sentence structure and receives its
+// own ceiling in the response shaper.
+export const configuredSpokenReplyBudget = (env=process.env) => {
+  const ordinary = Math.max(40, Number(env.V3_PHONE_REPLY_MAX_CHARS || "240"))
+  return {
+    ordinary,
+    fullPicture:Math.max(ordinary, Number(env.V3_FULL_PICTURE_MAX_CHARS || "720"))
+  }
+}
 const inboundSampleRate = () => Number(String(process.env.PLIVO_STREAM_CONTENT_TYPE || "audio/x-l16;rate=16000").match(/rate=(\d+)/i)?.[1] || 16_000)
 const createTtsPlayback = values => {
   let resolveCompletion
@@ -137,6 +145,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     const turnControl = configuredTurnControl()
     const turnControlSettings = configuredTurnControlSettings()
     const callStart = configuredCallStartPolicy()
+    const spokenReplyBudget = configuredSpokenReplyBudget()
     const openingDeliveryPolicy = configuredOpeningDeliveryPolicy()
     const pendingManualUtterances = []
     const echoDetector = createPlaybackEchoDetector({ sampleRate:inboundSampleRate() })
@@ -435,7 +444,8 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         // phrase and future turns remember exactly what was actually spoken.
         let shapedReply = shapePhoneResponse(replyText, {
           language,
-          maximumCharacters:maximumSpokenCharacters(),
+          maximumCharacters:spokenReplyBudget.ordinary,
+          fullPictureMaximumCharacters:spokenReplyBudget.fullPicture,
           stopReason:completion?.stopReason || null
         })
         // A complete grammatical sentence can still be an abandoned answer.
@@ -451,7 +461,8 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           }
           const repaired = shapePhoneResponse(repairedText, {
             language,
-            maximumCharacters:maximumSpokenCharacters(),
+            maximumCharacters:spokenReplyBudget.ordinary,
+            fullPictureMaximumCharacters:spokenReplyBudget.fullPicture,
             stopReason:repairedCompletion?.stopReason || null
           })
           if (repaired.reason !== "model_cutoff_trimmed") {
@@ -462,7 +473,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           } else {
             // A second cutoff must not turn back into a half-answer. The
             // existing complete recovery is preferable to hanging the caller.
-            shapedReply = shapePhoneResponse("", { language, maximumCharacters:maximumSpokenCharacters(), stopReason:"MAX_TOKENS" })
+            shapedReply = shapePhoneResponse("", { language, maximumCharacters:spokenReplyBudget.ordinary, fullPictureMaximumCharacters:spokenReplyBudget.fullPicture, stopReason:"MAX_TOKENS" })
             replyText = shapedReply.text
             completion = repairedCompletion || completion
             log("llm_response_repair_failed", { provider:brain.provider || configuredBrainProvider(), reason:"repair_token_cutoff" })
@@ -673,13 +684,13 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     }
     socket.on("close", () => close({ resumable:true, reason:"media_socket_closed" }))
     socket.on("message", raw => { try { const event = JSON.parse(raw.toString()); if (event.event === "stop") return close({ reason:"provider_stream_stopped" }); if (event.event === "media" && event.media?.payload) { const pcm = decodePlivoInboundAudio(event.media.payload, process.env.PLIVO_STREAM_CONTENT_TYPE || "audio/x-l16;rate=16000", process.env.PLIVO_L16_BYTE_ORDER || "little"); callUsage.sttAudioSeconds += pcm.length / 2 / inboundSampleRate(); if (bridgeTurnController) bridgeTurnController.push(pcm); else sttSession.push(pcm) } } catch (error) { log("error", { component:"v3_plivo_input", message:error.message }) } })
-    log("call_started", { provider:"plivo", agentId:"sarvam-streaming-v3", brain_provider:configuredBrainProvider(), brain_model:brain.model || configuredBrainModel(configuredBrainProvider()), stt_model:process.env.V3_STT_MODEL || "saaras:v3-realtime", tts_provider:callUsage.ttsProvider, tts_model:tts.model || (configuredTtsProvider() === "indic" ? "indic-tts-fastpitch-hifigan" : process.env.SARVAM_TTS_MODEL || "bulbul:v3"), turn_control:turnControl, turn_control_settings:turnControlSettings, language_switch_policy:configuredLanguageSwitchPolicy(), call_start:callStart, resumed:withinResumeWindow })
+    log("call_started", { provider:"plivo", agentId:"sarvam-streaming-v3", brain_provider:configuredBrainProvider(), brain_model:brain.model || configuredBrainModel(configuredBrainProvider()), stt_model:process.env.V3_STT_MODEL || "saaras:v3-realtime", tts_provider:callUsage.ttsProvider, tts_model:tts.model || (configuredTtsProvider() === "indic" ? "indic-tts-fastpitch-hifigan" : process.env.SARVAM_TTS_MODEL || "bulbul:v3"), turn_control:turnControl, turn_control_settings:turnControlSettings, spoken_reply_budget:spokenReplyBudget, language_switch_policy:configuredLanguageSwitchPolicy(), call_start:callStart, resumed:withinResumeWindow })
     if (withinResumeWindow) {
       log("stream_resumed", { restored_turns:restoredTurns.length, restored_language:languageSwitch.snapshot().active_language, next_turn_sequence:completedTurnSequence + 1 })
     } else if (callStart.speakFirst) {
       // If the caller begins speaking during the TTS handshake, never send a
       // delayed welcome afterwards. That would overlap their first response.
-      void speakCallStartPrompt({ text:welcome(requestedLanguage), source:"agent_first_welcome" })
+      void speakCallStartPrompt({ text:agentFirstGreeting(requestedLanguage), source:"agent_first_welcome" })
     } else if (callStart.timeoutEnabled) {
       callerFirstTimer = setTimeout(() => {
         callerFirstTimer = undefined

@@ -11,6 +11,29 @@ const RECOVERY = {
 
 const clean = value => String(value || "").replace(/\s+/g, " ").trim()
 const isQuestion = sentence => /[?？]$/u.test(sentence)
+const LEADING_ACKNOWLEDGEMENTS = {
+  en:/^(?:(?:yes|yeah|yep|sure)\s*[,،:—–-]?\s*)+/iu,
+  te:/^(?:(?:అవును|అవునండి|అవును అండి|యెస్|యెస్ అండి)\s*[,،:—–-]?\s*)+/u,
+  hi:/^(?:(?:हाँ|हां|जी हाँ|जी हां)\s*[,،:—–-]?\s*)+/u,
+  ta:/^(?:(?:ஆம்|ஆமா|ஆமாங்க)\s*[,،:—–-]?\s*)+/u,
+  kn:/^(?:(?:ಹೌದು|ಹೌದಾ|ಹೌದಪ್ಪ)\s*[,،:—–-]?\s*)+/u,
+  ml:/^(?:(?:അതെ|അതേ|അതെ ശരി)\s*[,،:—–-]?\s*)+/u,
+  mr:/^(?:(?:होय|हो|हां)\s*[,،:—–-]?\s*)+/u,
+  gu:/^(?:(?:હા|હાં)\s*[,،:—–-]?\s*)+/u,
+  bn:/^(?:(?:হ্যাঁ|হাঁ)\s*[,،:—–-]?\s*)+/u,
+  pa:/^(?:(?:ਹਾਂ|ਹਾਂਜੀ)\s*[,،:—–-]?\s*)+/u,
+  as:/^(?:(?:হয়|হʼয়)\s*[,،:—–-]?\s*)+/u,
+  ur:/^(?:(?:ہاں|جی ہاں)\s*[,،:—–-]?\s*)+/u
+}
+
+// The model is instructed not to start with a bare acknowledgement, but that
+// is easy to enforce safely after generation. Only strip it when real content
+// follows; a standalone affirmative answer remains intact.
+export function stripLeadingAcknowledgement(text, language="en") {
+  const source = clean(text)
+  const stripped = clean(source.replace(LEADING_ACKNOWLEDGEMENTS[language] || LEADING_ACKNOWLEDGEMENTS.en, ""))
+  return stripped || source
+}
 
 function completeSentences(text) {
   const sentences = []
@@ -24,10 +47,16 @@ function completeSentences(text) {
   return { sentences, remainder:clean(text.slice(start)) }
 }
 
-export function shapePhoneResponse(text, { language="en", maximumCharacters=180, stopReason=null }={}) {
-  const source = clean(text)
-  const maximum = Math.max(40, Number(maximumCharacters) || 180)
+export function shapePhoneResponse(text, { language="en", maximumCharacters=180, fullPictureMaximumCharacters=maximumCharacters, fullPictureMinimumSentences=5, stopReason=null }={}) {
+  const rawSource = clean(text)
+  const source = stripLeadingAcknowledgement(rawSource, language)
   const { sentences, remainder } = completeSentences(source)
+  const ordinaryMaximum = Math.max(40, Number(maximumCharacters) || 180)
+  const extendedMaximum = Math.max(ordinaryMaximum, Number(fullPictureMaximumCharacters) || ordinaryMaximum)
+  // The model's full-picture contract is six to seven short sentences. Five
+  // completed sentences is a conservative signal that it has begun that mode;
+  // ordinary one- or two-sentence replies retain their strict small budget.
+  const maximum = sentences.length >= Math.max(5, Number(fullPictureMinimumSentences) || 5) ? extendedMaximum : ordinaryMaximum
   const chosen = []
   let length = 0
   for (const sentence of sentences) {

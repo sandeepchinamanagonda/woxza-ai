@@ -1,6 +1,26 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { shapePhoneResponse } from "../src/demo/phone-response-shaper.js"
+import { shapePhoneResponse, stripLeadingAcknowledgement } from "../src/demo/phone-response-shaper.js"
+
+test("removes a leading acknowledgement before TTS when useful content follows", () => {
+  assert.equal(stripLeadingAcknowledgement("అవును, ఒకేసారి చాలా కాల్స్ వస్తే కష్టమే.", "te"), "ఒకేసారి చాలా కాల్స్ వస్తే కష్టమే.")
+  assert.equal(stripLeadingAcknowledgement("Yes, that would save time.", "en"), "that would save time.")
+})
+
+test("does not strip a standalone affirmative answer", () => {
+  assert.equal(stripLeadingAcknowledgement("అవును", "te"), "అవును")
+  assert.equal(stripLeadingAcknowledgement("Yes", "en"), "Yes")
+})
+
+test("allows only a multi-sentence full picture to use the larger phone budget", () => {
+  const fullPicture = "First concrete capability helps. Second concrete capability helps. Third concrete capability helps. Fourth concrete capability helps. Fifth concrete capability helps. Sixth concrete capability helps."
+  const shaped = shapePhoneResponse(fullPicture, { language:"en", maximumCharacters:80, fullPictureMaximumCharacters:300 })
+  assert.equal(shaped.text, fullPicture)
+  assert.equal(shaped.reason, "complete")
+
+  const ordinary = shapePhoneResponse("First normal response is concise. Second normal response is still concise.", { language:"en", maximumCharacters:40, fullPictureMaximumCharacters:300 })
+  assert.ok([...ordinary.text].length <= 40)
+})
 
 test("keeps only complete sentences when a model reaches its token ceiling", () => {
   const shaped = shapePhoneResponse("మీ షాపులో ఫోన్ ఆర్డర్‌లు వస్తాయని అర్థమైంది. ఉదాహరణకు,", { language:"te", maximumCharacters:180, stopReason:"MAX_TOKENS" })

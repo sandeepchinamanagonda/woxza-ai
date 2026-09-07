@@ -17,7 +17,7 @@ export function createGeminiConversation({ apiKey=process.env.GEMINI_API_KEY, mo
     provider:"gemini",
     model,
     async *replyStream({ language, history, callerText, memory, signal }) {
-      yield* stream({ language, history, callerText, memory, signal, maximumTokens:voiceResponseTokenLimit(language) })
+      yield* stream({ language, history, callerText, memory, signal, maximumTokens:voiceResponseTokenLimit(language, { extended:true }) })
     },
     async *repairStream({ language, history, callerText, memory, draft, signal }) {
       yield* stream({ language, history, callerText:repairInstruction(draft), memory, signal, maximumTokens:voiceRepairTokenLimit(language) })
