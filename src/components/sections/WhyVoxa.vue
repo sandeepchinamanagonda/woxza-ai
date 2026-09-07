@@ -1,5 +1,5 @@
 <template>
-  <section id="why-voxa" class="why-section landing-section">
+  <section id="why-voxa" data-analytics-section="Why Woxza" class="why-section landing-section">
     <div class="why-container">
       <header class="section-header">
         <div class="header-title">

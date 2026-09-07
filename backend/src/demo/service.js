@@ -17,7 +17,7 @@ const normalizePlivoStatus = value => {
   return "failed"
 }
 
-export function createDemoService({ db, plivo, twilio, followupQueue, bridgeUrl, publicUrl, signingSecret }) {
+export function createDemoService({ db, plivo, twilio, followupQueue, bridgeUrl, publicUrl, signingSecret, localMode=false }) {
   const timers = new Map()
   const clearTimers = id => {
     const callTimers = timers.get(id)
@@ -37,7 +37,7 @@ export function createDemoService({ db, plivo, twilio, followupQueue, bridgeUrl,
       const suppliedPhone = input.phone_number ? `${input.country_code || ""}${input.phone_number}` : input.phone
       const parsed = parsePhoneNumberFromString(String(suppliedPhone || ""))
       if (!parsed?.isValid()) return { error:"Enter a valid phone number including country code", status:400 }
-      if (process.env.NODE_ENV === "production" && parsed.countryCallingCode !== "91") {
+      if (!localMode && process.env.NODE_ENV === "production" && parsed.countryCallingCode !== "91") {
         return { error:"Live demo calls are currently available in India only.", status:403 }
       }
       if (input.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) return { error:"Enter a valid email address", status:400 }
@@ -62,7 +62,11 @@ export function createDemoService({ db, plivo, twilio, followupQueue, bridgeUrl,
         `INSERT INTO demo_calls (id,use_case,entry_hint,language,name,phone,email,ip,consent_marketing,status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'initiating')`,
         [id,useCase,entryHint ? useCase : null,language,input.name.trim(),phone,input.email?.trim().toLowerCase() || null,ip,true]
       )
-      const providerName = parsed.countryCallingCode === "1" ? "twilio" : "plivo"
+      // Production keeps the preferred US carrier. Local mode falls back to the
+      // configured Plivo test account when Twilio is not configured, so local
+      // testers can exercise every country picker option with one carrier.
+      const useTwilio = parsed.countryCallingCode === "1" && (!localMode || twilio?.provider === "twilio")
+      const providerName = useTwilio ? "twilio" : "plivo"
       logCallEvent(db, { callId:id, demoCallId:id, eventType:"call_started", payload:{ language, useCase }, call:{ provider:providerName, phoneNumberMasked:maskPhoneNumber(phone) } })
       await updateSubmission("calling", null, id)
       try {
@@ -98,9 +102,14 @@ export function createDemoService({ db, plivo, twilio, followupQueue, bridgeUrl,
       if (!result.rowCount) return null
       const call = result.rows[0]
       logCallEvent(db, { callId:id, demoCallId:id, eventType:"warning", severity:"info", payload:{ component:"telephony", message:"Plivo call connected", providerCallId:call.provider_call_id } })
-      const stream = new URL(publicUrl.replace(/^http/, "ws") + "/telephony/plivo/stream")
+      // V2 is an opt-in parallel bridge. V1 remains the public default until
+      // Sarvam STT/TTS + OpenRouter passes live Telugu/Hindi/Tamil testing.
+      const pipeline = process.env.VOICE_PIPELINE || "v1"
+      const streamPath = pipeline === "v3" ? "/telephony/plivo/v3/stream" : pipeline === "v2" ? "/telephony/plivo/v2/stream" : "/telephony/plivo/stream"
+      const stream = new URL(publicUrl.replace(/^http/, "ws") + streamPath)
       stream.searchParams.set("demoCallId", id)
       stream.searchParams.set("lang", call.language)
+      if (pipeline === "v2" || pipeline === "v3") stream.searchParams.set("pipeline", pipeline)
       console.info("demo-language-config", { callId:id, requested:call.language, configured:call.language })
       clearTimers(id)
       timers.set(id, {})

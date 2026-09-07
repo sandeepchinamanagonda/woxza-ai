@@ -11,6 +11,7 @@ import { getProofPoints } from "./proof-points.js"
 import { buildPitchContext, buildPitchSpeechPlan } from "./pitch-selector.js"
 import { createOpeningController } from "./opening-controller.js"
 import { createLiveTranscriptTurnBuffer } from "./live-transcript-buffer.js"
+import { createTranscriptWriter } from "../transcript-writer.js"
 import { createAudioChunkDeduplicator } from "./audio-deduplicator.js"
 import { createLiveTurnGate, interpretationSignature } from "./live-turn-gate.js"
 import { beginContextualDemo, completeContextualDemo, createContextualDemoState, prepareContextualDemoResponse } from "./contextual-demo-state.js"
@@ -120,17 +121,27 @@ async function findDemoCall(db, demoCallId) {
   return result.rows[0] || null
 }
 
-function persistTranscript(db, demoCallId, speaker, text) {
-  const value = String(text || "").trim()
-  if (!value) return
-  void db.query("INSERT INTO call_transcript_turns (demo_call_id,speaker,text) VALUES ($1,$2,$3) RETURNING id", [demoCallId, speaker, value])
-    .then(result => logCallEvent(db, {
-      callId:demoCallId, demoCallId, eventType:"turn_end", payload:{ speaker, transcript_row_id:result.rows?.[0]?.id || null }
-    }))
-    .catch(error => {
+const transcriptWriters = new Map()
+function transcriptWriter(db, demoCallId) {
+  if (!transcriptWriters.has(demoCallId)) transcriptWriters.set(demoCallId, createTranscriptWriter({
+    db, demoCallId,
+    onError:error => {
       console.warn("Transcript persistence failed", { demoCallId, error:error.message })
       logCallEvent(db, { callId:demoCallId, demoCallId, eventType:"error", severity:"error", payload:{ message:error.message, exception_type:error.name, stack_trace:error.stack || null, component:"db", request_payload:{ query:"INSERT call_transcript_turns" } } })
-    })
+    }
+  }))
+  return transcriptWriters.get(demoCallId)
+}
+function persistTranscript(db, demoCallId, speaker, text) {
+  return transcriptWriter(db, demoCallId).write(speaker, text).then(row => {
+    if (row) logCallEvent(db, { callId:demoCallId, demoCallId, eventType:"turn_end", payload:{ speaker, transcript_row_id:row.id } })
+    return row
+  })
+}
+function flushTranscript(db, demoCallId) {
+  const writer = transcriptWriters.get(demoCallId)
+  if (!writer) return Promise.resolve()
+  return writer.flush().finally(() => transcriptWriters.delete(demoCallId))
 }
 
 function isEscalationRequest(text) {
@@ -293,7 +304,7 @@ function openGeminiSession({ socket, call, language, demoCallId, db, orchestrato
     const audioChunkDeduplicator = createAudioChunkDeduplicator()
     const callerTranscriptBuffer = createLiveTranscriptTurnBuffer({
       delayMs:700,
-      onTurn:text => onLiveMessage?.({ serverContent:{ inputTranscription:{ text }, woxzaCombinedCallerTurn:true } })
+      onTurn:text => onLiveMessage?.({ woxzaCombinedCallerTurn:true, serverContent:{ inputTranscription:{ text } } })
     })
     const approvedActionWatchdog = createApprovedActionSpeechWatchdog({ delayMs:150,
       onTimeout:approved => {
@@ -987,6 +998,16 @@ function openGeminiSession({ socket, call, language, demoCallId, db, orchestrato
           const callerText = content?.inputTranscription?.text
           const agentText = content?.outputTranscription?.text
           if (callerText) {
+            // Gemini Live emits streaming input transcriptions in very small
+            // revisions for Indic languages. They are useful as live UI
+            // telemetry, but they are not caller turns. Feed every revision
+            // through the debounce buffer first; only its single combined
+            // callback below may enter the workflow, transcript, or model
+            // prompt path.
+            if (!message.woxzaCombinedCallerTurn) {
+              callerTranscriptBuffer.push(callerText)
+              return
+            }
             if (conversationFinished) return
             suppressNoOpOutput = false
             latestCallerText = String(callerText).trim()
@@ -1368,7 +1389,7 @@ export function attachDemoGeminiBridge(server, { db, redis=null }) {
       silenceMonitor.stop()
       audioWriter.close()
       try { session?.close() } catch (error) { console.warn("Gemini Live close failed", { demoCallId, error:error.message }) }
-      void writeTelemetry(endReason, durationSeconds)
+      void flushTranscript(db, demoCallId).finally(() => writeTelemetry(endReason, durationSeconds))
       plivoStream.close()
     }
     const silenceMonitor = createCallerSilenceMonitor({

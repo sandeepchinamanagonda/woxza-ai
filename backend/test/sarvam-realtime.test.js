@@ -1,0 +1,38 @@
+import test from "node:test"
+import assert from "node:assert/strict"
+import { realtimeSttUrl, streamingTtsUrl, v3EndpointSilenceMs, v3SarvamTtsBufferSize } from "../src/demo/sarvam-realtime.js"
+
+test("the endpointing experiment shortens V3 silence without changing its baseline", () => {
+  assert.equal(v3EndpointSilenceMs({ experiment:"350", baseline:"500" }), 350)
+  assert.equal(v3EndpointSilenceMs({ experiment:"", baseline:"500" }), 500)
+  assert.equal(v3EndpointSilenceMs({ experiment:"120", baseline:"500" }), 500)
+})
+
+test("realtime STT URL preserves low-latency and multilingual call settings", () => {
+  const url = new URL(realtimeSttUrl({ language:"auto", model:"saaras:v3-realtime", mode:"codemix", streamType:"fast", silenceDurationMs:420, minSpeechDurationMs:180 }))
+  assert.equal(url.pathname, "/speech-to-text-realtime/ws")
+  assert.equal(url.searchParams.get("language_code"), "auto")
+  assert.equal(url.searchParams.get("endpointing"), "vad")
+  assert.equal(url.searchParams.get("encoding"), "linear16")
+  assert.equal(url.searchParams.get("sample_rate"), "16000")
+  assert.equal(url.searchParams.get("stream_type"), "fast")
+  assert.equal(url.searchParams.get("silence_duration_ms"), "420")
+})
+
+test("uses manual endpointing only when Woxza owns the turn boundary", () => {
+  const url = new URL(realtimeSttUrl({ endpointing:"manual" }))
+  assert.equal(url.searchParams.get("endpointing"), "manual")
+})
+
+test("streaming TTS URL requests completion events for per-turn lifecycle", () => {
+  const url = new URL(streamingTtsUrl({ model:"bulbul:v3" }))
+  assert.equal(url.pathname, "/text-to-speech/ws")
+  assert.equal(url.searchParams.get("model"), "bulbul:v3")
+  assert.equal(url.searchParams.get("send_completion_event"), "true")
+})
+
+test("Sarvam's socket buffer is independently configurable from Woxza phrase buffering", () => {
+  assert.equal(v3SarvamTtsBufferSize({ configured:"42", legacy:"60" }), 42)
+  assert.equal(v3SarvamTtsBufferSize({ configured:"", legacy:"60" }), 60)
+  assert.equal(v3SarvamTtsBufferSize({ configured:"12", legacy:"60" }), 30)
+})

@@ -76,6 +76,72 @@ export async function getDebugCall(db, callId) {
   return { call, transcript:turns.rows, events:events.rows, timeline, audit:buildCallAudit(call, turns.rows, events.rows) };
 }
 
+// Cost data is calculated when a call closes. This endpoint intentionally
+// reports the stored estimates and their exact units side by side: it is an
+// operational ledger, not a replacement for a provider invoice.
+export async function usageMetrics(db, url) {
+  const { where, values } = callFilters(url)
+  const summarySql = `
+    SELECT count(*)::int AS calls,
+      count(*) FILTER (WHERE c.status='completed')::int AS completed_calls,
+      count(*) FILTER (WHERE c.status='failed')::int AS failed_calls,
+      COALESCE(sum(c.stt_audio_seconds),0)::float AS stt_audio_seconds,
+      COALESCE(sum(c.tts_characters),0)::bigint AS tts_characters,
+      COALESCE(sum(c.input_tokens),0)::bigint AS input_tokens,
+      COALESCE(sum(c.llm_cached_input_tokens),0)::bigint AS cached_input_tokens,
+      COALESCE(sum(c.output_tokens),0)::bigint AS output_tokens,
+      COALESCE(sum(c.total_tokens),0)::bigint AS total_tokens,
+      COALESCE(sum(c.estimated_stt_inr),0)::float AS stt_inr,
+      COALESCE(sum(c.estimated_tts_inr),0)::float AS tts_inr,
+      COALESCE(sum(c.estimated_llm_inr),0)::float AS llm_inr,
+      COALESCE(sum(c.estimated_gemini_usd),0)::float AS gemini_usd,
+      COALESCE(sum(c.estimated_gemini_inr),0)::float AS gemini_inr,
+      COALESCE(sum(c.estimated_total_inr),0)::float AS total_inr,
+      COALESCE(avg(c.estimated_total_inr) FILTER (WHERE c.estimated_total_inr > 0),0)::float AS average_cost_inr,
+      COALESCE(sum(c.estimated_total_inr) / NULLIF(sum(c.total_latency_ms) / 60000.0,0),0)::float AS cost_per_call_minute_inr,
+      count(*) FILTER (WHERE c.cost_estimation_version IS NOT NULL)::int AS calls_with_recorded_cost
+    FROM calls c LEFT JOIN demo_calls d ON d.id=c.demo_call_id ${where}`
+  const dailySql = `
+    SELECT to_char(date_trunc('day',c.started_at),'YYYY-MM-DD') AS day,
+      count(*)::int AS calls,
+      COALESCE(sum(c.estimated_stt_inr),0)::float AS stt_inr,
+      COALESCE(sum(c.estimated_tts_inr),0)::float AS tts_inr,
+      COALESCE(sum(c.estimated_llm_inr),0)::float AS llm_inr,
+      COALESCE(sum(c.estimated_total_inr),0)::float AS total_inr
+    FROM calls c LEFT JOIN demo_calls d ON d.id=c.demo_call_id ${where}
+    GROUP BY 1 ORDER BY 1`
+  const modelsSql = `
+    SELECT COALESCE(NULLIF(c.llm_model,''),'Not recorded') AS model,
+      count(*)::int AS calls,
+      COALESCE(sum(c.input_tokens),0)::bigint AS input_tokens,
+      COALESCE(sum(c.llm_cached_input_tokens),0)::bigint AS cached_input_tokens,
+      COALESCE(sum(c.output_tokens),0)::bigint AS output_tokens,
+      COALESCE(sum(c.estimated_gemini_usd),0)::float AS gemini_usd,
+      COALESCE(sum(c.estimated_llm_inr),0)::float AS llm_inr,
+      COALESCE(sum(c.estimated_total_inr),0)::float AS total_inr
+    FROM calls c LEFT JOIN demo_calls d ON d.id=c.demo_call_id ${where}
+    GROUP BY 1 ORDER BY total_inr DESC, calls DESC`
+  const callsSql = `
+    SELECT c.call_id,c.started_at,c.status,c.phone_number_masked,c.llm_model,
+      c.stt_audio_seconds,c.tts_characters,c.input_tokens,c.llm_cached_input_tokens,c.output_tokens,c.total_tokens,
+      c.estimated_stt_inr,c.estimated_tts_inr,c.estimated_llm_inr,c.estimated_gemini_usd,c.estimated_gemini_inr,c.estimated_total_inr,c.cost_estimation_version
+    FROM calls c LEFT JOIN demo_calls d ON d.id=c.demo_call_id ${where}
+    ORDER BY c.started_at DESC LIMIT 250`
+  const [summary, daily, models, calls] = await Promise.all([
+    db.query(summarySql, values), db.query(dailySql, values), db.query(modelsSql, values), db.query(callsSql, values)
+  ])
+  return {
+    summary:summary.rows[0], daily:daily.rows, models:models.rows, calls:calls.rows,
+    sources:[
+      { component:"Speech to text", provider:"Sarvam Saaras realtime", unit:"caller-audio seconds", source:"Decoded inbound Plivo media recorded by Woxza for newly instrumented V3 calls; unavailable historically" },
+      { component:"Text to speech", provider:"Sarvam Bulbul", unit:"generated characters", source:"Historical V3 phrase-ready event lengths; exact renderer text for newly instrumented calls" },
+      { component:"LLM brain", provider:"Configured V3 brain", unit:"input, cached-input, and output tokens", source:"Usage metadata returned by the model provider" },
+      { component:"Call total", provider:"Woxza cost ledger", unit:"INR estimate", source:"Recorded units multiplied by versioned environment rate settings" }
+    ],
+    notice:"Historical calls made before cost telemetry was deployed have model tokens but no recorded STT/TTS units or estimated cost. Provider dashboards and invoices remain authoritative."
+  }
+}
+
 const textOf = value => String(value || "").trim();
 const payloadOf = event => event?.payload && typeof event.payload === "object" ? event.payload : {};
 const firstValue = (items, keys) => {
