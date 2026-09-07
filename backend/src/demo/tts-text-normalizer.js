@@ -29,7 +29,9 @@ const fallbackPronunciations = (text, language) => {
   const locale = `${String(language || "en").toLowerCase()}-IN`
   const terms = pronunciationAsset.pronunciations?.[locale]
   if (!terms) return text
-  return Object.entries(terms).reduce((rendered, [term, pronunciation]) =>
+  // Long phrases must win over their components: replacing "Woxza" first
+  // would prevent the exact "Woxza AI website" pronunciation from matching.
+  return Object.entries(terms).sort(([left], [right]) => right.length - left.length).reduce((rendered, [term, pronunciation]) =>
     rendered.replace(new RegExp(`\\b${term}\\b`, "gi"), pronunciation), text)
 }
 

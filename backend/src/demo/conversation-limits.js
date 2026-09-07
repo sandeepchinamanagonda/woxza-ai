@@ -3,11 +3,16 @@ const withinSafeRange = (value, fallback) => Number.isFinite(value) ? Math.max(1
 // One provider-independent response budget for every text brain. The legacy
 // Sarvam names remain only as a backwards-compatible fallback for old setups.
 export function voiceResponseTokenLimit(language, { extended=false }={}) {
-  const languageSpecific = language === "te" ? (process.env.VOICE_RESPONSE_MAX_TOKENS_TE || process.env.SARVAM_CHAT_MAX_TOKENS_TE) : null
-  const configured = languageSpecific || process.env.VOICE_RESPONSE_MAX_TOKENS || process.env.SARVAM_CHAT_MAX_TOKENS
-  // Ordinary turns remain prompt-limited. V3 uses the extended budget so its
-  // one tailored four-to-six-sentence value explanation is not cut short.
-  const fallback = extended ? (language === "te" ? 112 : 96) : (language === "te" ? 64 : 56)
+  const ordinaryLanguageSpecific = language === "te" ? (process.env.VOICE_RESPONSE_MAX_TOKENS_TE || process.env.SARVAM_CHAT_MAX_TOKENS_TE) : null
+  const ordinaryConfigured = ordinaryLanguageSpecific || process.env.VOICE_RESPONSE_MAX_TOKENS || process.env.SARVAM_CHAT_MAX_TOKENS
+  // A full value explanation is the only intentionally long response type.
+  // Keep its ceiling independent so normal conversational turns cannot become
+  // slower or more costly just because an occasional pitch needs more room.
+  const extendedLanguageSpecific = language === "te" ? process.env.VOICE_FULL_PICTURE_MAX_TOKENS_TE : null
+  const configured = extended
+    ? (extendedLanguageSpecific || process.env.VOICE_FULL_PICTURE_MAX_TOKENS)
+    : ordinaryConfigured
+  const fallback = extended ? 256 : (language === "te" ? 64 : 56)
   return withinSafeRange(Number(configured), fallback)
 }
 

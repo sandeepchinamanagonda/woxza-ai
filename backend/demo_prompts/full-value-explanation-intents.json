@@ -1,0 +1,2065 @@
+{
+  "intent": "full_value_explanation",
+  "intentDescription": "The caller wants a fuller, tailored explanation of how Woxza would help after a business pain point and a recent Woxza-related statement.",
+  "languages": [
+    {
+      "languageCode": "en",
+      "languageName": "English",
+      "negativeExamples": [
+        {
+          "romanized_text": "How are you doing today?",
+          "text": "How are you doing today?",
+          "whyNotThisIntent": "Social greeting, not a request for Woxza value explanation."
+        },
+        {
+          "romanized_text": "How much does Woxza cost per month?",
+          "text": "How much does Woxza cost per month?",
+          "whyNotThisIntent": "Inquiry about pricing structure rather than functional explanation."
+        },
+        {
+          "romanized_text": "How do I sign up for the free trial?",
+          "text": "How do I sign up for the free trial?",
+          "whyNotThisIntent": "Action/onboarding request rather than explanation of business value."
+        },
+        {
+          "romanized_text": "How do I change my account password?",
+          "text": "How do I change my account password?",
+          "whyNotThisIntent": "Account settings support query."
+        },
+        {
+          "romanized_text": "Who is the CEO of Woxza?",
+          "text": "Who is the CEO of Woxza?",
+          "whyNotThisIntent": "General corporate trivia query."
+        },
+        {
+          "romanized_text": "Can I transfer my call to sales?",
+          "text": "Can I transfer my call to sales?",
+          "whyNotThisIntent": "Call routing request."
+        },
+        {
+          "romanized_text": "Where is your main office located?",
+          "text": "Where is your main office located?",
+          "whyNotThisIntent": "Location/contact info request."
+        },
+        {
+          "romanized_text": "What are your support hours?",
+          "text": "What are your support hours?",
+          "whyNotThisIntent": "Operational hours query."
+        },
+        {
+          "romanized_text": "Do you accept credit cards?",
+          "text": "Do you accept credit cards?",
+          "whyNotThisIntent": "Payment method inquiry."
+        },
+        {
+          "romanized_text": "Is Woxza down right now?",
+          "text": "Is Woxza down right now?",
+          "whyNotThisIntent": "System status check."
+        },
+        {
+          "romanized_text": "How long has Woxza been in business?",
+          "text": "How long has Woxza been in business?",
+          "whyNotThisIntent": "Company background information request."
+        },
+        {
+          "romanized_text": "How do I delete my business data?",
+          "text": "How do I delete my business data?",
+          "whyNotThisIntent": "Data management/privacy action."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "How?",
+          "text": "How?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Really? How so?",
+          "text": "Really? How so?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "How would that work?",
+          "text": "How would that work?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Tell me more about that.",
+          "text": "Tell me more about that."
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Then how does it work?",
+          "text": "Then how does it work?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "In what way?",
+          "text": "In what way?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "How can Woxza help my business with this?",
+          "text": "How can Woxza help my business with this?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "How would that actually help us?",
+          "text": "How would that actually help us?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Can you explain how Woxza handles that?",
+          "text": "Can you explain how Woxza handles that?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "How exactly does Woxza solve this problem for us?",
+          "text": "How exactly does Woxza solve this problem for us?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "What does Woxza actually do to help in our case?",
+          "text": "What does Woxza actually do to help in our case?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "How would that assist our daily operations?",
+          "text": "How would that assist our daily operations?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "How can Woxza handle our customer calls automatically?",
+          "text": "How can Woxza handle our customer calls automatically?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "How would it manage our WhatsApp messages and appointments?",
+          "text": "How would it manage our WhatsApp messages and appointments?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "How will Woxza update customers on stock availability and pricing?",
+          "text": "How will Woxza update customers on stock availability and pricing?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "How does Woxza stop us from missing calls after hours?",
+          "text": "How does Woxza stop us from missing calls after hours?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "So how can your AI assist our team with repeat calls?",
+          "text": "So how can your AI assist our team with repeat calls?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "How will Woxza automate our customer order status inquiries?",
+          "text": "How will Woxza automate our customer order status inquiries?"
+        }
+      ]
+    },
+    {
+      "languageCode": "es",
+      "languageName": "Spanish",
+      "negativeExamples": [
+        {
+          "romanized_text": "¿Cómo estás hoy?",
+          "text": "¿Cómo estás hoy?",
+          "whyNotThisIntent": "Social greeting, not a request for Woxza value explanation."
+        },
+        {
+          "romanized_text": "¿Cuánto cuesta el servicio de Woxza?",
+          "text": "¿Cuánto cuesta el servicio de Woxza?",
+          "whyNotThisIntent": "Pricing inquiry."
+        },
+        {
+          "romanized_text": "¿Cómo me registro en la plataforma?",
+          "text": "¿Cómo me registro en la plataforma?",
+          "whyNotThisIntent": "Registration/action step inquiry."
+        },
+        {
+          "romanized_text": "¿Cómo cambio mi contraseña?",
+          "text": "¿Cómo cambio mi contraseña?",
+          "whyNotThisIntent": "Account support query."
+        },
+        {
+          "romanized_text": "¿Dónde están sus oficinas principales?",
+          "text": "¿Dónde están sus oficinas principales?",
+          "whyNotThisIntent": "Location query."
+        },
+        {
+          "romanized_text": "¿Me puedes pasar con un agente humano?",
+          "text": "¿Me puedes pasar con un agente humano?",
+          "whyNotThisIntent": "Agent transfer request."
+        },
+        {
+          "romanized_text": "¿Cuáles son sus horarios de atención?",
+          "text": "¿Cuáles son sus horarios de atención?",
+          "whyNotThisIntent": "Business hours question."
+        },
+        {
+          "romanized_text": "¿Aceptan pago con tarjeta de crédito?",
+          "text": "¿Aceptan pago con tarjeta de crédito?",
+          "whyNotThisIntent": "Payment method question."
+        },
+        {
+          "romanized_text": "¿Hay algún problema con el servidor hoy?",
+          "text": "¿Hay algún problema con el servidor hoy?",
+          "whyNotThisIntent": "Status check."
+        },
+        {
+          "romanized_text": "¿Cuántos años lleva Woxza en el mercado?",
+          "text": "¿Cuántos años lleva Woxza en el mercado?",
+          "whyNotThisIntent": "Company history question."
+        },
+        {
+          "romanized_text": "¿Cómo elimino la cuenta de mi empresa?",
+          "text": "¿Cómo elimino la cuenta de mi empresa?",
+          "whyNotThisIntent": "Account cancellation query."
+        },
+        {
+          "romanized_text": "¿Cómo está el clima hoy por allá?",
+          "text": "¿Cómo está el clima hoy por allá?",
+          "whyNotThisIntent": "Casual small talk."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "¿Cómo?",
+          "text": "¿Cómo?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "¿En serio? ¿Cómo así?",
+          "text": "¿En serio? ¿Cómo así?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "¿Cómo funcionaría eso?",
+          "text": "¿Cómo funcionaría eso?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Cuéntame más sobre eso.",
+          "text": "Cuéntame más sobre eso."
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "¿Cómo sería entonces?",
+          "text": "¿Cómo sería entonces?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "¿De qué manera?",
+          "text": "¿De qué manera?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "¿Cómo puede Woxza ayudar a mi negocio con esto?",
+          "text": "¿Cómo puede Woxza ayudar a mi negocio con esto?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "¿Cómo nos ayudaría eso exactamente?",
+          "text": "¿Cómo nos ayudaría eso exactamente?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "¿Puedes explicarme cómo maneja Woxza esta situación?",
+          "text": "¿Puedes explicarme cómo maneja Woxza esta situación?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "¿De qué forma resuelve Woxza este problema para nosotros?",
+          "text": "¿De qué forma resuelve Woxza este problema para nosotros?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "¿Qué hace Woxza concretamente para ayudarnos?",
+          "text": "¿Qué hace Woxza concretamente para ayudarnos?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "¿Cómo apoyaría eso a nuestras operaciones diarias?",
+          "text": "¿Cómo apoyaría eso a nuestras operaciones diarias?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "¿Cómo respondería Woxza a las llamadas repetitivas de los clientes?",
+          "text": "¿Cómo respondería Woxza a las llamadas repetitivas de los clientes?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "¿De qué manera gestionaría los mensajes de WhatsApp y citas?",
+          "text": "¿De qué manera gestionaría los mensajes de WhatsApp y citas?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "¿Cómo informaría Woxza sobre precios y disponibilidad de stock?",
+          "text": "¿Cómo informaría Woxza sobre precios y disponibilidad de stock?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "¿Cómo evita Woxza que perdamos llamadas fuera del horario comercial?",
+          "text": "¿Cómo evita Woxza que perdamos llamadas fuera del horario comercial?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "¿Cómo ayuda su AI a gestionar los calls de los clientes?",
+          "text": "¿Cómo ayuda su AI a gestionar los calls de los clientes?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "¿Cómo funcionaría Woxza para automatizar el seguimiento de pedidos?",
+          "text": "¿Cómo funcionaría Woxza para automatizar el seguimiento de pedidos?"
+        }
+      ]
+    },
+    {
+      "languageCode": "as",
+      "languageName": "Assamese",
+      "negativeExamples": [
+        {
+          "romanized_text": "Apuni kenehoi ase?",
+          "text": "আপুনি কেনেকৈ আছে?",
+          "whyNotThisIntent": "Social greeting, not a request for value explanation."
+        },
+        {
+          "romanized_text": "Woxzar daam kiman?",
+          "text": "ৱক্সাৰ দাম কিমান?",
+          "whyNotThisIntent": "Pricing inquiry."
+        },
+        {
+          "romanized_text": "Moi kenehoi account khulim?",
+          "text": "মই কেনেকৈ একাউণ্ট খুলিম?",
+          "whyNotThisIntent": "Account setup question."
+        },
+        {
+          "romanized_text": "Password kenehoi xolab lage?",
+          "text": "পাছৱৰ্ড কেনেকৈ সলাব লাগে?",
+          "whyNotThisIntent": "Technical account support query."
+        },
+        {
+          "romanized_text": "Aponalokor office kot?",
+          "text": "আপোনালোকৰ অফিচ ক’ত?",
+          "whyNotThisIntent": "Office location query."
+        },
+        {
+          "romanized_text": "Manuh ejonor xoite kotha patiboparimne?",
+          "text": "মানুহ এজনৰ সৈতে কথা পাতিব পাৰিমনে?",
+          "whyNotThisIntent": "Human transfer request."
+        },
+        {
+          "romanized_text": "Office kholar xomoy ki?",
+          "text": "অফিচ খোলাৰ সময় কি?",
+          "whyNotThisIntent": "Business hours question."
+        },
+        {
+          "romanized_text": "Online payment loyne?",
+          "text": "অনলাইন পেমেণ্ট লয়নে?",
+          "whyNotThisIntent": "Payment inquiry."
+        },
+        {
+          "romanized_text": "Server down hoi ase neki?",
+          "text": "চাৰ্ভাৰ ডাউন হৈ আছে নেকি?",
+          "whyNotThisIntent": "System status check."
+        },
+        {
+          "romanized_text": "Woxza company to kiman puroni?",
+          "text": "ৱক্সা কোম্পানীটো কিমান পুৰণি?",
+          "whyNotThisIntent": "Company info request."
+        },
+        {
+          "romanized_text": "Moi data kenehoi delete korim?",
+          "text": "মই ডেটা কেনেকৈ ডিলেট কৰিম?",
+          "whyNotThisIntent": "Data management question."
+        },
+        {
+          "romanized_text": "Aji botor kenekuwa?",
+          "text": "আজি বতৰ কেনেকুৱা?",
+          "whyNotThisIntent": "Casual small talk."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kenehoi?",
+          "text": "কেৱেকৈ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Xosakai? Kenehoi baru?",
+          "text": "সঁচাকৈ? কেনেকৈ বাৰু?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "I kenehoi kaam koribo?",
+          "text": "ই কেনেকৈ কাম কৰিব?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Olop bohlai kobone?",
+          "text": "অলপ বহলাই কবনে?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Tente kenehoi hobo?",
+          "text": "তেন্তে কেনেকৈ হ'ব?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Konto upayot?",
+          "text": "কোনটো উপায়ত?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza e mur byoboxayot kenehoi xohay koribo?",
+          "text": "ৱক্সাই মোৰ ব্যৱসায়ত কেনেকৈ সহায় কৰিব?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Iyar dwara amar ki labh hobo?",
+          "text": "ইয়াৰ দ্বাৰা আমাৰ কি লাভ হ'ব?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza e ei xomoxya to kenehoi xomadhan koribo pare?",
+          "text": "ৱক্সাই এই সমস্যাটো কেনেকৈ সমাধান কৰিব পাৰে?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Amak xohay koriboloi Woxza e ki koribo?",
+          "text": "আমাক সহায় কৰিবলৈ ৱক্সাই কি কৰিব?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxzar joriyote amar byoboxay kenehoi xohoj hobo?",
+          "text": "ৱক্সাৰ জৰিয়তে আমাৰ ব্যৱসায় কেনেকৈ সহজ হ'ব?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Amar kamborot Woxza e kenehoi bhag lobo?",
+          "text": "আমার কামবোৰত ৱক্সাই কেনেকৈ ভাগ ল'ব?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Grahokor ekebor call Woxza e kenehoi xombhalibo?",
+          "text": "গ্রাহকৰ একেবোৰ কল ৱক্সাই কেনেকৈ চম্ভালিব?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Order aru xamogrir khobor Woxza e kenehoi dibo?",
+          "text": "অৰ্ডাৰ আৰু সামগ্ৰীৰ খবৰ ৱক্সাই কেনেকৈ দিব?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "WhatsApp barta aru appointment kenehoi manage koribo?",
+          "text": "হোৱাটছএপ বাৰ্তা আৰু অপইণ্টমেণ্ট কেনেকৈ মেনেজ কৰিব?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Bondhor xomoyot oha call bor Woxza e kenehoi receive koribo?",
+          "text": "বন্ধৰ সময়ত অহা কলবোৰ ৱক্সাই কেনেকৈ ৰিচিভ কৰিব?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Amar customer calls bor Woxza e kenehoi AI re handle koribo?",
+          "text": "আমার customer calls বোৰ Woxza এ কেনেকৈ AI ৰে handle কৰিব?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Mur business r repeat work bor Woxza e kenehoi komabo?",
+          "text": "মোৰ business ৰ repeat work বোৰ Woxza এ কেনেকৈ কমাব?"
+        }
+      ]
+    },
+    {
+      "languageCode": "bn",
+      "languageName": "Bengali",
+      "negativeExamples": [
+        {
+          "romanized_text": "Apni kemon achen?",
+          "text": "আপনি কেমন আছেন?",
+          "whyNotThisIntent": "Social greeting."
+        },
+        {
+          "romanized_text": "Woxza byobohar korte koto khoroch hobe?",
+          "text": "ক্সা ব্যবহার করতে কত খরচ হবে?",
+          "whyNotThisIntent": "Pricing inquiry."
+        },
+        {
+          "romanized_text": "Ami kibhabe sign up korbo?",
+          "text": "আমি কীভাবে সাইন আপ করব?",
+          "whyNotThisIntent": "Signup action question."
+        },
+        {
+          "romanized_text": "Password kibhabe poribortonis korbo?",
+          "text": "পাসওয়ার্ড কীভাবে পরিবর্তন করব?",
+          "whyNotThisIntent": "Account support query."
+        },
+        {
+          "romanized_text": "Apadeder office kothay obosthito?",
+          "text": "আপনাদের অফিস কোথায় অবস্থিত?",
+          "whyNotThisIntent": "Office location query."
+        },
+        {
+          "romanized_text": "Amake ki kono agent er sathe connect kora jabe?",
+          "text": "আমাকে কি কোনো এজেন্টের সাথে কানেক্ট করা যাবে?",
+          "whyNotThisIntent": "Human routing request."
+        },
+        {
+          "romanized_text": "Apadeder service kotokhon khola thake?",
+          "text": "আপনাদের সার্ভিস কতক্ষণ খোলা থাকে?",
+          "whyNotThisIntent": "Operating hours inquiry."
+        },
+        {
+          "romanized_text": "Aponara ki card payment nen?",
+          "text": "আপনারা কি কার্ড পেমেন্ট নেন?",
+          "whyNotThisIntent": "Payment method inquiry."
+        },
+        {
+          "romanized_text": "Server e ki kono somosya cholche?",
+          "text": "সার্ভারে কি কোনো সমস্যা চলছে?",
+          "whyNotThisIntent": "System status check."
+        },
+        {
+          "romanized_text": "Woxza kotodin dhore cholche?",
+          "text": "ক্সা কতদিন ধরে চলছে?",
+          "whyNotThisIntent": "Company history query."
+        },
+        {
+          "romanized_text": "Amar data kibhabe delete korbo?",
+          "text": "আমার ডেটা কীভাবে ডিলিট করব?",
+          "whyNotThisIntent": "Data management question."
+        },
+        {
+          "romanized_text": "Ajke ki bristi hobe?",
+          "text": "আজকে কি বৃষ্টি হবে?",
+          "whyNotThisIntent": "Irrelevant casual conversational query."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kibhabe?",
+          "text": "কীভাবে?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Tai naki? Kibhabe sombhob?",
+          "text": "তাই নাকি? কীভাবে সম্ভব?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Eta kibhabe kaj korbe?",
+          "text": "এটা কীভাবে কাজ করবে?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Arektu bujhiye bolben?",
+          "text": "আরেকটু বুঝিয়ে বলবেন?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Tahole kibhabe hobe?",
+          "text": "তাহলে কীভাবে হবে?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kon upaye?",
+          "text": "কোন উপায়ে?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza kibhabe amar byobosake xahajyo korte pare?",
+          "text": "ক্সা কীভাবে আমার ব্যবসাকে সাহায্য করতে পারে?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Ete ashole amader ki labh hobe?",
+          "text": "এতে আসলে আমাদের কী লাভ হবে?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza kibhabe ei somosyar somadhan korbe?",
+          "text": "ক্সা কীভাবে এই সমস্যার সমাধান করবে?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Amak xahajyo korte Woxza thik ki korbe?",
+          "text": "আমাক সাহায্য করতে ক্সা ঠিক কী করবে?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxzar madhyome kibhabe kajta sohoj hobe?",
+          "text": "ক্সার মাধ্যমে কীভাবে কাজটা সহজ হবে?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Amader doinondin kaje Woxza kibhabe xahajyo korbe?",
+          "text": "আমাদের দৈনন্দিন কাজে ক্সা কীভাবে সাহায্য করবে?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Grahokder barbar kora call gulo Woxza kibhabe samlabe?",
+          "text": "গ্রাহকদের বারবার করা কলগুলো ক্সা কীভাবে সামলাবে?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Order update ba ponnyer dam Woxza kibhabe janabe?",
+          "text": "অর্ডার আপডেট বা পণ্যের দাম ক্সা কীভাবে জানাবে?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "WhatsApp message ar appointment kibhabe manage hobe?",
+          "text": "হোয়াটসঅ্যাপ মেসেজ আর অ্যাপয়েন্টমেন্ট কীভাবে ম্যানেজ হবে?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Office bondher por asa call Woxza kibhabe miss hote debe na?",
+          "text": "অফিস বন্ধের পর আসা কল ক্সা কীভাবে মিস হতে দেবে না?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Amader customer calls gulo Woxza er AI kibhabe handle korbe?",
+          "text": "আমাদের customer calls গুলো Woxza এর AI কীভাবে হ্যান্ডেল করবে?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Amar business er repeat work komate Woxza kibhabe xahajyo korbe?",
+          "text": "আমার business এর repeat work কমাতে Woxza কীভাবে সাহায্য করবে?"
+        }
+      ]
+    },
+    {
+      "languageCode": "gu",
+      "languageName": "Gujarati",
+      "negativeExamples": [
+        {
+          "romanized_text": "Tame kem chho?",
+          "text": "તમે કેમ છો?",
+          "whyNotThisIntent": "Social greeting."
+        },
+        {
+          "romanized_text": "Woxza ni fee ketli chhe?",
+          "text": "વોક્ઝાની ફી કેટલી છે?",
+          "whyNotThisIntent": "Pricing inquiry."
+        },
+        {
+          "romanized_text": "Hu sign up kevi rite karu?",
+          "text": "હું સાઇન અપ કેવી રીતે કરું?",
+          "whyNotThisIntent": "Onboarding inquiry."
+        },
+        {
+          "romanized_text": "Maro password kevi rite badlavo?",
+          "text": "મારો પાસવર્ડ કેવી રીતે બદલવો?",
+          "whyNotThisIntent": "Account settings inquiry."
+        },
+        {
+          "romanized_text": "Tamari mukhya office kya chhe?",
+          "text": "તમારી મુખ્ય ઓફિસ ક્યાં છે?",
+          "whyNotThisIntent": "Office location query."
+        },
+        {
+          "romanized_text": "Shu mane koi agent sathe baat karavi sakso?",
+          "text": "શું મને કોઈ એજન્ટ સાથે વાત કરાવી શકશો?",
+          "whyNotThisIntent": "Human agent transfer query."
+        },
+        {
+          "romanized_text": "Tamaro samay shu chhe?",
+          "text": "તમારો સમય શું છે?",
+          "whyNotThisIntent": "Business timing query."
+        },
+        {
+          "romanized_text": "Shu tame credit card svikaro chho?",
+          "text": "શું તમે ક્રેડિટ કાર્ડ સ્વીકારો છો?",
+          "whyNotThisIntent": "Payment method inquiry."
+        },
+        {
+          "romanized_text": "Shu system bandh chhe?",
+          "text": "શું સિસ્ટમ બંધ છે?",
+          "whyNotThisIntent": "System status query."
+        },
+        {
+          "romanized_text": "Woxza company ketli juni chhe?",
+          "text": "વોક્ઝા કંપની કેટલી જૂની છે?",
+          "whyNotThisIntent": "Company background information."
+        },
+        {
+          "romanized_text": "Maro data kevi rite delete karvo?",
+          "text": "મારો ડેટા કેવી રીતે ડિલીટ કરવો?",
+          "whyNotThisIntent": "Data privacy request."
+        },
+        {
+          "romanized_text": "Aaje Ahmedabad ma havaman kevu chhe?",
+          "text": "આજે અમદાવાદમાં હવામાન કેવું છે?",
+          "whyNotThisIntent": "Casual small talk."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kevi rite?",
+          "text": "કેવી રીતે?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kharekhar? Kai rite?",
+          "text": "ખરેખર? કઈ રીતે?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "E kaam kevi rite karse?",
+          "text": "એ કામ કેવી રીતે કરશે?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Thodu vigate janavso?",
+          "text": "થોડું વિગતે જણાવશો?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "To pachhi kevi rite thase?",
+          "text": "તો પછી કેવી રીતે થશે?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kai rite shakya banse?",
+          "text": "કઈ રીતે શક્ય બનશે?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza mara business ne kevi rite madad kari sake?",
+          "text": "વોક્ઝા મારા બિઝનેસને કેવી રીતે મદદ કરી શકે?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Enathi amone sho faydo thase?",
+          "text": "એનાથી અમોને શો ફાયદો થશે?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza aa samasya no ukel kevi rite lavse?",
+          "text": "વોક્ઝા આ સમસ્યાનો ઉકેલ કેવી રીતે લાવશે?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Amari madad mate Woxza barabar shu karse?",
+          "text": "અમારી મદદ માટે વોક્ઝા બરાબર શું કરશે?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza dvara amaru kaam kevi rite saral banse?",
+          "text": "વોક્ઝા દ્વારા અમારું કામ કેવી રીતે સરળ બનશે?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Amara dainik kamkaj ma Woxza kai rite upyogi thase?",
+          "text": "અમારા દૈનિક કામકાજમાં વોક્ઝા કઈ રીતે ઉપયોગી થશે?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Grahako na varamvar aavta calls Woxza kevi rite sambhalse?",
+          "text": "ગ્રાહકોના વારંવાર આવતા કોલ્સ વોક્ઝા કેવી રીતે સંભાળશે?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Order update ane stock ni mahiti Woxza kevi rite aapase?",
+          "text": "ઓર્ડર અપડેટ અને સ્ટોકની માહિતી વોક્ઝા કેવી રીતે આપશે?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "WhatsApp message ane appointment manage kevi rite thase?",
+          "text": "વોટ્સએપ મેસેજ અને એપોઇન્ટમેન્ટ મેનેજ કેવી રીતે થશે?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Business hours pachhi aavta calls Woxza kevi rite miss nahi thava de?",
+          "text": "બિઝનેસ અવર્સ પછી આવતા કોલ્સ વોક્ઝા કેવી રીતે મિસ નહીં થવા દે?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Amara customer calls ne Woxza nu AI kevi rite handle karse?",
+          "text": "અમારા customer calls ને Woxza નું AI કેવી રીતે handle કરશે?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Mara business na repeat work ne ghatavama Woxza kevi rite help karse?",
+          "text": "મારા business ના repeat work ને ઘટાડવામાં Woxza કેવી રીતે હેલ્પ કરશે?"
+        }
+      ]
+    },
+    {
+      "languageCode": "hi",
+      "languageName": "Hindi",
+      "negativeExamples": [
+        {
+          "romanized_text": "Aap kaise hain?",
+          "text": "आप कैसे हैं?",
+          "whyNotThisIntent": "Social greeting."
+        },
+        {
+          "romanized_text": "Woxza ka kitna charge hai?",
+          "text": "वॉक्सज़ा का कितना चार्ज है?",
+          "whyNotThisIntent": "Pricing inquiry."
+        },
+        {
+          "romanized_text": "Main sign up kaise karoon?",
+          "text": "मैं साइन अप कैसे करूँ?",
+          "whyNotThisIntent": "Onboarding/registration query."
+        },
+        {
+          "romanized_text": "Password kaise badlein?",
+          "text": "पासवर्ड कैसे बदलें?",
+          "whyNotThisIntent": "Account support query."
+        },
+        {
+          "romanized_text": "Aapka main office kahan hai?",
+          "text": "आपका मेन ऑफिस कहाँ है?",
+          "whyNotThisIntent": "Office location query."
+        },
+        {
+          "romanized_text": "Kya meri baat kisi agent se ho sakti hai?",
+          "text": "क्या मेरी बात किसी एजेंट से हो सकती है?",
+          "whyNotThisIntent": "Human routing request."
+        },
+        {
+          "romanized_text": "Aapki timing kya hai?",
+          "text": "आपकी टाइमिंग क्या है?",
+          "whyNotThisIntent": "Operating hours inquiry."
+        },
+        {
+          "romanized_text": "Kya aap credit card lete hain?",
+          "text": "क्या आप क्रेडिट कार्ड लेते हैं?",
+          "whyNotThisIntent": "Payment option inquiry."
+        },
+        {
+          "romanized_text": "Kya server down chal raha hai?",
+          "text": "क्या सर्वर डाउन चल रहा है?",
+          "whyNotThisIntent": "System health status."
+        },
+        {
+          "romanized_text": "Woxza company kitni purani hai?",
+          "text": "वॉक्सज़ा कंपनी कितनी पुरानी है?",
+          "whyNotThisIntent": "Company history inquiry."
+        },
+        {
+          "romanized_text": "Apna data kaise delete karoon?",
+          "text": "अपना डेटा कैसे डिलीट करूँ?",
+          "whyNotThisIntent": "Data removal query."
+        },
+        {
+          "romanized_text": "Aaj Delhi mein mausam kaisa hai?",
+          "text": "आज दिल्ली में मौसम कैसा है?",
+          "whyNotThisIntent": "Casual small talk."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kaise?",
+          "text": "कैसे?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Arey sach mein? Kaise?",
+          "text": "अरे सच में? कैसे?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Yeh kaise kaam karega?",
+          "text": "यह कैसे काम करेगा?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Thoda vistaar se batayenge?",
+          "text": "थोड़ा विस्तार से बताएंगे?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "To phir yeh kaise hoga?",
+          "text": "तो फिर यह कैसे होगा?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kis tarah se?",
+          "text": "किस तरह से?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza mere business ki madad kaise kar sakta hai?",
+          "text": "वॉक्सज़ा मेरे बिज़नेस की मदद कैसे कर सकता है?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Isse asal mein hamara kya fayda hoga?",
+          "text": "इससे असल में हमारा क्या फायदा होगा?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza is pareshani ko kaise hal karega?",
+          "text": "वॉक्सज़ा इस परेशानी को कैसे हल करेगा?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Hamari madad karne ke liye Woxza kya karega?",
+          "text": "हमारी मदद करने के लिए वॉक्सज़ा क्या करेगा?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza ke zariye hamara kaam kaise aasaan hoga?",
+          "text": "वॉक्सज़ा के ज़रिए हमारा काम कैसे आसान होगा?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Yeh hamare roz ke kaamon mein kaise sahayata karega?",
+          "text": "यह हमारे रोज़ के कामों में कैसे सहायता करेगा?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Grahakon ke baar-baar aane wale calls ko Woxza kaise sambhalega?",
+          "text": "ग्राहकों के बार-बार आने वाले कॉल्स को वॉक्सज़ा कैसे संभालेगा?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Order update aur saaman ki uplabdhta Woxza kaise batayega?",
+          "text": "ऑर्डर अपडेट और सामान की उपलब्धता वॉक्सज़ा कैसे बताएगा?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "WhatsApp messages aur appointments kaise manage honge?",
+          "text": "व्हाट्सएप मैसेज और अपॉइंटमेंट्स कैसे मैनेज होंगे?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Dukaan band hone ke baad aane wale calls Woxza kaise miss nahi hone dega?",
+          "text": "दुकान बंद होने के बाद आने वाले कॉल्स वॉक्सज़ा कैसे मिस नहीं होने देगा?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Hamare customer calls ko Woxza ka AI kaise handle karega?",
+          "text": "हमारे customer calls को Woxza का AI कैसे handle करेगा?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Business ke repeat work ko kam karne mein Woxza kaise help karega?",
+          "text": "बिज़नेस के repeat work को कम करने में Woxza कैसे help करेगा?"
+        }
+      ]
+    },
+    {
+      "languageCode": "kn",
+      "languageName": "Kannada",
+      "negativeExamples": [
+        {
+          "romanized_text": "Hegiddira?",
+          "text": "ಹೇಗಿದ್ದೀರಾ?",
+          "whyNotThisIntent": "Social greeting."
+        },
+        {
+          "romanized_text": "Woxza bele eshtu?",
+          "text": "ವೋಕ್ಸಾ ಬೆಲೆ ಎಷ್ಟು?",
+          "whyNotThisIntent": "Pricing query."
+        },
+        {
+          "romanized_text": "Nanu sign up maduvudu hege?",
+          "text": "ನಾನು ಸೈನ್ ಅಪ್ ಮಾಡುವುದು ಹೇಗೆ?",
+          "whyNotThisIntent": "Account setup action inquiry."
+        },
+        {
+          "romanized_text": "Password reset maduvudu hege?",
+          "text": "ಪಾಸ್‌ವರ್ಡ್ ರಿಸೆಟ್ ಮಾಡುವುದು ಹೇಗೆ?",
+          "whyNotThisIntent": "Account tech support query."
+        },
+        {
+          "romanized_text": "Nimma mukhya office ellide?",
+          "text": "ನಿಮ್ಮ ಮುಖ್ಯ ಆಫೀಸ್ ಎಲ್ಲಿದೆ?",
+          "whyNotThisIntent": "Location query."
+        },
+        {
+          "romanized_text": "Nanna kare bere agent ge transfer madteera?",
+          "text": "ನನ್ನ ಕರೆ ಬೇರೆ ಏಜೆಂಟ್‌ಗೆ ಟ್ರಾನ್ಸ್‌ಫರ್ ಮಾಡ್ತೀರಾ?",
+          "whyNotThisIntent": "Call transfer request."
+        },
+        {
+          "romanized_text": "Nimma office timings enu?",
+          "text": "ನಿಮ್ಮ ಆಫೀಸ್ ಟೈಮಿಂಗ್ಸ್ ಏನು?",
+          "whyNotThisIntent": "Business timing query."
+        },
+        {
+          "romanized_text": "Card payment tagoltira?",
+          "text": "ಕಾರ್ಡ್ ಪೇಮೆಂಟ್ ತಗೊಳ್ತೀರಾ?",
+          "whyNotThisIntent": "Payment option inquiry."
+        },
+        {
+          "romanized_text": "Server down ideya?",
+          "text": "ಸರ್ವರ್ ಡೌನ್ ಇದೆಯಾ?",
+          "whyNotThisIntent": "System uptime check."
+        },
+        {
+          "romanized_text": "Woxza company shuruvagi eshtu varsha aytu?",
+          "text": "ವೋಕ್ಸಾ ಕಂಪನಿ ಶುರುವಾಗಿ ಎಷ್ಟು ವರ್ಷ ಆಯ್ತು?",
+          "whyNotThisIntent": "Company age inquiry."
+        },
+        {
+          "romanized_text": "Nanna data delete maduvudu hege?",
+          "text": "ನನ್ನ ಡೇಟಾ ಡಿಲೀಟ್ ಮಾಡುವುದು ಹೇಗೆ?",
+          "whyNotThisIntent": "Data management request."
+        },
+        {
+          "romanized_text": "Bengalurunalli ivattu male ideya?",
+          "text": "ಬೆಂಗಳೂರಿನಲ್ಲಿ ಇವತ್ತು ಮಳೆ ಇದೆಯಾ?",
+          "whyNotThisIntent": "Casual small talk."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Hege?",
+          "text": "ಹೇಗೆ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Houda? Adu hege?",
+          "text": "ಹೌದಾ? ಅದು ಹೇಗೆ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Adu hege kelasa madutte?",
+          "text": "ಅದು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತೆ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Swalpa vivaravagi helteera?",
+          "text": "ಸ್ವಲ್ಪ ವಿವರವಾಗಿ ಹೇಳ್ತೀರಾ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Hagiddare hege sadhya?",
+          "text": "ಹಾಗಿದ್ದರೆ ಹೇಗೆ ಸಾಧ್ಯ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Yava reetiyalli?",
+          "text": "ಯಾವ ರೀತಿಯಲ್ಲಿ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza nanna business ge hege sahaya madutte?",
+          "text": "ವೋಕ್ಸಾ ನನ್ನ ಬಿಸಿನೆಸ್‌ಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡುತ್ತೆ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Idarinda namage nijavagiyu enu prayojana?",
+          "text": "ಇದರಿಂದ ನಮಗೆ ನಿಜವಾಗಿಯೂ ಏನು ಪ್ರಯೋಜನ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza ee samasyeyannu hege pariharisuttade?",
+          "text": "ವೋಕ್ಸಾ ಈ ಸಮಸ್ಯೆಯನ್ನು ಹೇಗೆ ಪರಿಹರಿಸುತ್ತದೆ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Namage sahaya madalu Woxza enu madutte?",
+          "text": "ನಮಗೆ ಸಹಾಯ ಮಾಡಲು ವೋಕ್ಸಾ ಏನು ಮಾಡುತ್ತೆ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza moolaka namma kelasa hege sulabhavaguttade?",
+          "text": "ವೋಕ್ಸಾ ಮೂಲಕ ನಮ್ಮ ಕೆಲಸ ಹೇಗೆ ಸುಲಭವಾಗುತ್ತದೆ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Namma dainandina kelasagalige idu hege neravagutte?",
+          "text": "ನಮ್ಮ ದೈನಂದಿನ ಕೆಲಸಗಳಿಗೆ ಇದು ಹೇಗೆ ನೆರವಾಗುತ್ತೆ?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Grahakara pade pade baruva karegalannu Woxza hege nirvahisutte?",
+          "text": "ಗ್ರಾಹಕರ ಪದೇ ಪದೇ ಬರುವ ಕರೆಗಳನ್ನು ವೋಕ್ಸಾ ಹೇಗೆ ನಿರ್ವಹಿಸುತ್ತೆ?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Order update mattu stock vivaragalannu Woxza hege tilisutte?",
+          "text": "ಆರ್ಡರ್ ಅಪ್‌ಡೇಟ್ ಮತ್ತು ಸ್ಟಾಕ್ ವಿವರಗಳನ್ನು ವೋಕ್ಸಾ ಹೇಗೆ ತಿಳಿಸುತ್ತೆ?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "WhatsApp message mattu appointment hege manage agutte?",
+          "text": "ವಾಟ್ಸಾಪ್ ಮೆಸೇಜ್ ಮತ್ತು ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಹೇಗೆ ಮ್ಯಾನೇಜ್ ಆಗುತ್ತೆ?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Office hours nantara baruva karegalu miss agadante Woxza hege tadeyutte?",
+          "text": "ಆಫೀಸ್ ಅವರ್ಸ್ ನಂತರ ಬರುವ ಕರೆಗಳು ಮಿಸ್ ಆಗದಂತೆ ವೋಕ್ಸಾ ಹೇಗೆ ತಡೆಯುತ್ತೆ?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Namma customer calls annu Woxza da AI hege handle madutte?",
+          "text": "ನಮ್ಮ customer calls ಅನ್ನು Woxza ದ AI ಹೇಗೆ handle ಮಾಡುತ್ತೆ?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Nanna business na repeat work kadime madalu Woxza hege help madutte?",
+          "text": "ನನ್ನ business ನ repeat work ಕಡಿಮೆ ಮಾಡಲು Woxza ಹೇಗೆ help ಮಾಡುತ್ತೆ?"
+        }
+      ]
+    },
+    {
+      "languageCode": "ml",
+      "languageName": "Malayalam",
+      "negativeExamples": [
+        {
+          "romanized_text": "Sukhamano?",
+          "text": "സുഖമാണോ?",
+          "whyNotThisIntent": "Social greeting."
+        },
+        {
+          "romanized_text": "Woxza yude nirakku ethrayaanu?",
+          "text": "വോക്‌സയുടെ നിരക്ക് എത്രയാണ്?",
+          "whyNotThisIntent": "Pricing query."
+        },
+        {
+          "romanized_text": "Njan engane sign up cheyyanam?",
+          "text": "ഞാൻ എങ്ങനെ സൈൻ അപ്പ് ചെയ്യണം?",
+          "whyNotThisIntent": "Sign up instructions inquiry."
+        },
+        {
+          "romanized_text": "Password engane maattam?",
+          "text": "പാസ്‌വേഡ് എങ്ങനെ മാറ്റാം?",
+          "whyNotThisIntent": "Password account query."
+        },
+        {
+          "romanized_text": "Ningalude main office evideyaanu?",
+          "text": "നിങ്ങളുടെ മെയിൻ ഓഫീസ് എവിടെയാണ്?",
+          "whyNotThisIntent": "Location query."
+        },
+        {
+          "romanized_text": "Enne oru human agent ilekku connect cheyyaamo?",
+          "text": "എന്നെ ഒരു ഹ്യൂമൻ ഏജന്റിലേക്ക് കണക്ട് ചെയ്യാമോ?",
+          "whyNotThisIntent": "Human routing request."
+        },
+        {
+          "romanized_text": "Office pravarthana samayam eppozhaanu?",
+          "text": "ഓഫീസ് പ്രവർത്തന സമയം എപ്പോഴാണ്?",
+          "whyNotThisIntent": "Business hours inquiry."
+        },
+        {
+          "romanized_text": "Credit card sweekarikkumo?",
+          "text": "ക്രെഡിറ്റ് കാർഡ് സ്വീകരിക്കുമോ?",
+          "whyNotThisIntent": "Payment method query."
+        },
+        {
+          "romanized_text": "Server down aano?",
+          "text": "സെർവർ ഡൗൺ ആണോ?",
+          "whyNotThisIntent": "System state check."
+        },
+        {
+          "romanized_text": "Woxza thudangiittu ethra naalaayi?",
+          "text": "വോക്‌സ തുടങ്ങിയിട്ട് എത്ര നാളായി?",
+          "whyNotThisIntent": "Company trivia."
+        },
+        {
+          "romanized_text": "Ente data engane delete cheyyaam?",
+          "text": "എന്റെ ഡാറ്റ എങ്ങനെ ഡിലീറ്റ് ചെയ്യാം?",
+          "whyNotThisIntent": "Data deletion procedure."
+        },
+        {
+          "romanized_text": "Innu Kochiyil mazha peyyumo?",
+          "text": "ഇന്ന് കൊച്ചിയിൽ മഴ പെയ്യുമോ?",
+          "whyNotThisIntent": "Casual small talk."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Engane?",
+          "text": "എങ്ങനെ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Aano? Athingane?",
+          "text": "ആണോ? അതെങ്ങനെ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Ithu engane pravarthikkum?",
+          "text": "ഇത് എങ്ങനെ പ്രവർത്തിക്കും?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Onnu vishadheekerikkaamo?",
+          "text": "ഒന്ന് വിശദീകരിക്കാമോ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Pinne enganeyaanu?",
+          "text": "പിന്നെ എങ്ങനെയാണ്?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Ethu reethiyil?",
+          "text": "ഏത് രീതിയിൽ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza kku ente business ine engane sahayikkaanaakum?",
+          "text": "വോക്‌സയ്ക്ക് എന്റെ ബിസിനസ്സിനെ എങ്ങനെ സഹായിക്കാനാകും?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Ithukondu njangalkku yatharthathil enthu prayojanamaanundaakuka?",
+          "text": "ഇതുകൊണ്ട് ഞങ്ങൾക്ക് യഥാർത്ഥത്തിൽ എന്ത് പ്രയോജനമാണുണ്ടാകുക?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Ee prashnam Woxza engane parihariykum?",
+          "text": "ഈ പ്രശ്നം വോക്‌സ എങ്ങനെ പരിഹരിക്കും?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Njangale sahayikkaan Woxza enthaanu cheyyuka?",
+          "text": "ഞങ്ങളെ സഹായിക്കാൻ വോക്‌സ എന്താണ് ചെയ്യുക?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza vazhi njangalude joli engane eluppamaakum?",
+          "text": "വോക്‌സ വഴി ഞങ്ങളുടെ ജോലി എങ്ങനെ എളുപ്പമാകും?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Njangalude dainandina kaaryangalil ithu engane sahayikkum?",
+          "text": "ഞങ്ങളുടെ ദൈനംദിന കാര്യങ്ങളിൽ ഇത് എങ്ങനെ സഹായിക്കും?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Customers nte thodarchayaaya calls Woxza engane kaikaaryam cheyyum?",
+          "text": "കസ്റ്റമേഴ്സിന്റെ തുടർച്ചയായ കോളുകൾ വോക്‌സ എങ്ങനെ കൈകാര്യം ചെയ്യും?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Order updates um stock vivarangalum Woxza engane ariyikkum?",
+          "text": "ഓർഡർ അപ്‌ഡേറ്റുകളും സ്റ്റോക്ക് വിവരങ്ങളും വോക്‌സ എങ്ങനെ അറിയിക്കും?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "WhatsApp messages um appointments um engane manage cheyyum?",
+          "text": "വാട്‌സ്ആപ്പ് മെസ്സേജുകളും അപ്പോയിന്റ്മെന്റുകളും എങ്ങനെ മാനേജ് ചെയ്യും?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Working hours inu sheshamulla calls miss aakaathe Woxza engane nokkum?",
+          "text": "വർക്കിംഗ് അവേഴ്‌സിന് ശേഷമുള്ള കോളുകൾ മിസ്സാകാതെ വോക്‌സ എങ്ങനെ നോക്കും?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Njangalude customer calls Woxza yude AI engane handle cheyyum?",
+          "text": "ഞങ്ങളുടെ customer calls വോക്സയുടെ AI എങ്ങനെ handle ചെയ്യും?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Ente business le repeat work kuraykkaan Woxza engane help cheyyum?",
+          "text": "എന്റെ business ലെ repeat work കുറയ്ക്കാൻ Woxza എങ്ങനെ help ചെയ്യും?"
+        }
+      ]
+    },
+    {
+      "languageCode": "mr",
+      "languageName": "Marathi",
+      "negativeExamples": [
+        {
+          "romanized_text": "Tumhi kase ahat?",
+          "text": "तुम्ही कसे आहात?",
+          "whyNotThisIntent": "Social greeting."
+        },
+        {
+          "romanized_text": "Woxza che charges kiti ahet?",
+          "text": "ऑक्झाचे चार्जेस किती आहेत?",
+          "whyNotThisIntent": "Pricing query."
+        },
+        {
+          "romanized_text": "Mi sign up kasa karu?",
+          "text": "मी साइन अप कसं करू?",
+          "whyNotThisIntent": "Sign up steps query."
+        },
+        {
+          "romanized_text": "Password kasa badlaycha?",
+          "text": "पासवर्ड कसा बदलायचा?",
+          "whyNotThisIntent": "Account support query."
+        },
+        {
+          "romanized_text": "Tumche main office kuthe ahe?",
+          "text": "तुमचे मुख्य ऑफिस कुठे आहे?",
+          "whyNotThisIntent": "Office location query."
+        },
+        {
+          "romanized_text": "Maza bolna kona adhikaryashi karun dyal ka?",
+          "text": "माझं बोलणं कोणा अधिकाऱ्याशी करून द्याल का?",
+          "whyNotThisIntent": "Human transfer query."
+        },
+        {
+          "romanized_text": "Tumchi office timing kay ahe?",
+          "text": "तुमची ऑफिस टायमिंग काय आहे?",
+          "whyNotThisIntent": "Timing query."
+        },
+        {
+          "romanized_text": "Tumhi credit card swikarta ka?",
+          "text": "तुम्ही क्रेडिट कार्ड स्वीकारता का?",
+          "whyNotThisIntent": "Payment option query."
+        },
+        {
+          "romanized_text": "Server down ahe ka?",
+          "text": "सर्व्हर डाऊन आहे का?",
+          "whyNotThisIntent": "System uptime query."
+        },
+        {
+          "romanized_text": "Woxza company kiti juni ahe?",
+          "text": "ऑक्झा कंपनी किती जुनी आहे?",
+          "whyNotThisIntent": "Company trivia query."
+        },
+        {
+          "romanized_text": "Maza data kasa delete karu?",
+          "text": "माझा डेटा कसा डिलीट करू?",
+          "whyNotThisIntent": "Data management query."
+        },
+        {
+          "romanized_text": "Aaj Punyat paus padel ka?",
+          "text": "आज पुण्यात पाऊस पडेल का?",
+          "whyNotThisIntent": "Casual small talk."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kasa?",
+          "text": "कसं?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kharanch? Te kasa kay?",
+          "text": "खरंच? ते कसं काय?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "He kasa kaam karel?",
+          "text": "हे कसं काम करेल?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Thoda savistar sangal ka?",
+          "text": "थोडा सविस्तर सांगाल का?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Mag he kasa hoil?",
+          "text": "मग हे कसं होईल?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Konthya prakare?",
+          "text": "कोणत्या प्रकारे?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza mazya vyavsayala kashi madat karu shakta?",
+          "text": "ऑक्झा माझ्या व्यवसायाला कशी मदत करू शकतं?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Yacha nakki amhala kay fayda hoil?",
+          "text": "याचा नक्की आम्हाला काय फायदा होईल?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza hi adchan kashi sodvel?",
+          "text": "ऑक्झा ही अडचण कशी सोडवेल?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Amchya madatisathi Woxza nakki kay karel?",
+          "text": "आमच्या मदतीसाठी ऑक्झा नक्की काय करेल?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza mule amcha kaam kasa sopa hoil?",
+          "text": "ऑक्झा मुळे आमचं काम कसं सोपं होईल?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Amchya dainandin kamat he kasa upyukta tharel?",
+          "text": "आमच्या दैनंदिन कामात हे कसं उपयुक्त ठरेल?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Grahakanche punha punha yenare calls Woxza kase sambhalel?",
+          "text": "ग्राहकांचे पुन्हा पुन्हा येणारे कॉल्स ऑक्झा कसे सांभाळेल?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Order update ani malachi mahiti Woxza kashi deil?",
+          "text": "ऑर्डर अपडेट आणि मालाची माहिती ऑक्झा कशी देईल?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "WhatsApp message ani appointment kasa manage hoil?",
+          "text": "व्हॉट्सॲप मेसेज आणि अपॉइंटमेंट कसं मॅनेज होईल?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Velenantar yenare calls Woxza miss hou naye mhanun kay karel?",
+          "text": "वेळेनंतर येणारे कॉल्स ऑक्झा मिस होऊ नये म्हणून काय करेल?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Amche customer calls Woxza cha AI kasa handle karel?",
+          "text": "आमचे customer calls Woxza चं AI कसं handle करेल?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Mazya business madhil repeat work kami karayla Woxza kashi help karel?",
+          "text": "माझ्या business मधील repeat work कमी करायला Woxza कशी help करेल?"
+        }
+      ]
+    },
+    {
+      "languageCode": "pa",
+      "languageName": "Punjabi",
+      "negativeExamples": [
+        {
+          "romanized_text": "Tusi kivein ho?",
+          "text": "ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ?",
+          "whyNotThisIntent": "Social greeting."
+        },
+        {
+          "romanized_text": "Woxza di fee kinni hai?",
+          "text": "ਵੋਕਸਾ ਦੀ ਫੀਸ ਕਿੰਨੀ ਹੈ?",
+          "whyNotThisIntent": "Pricing inquiry."
+        },
+        {
+          "romanized_text": "Main sign up kivein karaan?",
+          "text": "ਮੈਂ ਸਾਈਨ ਅੱਪ ਕਿਵੇਂ ਕਰਾਂ?",
+          "whyNotThisIntent": "Sign up steps query."
+        },
+        {
+          "romanized_text": "Password kivein badliye?",
+          "text": "ਪਾਸਵਰਡ ਕਿਵੇਂ ਬਦਲੀਏ?",
+          "whyNotThisIntent": "Account support query."
+        },
+        {
+          "romanized_text": "Tuhada mukh daftar kitthe hai?",
+          "text": "ਤੁਹਾਡਾ ਮੁੱਖ ਦਫਤਰ ਕਿੱਥੇ ਹੈ?",
+          "whyNotThisIntent": "Location inquiry."
+        },
+        {
+          "romanized_text": "Ki meri gall kisi bande naal ho sakdi hai?",
+          "text": "ਕੀ ਮੇਰੀ ਗੱਲ ਕਿਸੇ ਬੰਦੇ ਨਾਲ ਹੋ ਸਕਦੀ ਹੈ?",
+          "whyNotThisIntent": "Human agent transfer request."
+        },
+        {
+          "romanized_text": "Tuhade daftar da samah ki hai?",
+          "text": "ਤੁਹਾਡੇ ਦਫਤਰ ਦਾ ਸਮਾਂ ਕੀ ਹੈ?",
+          "whyNotThisIntent": "Operating timing inquiry."
+        },
+        {
+          "romanized_text": "Ki tusi credit card lende ho?",
+          "text": "ਕੀ ਤੁਸੀਂ ਕ੍ਰੈਡਿਟ ਕਾਰਡ ਲੈਂਦੇ ਹੋ?",
+          "whyNotThisIntent": "Payment option inquiry."
+        },
+        {
+          "romanized_text": "Ki server kharaab hai?",
+          "text": "ਕੀ ਸਰਵਰ ਖਰਾਬ ਹੈ?",
+          "whyNotThisIntent": "System state query."
+        },
+        {
+          "romanized_text": "Woxza company kinni purani hai?",
+          "text": "ਵੋਕਸਾ ਕੰਪਨੀ ਕਿੰਨੀ ਪੁਰਾਣੀ ਹੈ?",
+          "whyNotThisIntent": "Company trivia query."
+        },
+        {
+          "romanized_text": "Main apna data kivein hatawaan?",
+          "text": "ਮੈਂ ਆਪਣਾ ਡਾਟਾ ਕਿਵੇਂ ਹਟਾਵਾਂ?",
+          "whyNotThisIntent": "Data management request."
+        },
+        {
+          "romanized_text": "Aaj Punjab vich mausam kiho jiha hai?",
+          "text": "ਅੱਜ ਪੰਜਾਬ ਵਿੱਚ ਮੌਸਮ ਕਿਹੋ ਜਿਹਾ ਹੈ?",
+          "whyNotThisIntent": "Casual small talk."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kivein?",
+          "text": "ਕਿਵੇਂ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Sachin? Oh kivein?",
+          "text": "ਸੱਚੀਂ? ਉਹ ਕਿਵੇਂ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Eh kivein kaam karega?",
+          "text": "ਇਹ ਕਿਵੇਂ ਕੰਮ ਕਰੇਗਾ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Thodha khol ke dassoge?",
+          "text": "ਥੋੜ੍ਹਾ ਖੋਲ੍ਹ ਕੇ ਦੱਸੋਗੇ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Phir eh kivein hovega?",
+          "text": "ਫਿਰ ਇਹ ਕਿਵੇਂ ਹੋਵੇਗਾ?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kis tareeke naal?",
+          "text": "ਕਿਸ ਤਰੀਕੇ ਨਾਲ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza mere business di kivein madad kar sakda hai?",
+          "text": "ਵੋਕਸਾ ਮੇਰੇ ਬਿਜ਼ਨਸ ਦੀ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹੈ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Is naal asal vich saada ki fayda hovega?",
+          "text": "ਇਸ ਨਾਲ ਅਸਲ ਵਿੱਚ ਸਾਡਾ ਕੀ ਫਾਇਦਾ ਹੋਵੇਗਾ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza is pareshani nu kivein hall karega?",
+          "text": "ਵੋਕਸਾ ਇਸ ਪਰੇਸ਼ਾਨੀ ਨੂੰ ਕਿਵੇਂ ਹੱਲ ਕਰੇਗਾ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Saadi madad karan lai Woxza ki karega?",
+          "text": "ਸਾਡੀ ਮਦਦ ਕਰਨ ਲਈ ਵੋਕਸਾ ਕੀ ਕਰੇਗਾ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza raahin saada kaam kivein saukha ho jaavega?",
+          "text": "ਵੋਕਸਾ ਰਾਹੀਂ ਸਾਡਾ ਕੰਮ ਕਿਵੇਂ ਸੌਖਾ ਹੋ ਜਾਵੇਗਾ?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Eh saade roz de kaamaan vich kivein sahai hovega?",
+          "text": "ਇਹ ਸਾਡੇ ਰੋਜ਼ ਦੇ ਕੰਮਾਂ ਵਿੱਚ ਕਿਵੇਂ ਸਹਾਈ ਹੋਵੇਗਾ?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Gaahkan diyan vaar-vaar aaun valiyan calls Woxza kivein sambhaalega?",
+          "text": "ਗਾਹਕਾਂ ਦੀਆਂ ਵਾਰ-ਵਾਰ ਆਉਣ ਵਾਲੀਆਂ ਕਾਲਾਂ ਵੋਕਸਾ ਕਿਵੇਂ ਸੰਭਾਲੇਗਾ?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Order update ate stock di jaankari Woxza kivein devega?",
+          "text": "ਆਰਡਰ ਅਪਡੇਟ ਅਤੇ ਸਟੌਕ ਦੀ ਜਾਣਕਾਰੀ ਵੋਕਸਾ ਕਿਵੇਂ ਦੇਵੇਗਾ?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "WhatsApp message ate appointments kivein manage hongiyan?",
+          "text": "ਵਟਸਐਪ ਮੈਸੇਜ ਅਤੇ ਅਪੁਆਇੰਟਮੈਂਟਾਂ ਕਿਵੇਂ ਮੈਨੇਜ ਹੋਣਗੀਆਂ?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Kaam da samah khatam hon ton baad aaiyan calls Woxza kivein miss nahi hon devega?",
+          "text": "ਕੰਮ ਦਾ ਸਮਾਂ ਖਤਮ ਹੋਣ ਤੋਂ ਬਾਅਦ ਆਈਆਂ ਕਾਲਾਂ ਵੋਕਸਾ ਕਿਵੇਂ ਮਿਸ ਨਹੀਂ ਹੋਣ ਦੇਵੇਗਾ?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Saade customer calls nu Woxza da AI kivein handle karega?",
+          "text": "ਸਾਡੇ customer calls ਨੂੰ Woxza ਦਾ AI ਕਿਵੇਂ handle ਕਰੇਗਾ?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Mere business de repeat work nu ghataun vich Woxza kivein help karega?",
+          "text": "ਮੇਰੇ business ਦੇ repeat work ਨੂੰ ਘਟਾਉਣ ਵਿੱਚ Woxza ਕਿਵੇਂ help ਕਰੇਗਾ?"
+        }
+      ]
+    },
+    {
+      "languageCode": "ta",
+      "languageName": "Tamil",
+      "negativeExamples": [
+        {
+          "romanized_text": "Eppadi irukkeenga?",
+          "text": "எப்படி இருக்கீங்க?",
+          "whyNotThisIntent": "Social greeting."
+        },
+        {
+          "romanized_text": "Woxza kattanam evvalavu?",
+          "text": "வாக்ஸா கட்டணம் எவ்வளவு?",
+          "whyNotThisIntent": "Pricing inquiry."
+        },
+        {
+          "romanized_text": "Naan eppadi sign up seivadu?",
+          "text": "நான் எப்படி சைன் அப் செய்வது?",
+          "whyNotThisIntent": "Sign up registration query."
+        },
+        {
+          "romanized_text": "Password eppadi maatruvadu?",
+          "text": "பாஸ்வர்ட் எப்படி மாற்றுவது?",
+          "whyNotThisIntent": "Password change query."
+        },
+        {
+          "romanized_text": "Ungal main office enge ulladu?",
+          "text": "உங்கள் மெயின் ஆபீஸ் எங்கே உள்ளது?",
+          "whyNotThisIntent": "Office location query."
+        },
+        {
+          "romanized_text": "Ennai manitha agent idam maatra mudiyuma?",
+          "text": "என்னை மனித ஏஜெண்டிடம் மாற்ற முடியுமா?",
+          "whyNotThisIntent": "Call transfer request."
+        },
+        {
+          "romanized_text": "Ungal velai neram enna?",
+          "text": "உங்கள் வேலை நேரம் என்ன?",
+          "whyNotThisIntent": "Working hours inquiry."
+        },
+        {
+          "romanized_text": "Credit card eethuppeengala?",
+          "text": "கிரெடிட் கார்டு கார்டு ஏத்துப்பீங்களா?",
+          "whyNotThisIntent": "Payment mode query."
+        },
+        {
+          "romanized_text": "Server down aga ulladha?",
+          "text": "சர்வர் டவுனாக உள்ளதா?",
+          "whyNotThisIntent": "System status check."
+        },
+        {
+          "romanized_text": "Woxza niruvanam thodangi ethanai varudam agiradhu?",
+          "text": "வாக்ஸா நிறுவனம் தொடங்கி எத்தனை வருடம் ஆகிறது?",
+          "whyNotThisIntent": "Company trivia query."
+        },
+        {
+          "romanized_text": "En data vai eppadi delete seivadu?",
+          "text": "என் டேட்டாவை எப்படி டெலிட் செய்வது?",
+          "whyNotThisIntent": "Data deletion procedure."
+        },
+        {
+          "romanized_text": "Innaikku Chennaiyil mazhai peyyuma?",
+          "text": "இன்னைக்கு சென்னையில் மழை பெய்யுமா?",
+          "whyNotThisIntent": "Casual small talk."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Eppadi?",
+          "text": "எப்படி?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Appadiya? Adu eppadi?",
+          "text": "அப்படியா? அது எப்படி?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Idu eppadi velai seiyum?",
+          "text": "இது எப்படி வேலை செய்யும்?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Konjam viriva solreengala?",
+          "text": "கொஞ்சம் விரிவா சொல்றீங்களா?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Appuram eppadi sathiyam?",
+          "text": "அப்புறம் எப்படி சாத்தியம்?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Endha vazhiyil?",
+          "text": "எந்த வழியில்?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza en business ukku eppadi udhavi seiyum?",
+          "text": "வாக்ஸா என் பிசினஸுக்கு எப்படி உதவி செய்யும்?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Idhanala engalukku unmaiyிலேயே enna balan?",
+          "text": "இதனால எங்களுக்கு உண்மையிலேயே என்ன பலன்?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza indha prachanaiyai eppadi sari pannum?",
+          "text": "வாக்ஸா இந்த பிரச்சனையை எப்படி சரி பண்ணும்?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Engalukku udhava Woxza enna seiyum?",
+          "text": "எங்களுக்கு உதவ வாக்ஸா என்ன செய்யும்?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza moolama engal velai eppadi sulabhamagum?",
+          "text": "வாக்ஸா மூலமா எங்கள் வேலை எப்படி சுலபமாகும்?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Engal anrada velaiyil idu eppadi udhaviyaga irukkum?",
+          "text": "எங்கள் அன்றாட வேலையில் இது எப்படி உதவியாக இருக்கும்?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Vadhikkaiyalargalin thirumba thirumba varum calls ai Woxza eppadi samalikkum?",
+          "text": "வாடிக்கையாளர்களின் திரும்பத் திரும்ப வரும் கால்களை வாக்ஸா எப்படி சமாளிக்கும்?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Order update matrum stock viparangalai Woxza eppadi therivikkum?",
+          "text": "ஆர்டர் அப்டேட் மற்றும் ஸ்டாக் விபரங்களை வாக்ஸா எப்படி தெரிவிக்கும்?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "WhatsApp messages matrum appointments ai eppadi manage seiyum?",
+          "text": "வாட்ஸ்அப் மெசேஜ்கள் மற்றும் அப்பாயிண்ட்மெண்ட்களை எப்படி மேனேஜ் செய்யும்?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Office nerathirku pin varum calls ai miss agamal Woxza eppadi thadukkum?",
+          "text": "ஆஃபீஸ் நேரத்திற்கு பின் வரும் கால்களை மிஸ் ஆகாமல் வாக்ஸா எப்படி தடுக்கும்?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Engaloda customer calls ai Woxza voda AI eppadi handle pannum?",
+          "text": "எங்களோட customer calls ஐ Woxza வோட AI எப்படி handle பண்ணும்?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "En business oda repeat work ai kuraikka Woxza eppadi help pannum?",
+          "text": "என் business ஓட repeat work ஐ குறைக்க Woxza எப்படி help பண்ணும்?"
+        }
+      ]
+    },
+    {
+      "languageCode": "te",
+      "languageName": "Telugu",
+      "negativeExamples": [
+        {
+          "romanized_text": "Meeru ela unnaru?",
+          "text": "మీరు ఎలా ఉన్నారు?",
+          "whyNotThisIntent": "Social greeting."
+        },
+        {
+          "romanized_text": "Woxza dhara entha untundi?",
+          "text": "వాక్సా ధర ఎంత ఉంటుంది?",
+          "whyNotThisIntent": "Pricing inquiry."
+        },
+        {
+          "romanized_text": "Nenu ela sign up avvali?",
+          "text": "నేను ఎలా సైన్ అప్ అవ్వాలి?",
+          "whyNotThisIntent": "Onboarding action inquiry."
+        },
+        {
+          "romanized_text": "Password ela marchukovali?",
+          "text": "పాస్‌వర్డ్ ఎలా మార్చుకోవాలి?",
+          "whyNotThisIntent": "Account settings inquiry."
+        },
+        {
+          "romanized_text": "Mee head office ekkada undi?",
+          "text": "మీ హెడ్ ఆఫీస్ ఎక్కడ ఉంది?",
+          "whyNotThisIntent": "Office location query."
+        },
+        {
+          "romanized_text": "Nannu oka agent ki connect chesthara?",
+          "text": "నన్ను ఒక ఏజెంట్‌కి కనెక్ట్ చేస్తారా?",
+          "whyNotThisIntent": "Human transfer query."
+        },
+        {
+          "romanized_text": "Mee office timings emiti?",
+          "text": "మీ ఆఫీస్ టైమింగ్స్ ఏమిటి?",
+          "whyNotThisIntent": "Timing inquiry."
+        },
+        {
+          "romanized_text": "Credit card payment theesukuntara?",
+          "text": "క్రెడిట్ కార్డ్ పేమెంట్ తీసుకుంటారా?",
+          "whyNotThisIntent": "Payment mode query."
+        },
+        {
+          "romanized_text": "Server panicheyadam leda?",
+          "text": "సర్వర్ పనిచేయడం లేదా?",
+          "whyNotThisIntent": "System uptime check."
+        },
+        {
+          "romanized_text": "Woxza company prarambhinchhi enni samvatsaralaindi?",
+          "text": "వాక్సా కంపెనీ ప్రారంభించి ఎన్ని సంవత్సరాలైంది?",
+          "whyNotThisIntent": "Company trivia query."
+        },
+        {
+          "romanized_text": "Naa data nu ela delete cheyali?",
+          "text": "నా డేటాను ఎలా డిలీట్ చేయాలి?",
+          "whyNotThisIntent": "Data management request."
+        },
+        {
+          "romanized_text": "Ee roju Hyderabad lo varsham paduthunda?",
+          "text": "ఈ రోజు హైదరాబాద్‌లో వర్షం పడుతుందా?",
+          "whyNotThisIntent": "Casual small talk."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Ela?",
+          "text": "ఎలా?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Avuna? Ela?",
+          "text": "అవునా? ఎలా?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Adu ela panichesthundi?",
+          "text": "అది ఎలా పనిచేస్తుంది?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Koncham vivaranga chebhuthara?",
+          "text": "కొంచెం వివరంగా చెబుతారా?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Aithe ela kuduruthundi?",
+          "text": "అయితే ఎలా కుదురుతుంది?"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "E vidhanga?",
+          "text": "ఏ విధంగా?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza naa business ki ela sahayapaduthundi?",
+          "text": "వాక్సా నా బిజినెస్‌కి ఎలా సహాయపడుతుంది?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Deenivalla maaku asalu upayogam emiti?",
+          "text": "దీనివల్ల మాకు అసలు ఉపయోగం ఏమిటి?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza ee samasyanu ela parishkaristhundi?",
+          "text": "వాక్సా ఈ సమస్యను ఎలా పరిష్కరిస్తుంది?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Maaku help cheyadaniki Woxza em chesthundi?",
+          "text": "మాకు హెల్ప్ చేయడానికి వాక్సా ఏం చేస్తుంది?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza dwara maa pani ela suluvavuthundi?",
+          "text": "వాక్సా ద్వారా మా పని ఎలా సులువవుతుంది?"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Maa rojuvaari panullo idhi ela thodpaduthundi?",
+          "text": "మా రోజువారీ పనుల్లో ఇది ఎలా తోడ్పడుతుంది?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Customer lu pade pade chese calls nu Woxza ela handle chesthundi?",
+          "text": "కస్టమర్లు పదే పదే చేసే కాల్స్‌ను వాక్సా ఎలా హ్యాండిల్ చేస్తుంది?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Order updates mariyu sarukula vivaralu Woxza ela teliyajesthundi?",
+          "text": "ఆర్డర్ అప్‌డేట్లు మరియు సరుకుల వివరాలు వాక్సా ఎలా తెలియజేస్తుంది?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "WhatsApp messages mariyu appointments ela manage avuthayi?",
+          "text": "వాట్సాప్ మెసేజ్‌లు మరియు అపాయింట్‌మెంట్లు ఎలా మేనేజ్ అవుతాయి?"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Business samayam mugisaaka vache calls miss avvakunda Woxza ela choosthundi?",
+          "text": "బిజినెస్ సమయం ముగిసాక వచ్చే కాల్స్ మిస్ అవ్వకుండా వాక్సా ఎలా చూస్తుంది?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Maa customer calls ni Woxza AI ela handle chesthundi?",
+          "text": "మా customer calls ని Woxza AI ఎలా handle చేస్తుంది?"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Naa business lo repeat work thagginchadaniki Woxza ela help chesthundi?",
+          "text": "నా business లో repeat work తగ్గించడానికి Woxza ఎలా help చేస్తుంది?"
+        }
+      ]
+    },
+    {
+      "languageCode": "ur",
+      "languageName": "Urdu",
+      "negativeExamples": [
+        {
+          "romanized_text": "Aap kaise hain?",
+          "text": "آپ کیسے ہیں؟",
+          "whyNotThisIntent": "Social greeting."
+        },
+        {
+          "romanized_text": "Woxza ki fee kitni hai?",
+          "text": "ووکسزا کی فیس کتنی ہے؟",
+          "whyNotThisIntent": "Pricing inquiry."
+        },
+        {
+          "romanized_text": "Main sign up kaise karoon?",
+          "text": "میں سائن اپ کیسے کروں؟",
+          "whyNotThisIntent": "Sign up inquiry."
+        },
+        {
+          "romanized_text": "Password kaise tabdeel karein?",
+          "text": "پاس ورڈ کیسے تبدیل کریں؟",
+          "whyNotThisIntent": "Password change query."
+        },
+        {
+          "romanized_text": "Aap ka main office kahan hai?",
+          "text": "آپ کا مین آفس کہاں ہے؟",
+          "whyNotThisIntent": "Office location query."
+        },
+        {
+          "romanized_text": "Kya meri baat kisi insaan se ho sakti hai?",
+          "text": "کیا میری بات کسی انسان سے ہو سکتی ہے؟",
+          "whyNotThisIntent": "Human routing request."
+        },
+        {
+          "romanized_text": "Aap ke office ka waqt kya hai?",
+          "text": "آپ کے آفس کا وقت کیا ہے؟",
+          "whyNotThisIntent": "Operating timing query."
+        },
+        {
+          "romanized_text": "Kya aap credit card qabool karte hain?",
+          "text": "کیا آپ کریڈٹ کارڈ قبول کرتے ہیں؟",
+          "whyNotThisIntent": "Payment method query."
+        },
+        {
+          "romanized_text": "Kya server down hai?",
+          "text": "کیا سرور ڈاؤن ہے؟",
+          "whyNotThisIntent": "System uptime query."
+        },
+        {
+          "romanized_text": "Woxza company kitni purani hai?",
+          "text": "ووکسزا کمپنی کتنی پرانی ہے؟",
+          "whyNotThisIntent": "Company age query."
+        },
+        {
+          "romanized_text": "Main apna data kaise delete karoon?",
+          "text": "میں اپنا ڈیٹا کیسے ڈیلیٹ کروں؟",
+          "whyNotThisIntent": "Data management request."
+        },
+        {
+          "romanized_text": "Aaj mausam kaisa hai?",
+          "text": "آج موسم کیسا ہے؟",
+          "whyNotThisIntent": "Casual small talk."
+        }
+      ],
+      "positiveExamples": [
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kaise?",
+          "text": "کیسے؟"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Waqai? Woh kaise?",
+          "text": "واقعی؟ وہ کیسے؟"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Yeh kaise kaam karega?",
+          "text": "یہ کیسے کام کرے گا؟"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Thoda tafseel se batayenge?",
+          "text": "تھوڑا تفصیل سے بتائیں گے؟"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "To phir yeh kaise hoga?",
+          "text": "تو پھر یہ کیسے ہوگا؟"
+        },
+        {
+          "category": "short_contextual_follow_up",
+          "romanized_text": "Kis tariqe se?",
+          "text": "کس طریقہ سے؟"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza mere business ki kaise madad kar sakta hai?",
+          "text": "ووکسزا میرے بزنس کی کیسے مدد کر سکتا ہے؟"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Is se asal mein hamara kya fayda hoga?",
+          "text": "اس سے اصل میں ہمارا کیا فائدہ ہوگا؟"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza is maslay ko kaise hal karega?",
+          "text": "ووکسزا اس مسئلے کو کیسے حل کرے گا؟"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Hamari madad ke liye Woxza kya karega?",
+          "text": "ہماری مدد کے لیے ووکسزا کیا کرے گا؟"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Woxza ke zariye hamara kaam kaise aasan hoga?",
+          "text": "ووکسزا کے ذریعے ہمارا کام کیسے آسان ہوگا؟"
+        },
+        {
+          "category": "direct_help_question",
+          "romanized_text": "Yeh hamare rozmarra ke kaamon mein kaise muawin hoga?",
+          "text": "یہ ہمارے روزمرہ کے کاموں میں کیسے معاون ہوگا؟"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Gahakon ki baar baar aane wali calls Woxza kaise sambhale ga?",
+          "text": "گاہکوں کی بار بار آنے والی کالز ووکسزا کیسے سنبھالے گا؟"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Order update aur stock ki maloomat Woxza kaise dega?",
+          "text": "آرڈر اپ ڈیٹ اور اسٹاک کی معلومات ووکسزا کیسے دے گا؟"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "WhatsApp messages aur appointments kaise manage hon ge?",
+          "text": "واٹس ایپ میسجز اور اپائنٹمنٹس کیسے مینیج ہوں گے؟"
+        },
+        {
+          "category": "workflow_specific_question",
+          "romanized_text": "Business hours ke baad aane wali calls Woxza kaise miss nahi hone dega?",
+          "text": "بزنس آورز کے بعد آنے والی کالز ووکسزا کیسے مس نہیں ہونے دے گا؟"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Hamare customer calls ko Woxza ka AI kaise handle karega?",
+          "text": "ہمارے customer calls کو Woxza کا AI کیسے handle کرے گا؟"
+        },
+        {
+          "category": "code_mixed_follow_up",
+          "romanized_text": "Mere business ke repeat work ko kam karne mein Woxza kaise help karega?",
+          "text": "میرے business کے repeat work کو کم کرنے میں Woxza کیسے help کرے گا؟"
+        }
+      ]
+    }
+  ],
+  "requiredContext": {
+    "hasKnownBusinessPainPoint": true,
+    "recentAgentMentionedWoxzaHelp": true
+  },
+  "schemaVersion": 1
+}

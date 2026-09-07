@@ -8,6 +8,7 @@ const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models"
 const requestContents = (_history, callerText) => callerText ? [{ role:"user", parts:[{ text:callerText }] }] : []
 const repairInstruction = draft => `Your previous answer was cut off before it was useful on a phone call. Replace it with one concise, self-contained answer to the caller's latest question, followed by at most one natural next question. Do not mention token limits, drafts, or this instruction. Do not repeat the caller verbatim. Previous cut-off draft:\n${draft}`
 const systemWithMemory = (language, memory={}) => `${buildWoxzaConversationPrompt(language)}\n\nCALL_STATE_JSON (authoritative facts and already-covered topics from this call):\n${JSON.stringify(memory)}`
+const isFullValueExplanation = memory => ["four_examples", "four_more_examples"].includes(memory?.full_value_explanation?.mode)
 
 // Gemini is intentionally used as a text-only brain in V3. Phone audio stays
 // with Sarvam STT/TTS, avoiding Gemini Live's continuous audio-token billing.
@@ -17,7 +18,7 @@ export function createGeminiConversation({ apiKey=process.env.GEMINI_API_KEY, mo
     provider:"gemini",
     model,
     async *replyStream({ language, history, callerText, memory, signal }) {
-      yield* stream({ language, history, callerText, memory, signal, maximumTokens:voiceResponseTokenLimit(language, { extended:true }) })
+      yield* stream({ language, history, callerText, memory, signal, maximumTokens:voiceResponseTokenLimit(language, { extended:isFullValueExplanation(memory) }) })
     },
     async *repairStream({ language, history, callerText, memory, draft, signal }) {
       yield* stream({ language, history, callerText:repairInstruction(draft), memory, signal, maximumTokens:voiceRepairTokenLimit(language) })

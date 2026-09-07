@@ -15,6 +15,7 @@ const INTERRUPTION_PHRASES = new Set([
 ])
 
 const normalize = text => String(text || "").replace(/[.,!?"'“”]/gu, " ").replace(/\s+/gu, " ").trim().toLocaleLowerCase()
+const isIncompleteOpening = value => /^(?:oh|um|uh|well|so)(?: (?:i|um|uh|was|am|was thinking))?$/u.test(value)
 const isAcknowledgement = value => {
   if (ACKNOWLEDGEMENT_WORDS.has(value)) return true
   const words = value.split(" ").filter(Boolean)
@@ -25,6 +26,9 @@ export function assessCallerTurn(text) {
   const value = normalize(text)
   if (!value) return { action:"hold", reason:"empty_final" }
   if (isAcknowledgement(value)) return { action:"hold", reason:"acknowledgement" }
+  // Providers can finalise an English lead-in such as "Oh, I" before the
+  // caller completes their actual thought. That lead-in is not a user turn.
+  if (isIncompleteOpening(value)) return { action:"hold", reason:"incomplete_opening" }
   if ([...value].length <= 2) return { action:"hold", reason:"micro_fragment" }
   return { action:"respond", reason:"meaningful_turn" }
 }

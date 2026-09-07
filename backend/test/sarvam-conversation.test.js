@@ -13,7 +13,7 @@ test("Sarvam Conversations disables thinking for short phone replies", async () 
   assert.equal(request.reasoning_effort, null)
   assert.equal(request.stream, false)
   assert.equal(request.max_tokens, 64)
-  assert.match(request.messages[0].content, /one brief acknowledgement and one useful question/)
+  assert.match(request.messages[0].content, /Keep each phone turn short and easy to follow/)
   assert.equal(reply.provider, "sarvam-conversations")
 })
 
@@ -32,4 +32,16 @@ test("Sarvam Conversations accepts a language-specific response ceiling", async 
     if (original === undefined) delete process.env.VOICE_RESPONSE_MAX_TOKENS_TE
     else process.env.VOICE_RESPONSE_MAX_TOKENS_TE = original
   }
+})
+
+test("Sarvam streaming reserves the larger budget for controller-confirmed full explanations only", async () => {
+  const requests = []
+  const client = createSarvamConversation({ apiKey:"test", fetchImpl:async (_url, options) => {
+    requests.push(JSON.parse(options.body))
+    return new Response('data: {"choices":[{"delta":{"content":"Okay."}}]}\n\ndata: [DONE]\n', { status:200 })
+  } })
+  for await (const _event of client.replyStream({ language:"en", history:[], callerText:"Tell me more", memory:{} })) {}
+  for await (const _event of client.replyStream({ language:"en", history:[], callerText:"Tell me more", memory:{ full_value_explanation:{ mode:"four_examples" } } })) {}
+  assert.equal(requests[0].max_tokens, 56)
+  assert.equal(requests[1].max_tokens, 256)
 })

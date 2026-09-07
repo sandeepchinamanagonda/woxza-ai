@@ -22,6 +22,18 @@ test("V3 Gemini is a text-only stream with thinking disabled and final usage tel
   assert.deepEqual(events.at(-1).completion, { usage:{ promptTokenCount:100, candidatesTokenCount:8, totalTokenCount:108 }, stopReason:"STOP" })
 })
 
+test("V3 Gemini reserves the larger budget for controller-confirmed full explanations only", async () => {
+  const requests = []
+  const client = createGeminiConversation({ apiKey:"test", fetchImpl:async (_url, options) => {
+    requests.push(JSON.parse(options.body))
+    return new Response('data: {"candidates":[{"finishReason":"STOP"}]}', { status:200 })
+  } })
+  for await (const _event of client.replyStream({ language:"en", history:[], callerText:"Tell me more", memory:{} })) {}
+  for await (const _event of client.replyStream({ language:"en", history:[], callerText:"Tell me more", memory:{ full_value_explanation:{ mode:"four_examples" } } })) {}
+  assert.equal(requests[0].generationConfig.maxOutputTokens, 56)
+  assert.equal(requests[1].generationConfig.maxOutputTokens, 256)
+})
+
 test("repair stream asks for a self-contained replacement using its own small budget", async () => {
   let request
   const sse = 'data: {"candidates":[{"content":{"parts":[{"text":"A complete replacement."}]},"finishReason":"STOP"}]}'

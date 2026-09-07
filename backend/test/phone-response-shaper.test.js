@@ -22,6 +22,12 @@ test("allows only a multi-sentence full picture to use the larger phone budget",
   assert.ok([...ordinary.text].length <= 40)
 })
 
+test("controller-confirmed full picture gets its larger budget before sentence counting", () => {
+  const answer = "First useful example is detailed. Second useful example is detailed. Third useful example is detailed."
+  const shaped = shapePhoneResponse(answer, { language:"en", maximumCharacters:40, fullPictureMaximumCharacters:300, forceExtended:true })
+  assert.equal(shaped.text, answer)
+})
+
 test("keeps only complete sentences when a model reaches its token ceiling", () => {
   const shaped = shapePhoneResponse("మీ షాపులో ఫోన్ ఆర్డర్‌లు వస్తాయని అర్థమైంది. ఉదాహరణకు,", { language:"te", maximumCharacters:180, stopReason:"MAX_TOKENS" })
   assert.equal(shaped.text, "మీ షాపులో ఫోన్ ఆర్డర్‌లు వస్తాయని అర్థమైంది.")

@@ -4,6 +4,7 @@ import { voiceResponseTokenLimit } from "./conversation-limits.js"
 const SARVAM_API = "https://api.sarvam.ai"
 const safeHistory = history => history.slice(-4).map(item => ({ role:item.role, content:item.content }))
 const systemWithMemory = (language, memory={}) => `${buildWoxzaConversationPrompt(language)}\n\nCALL_STATE_JSON (authoritative facts and already-covered topics from this call):\n${JSON.stringify(memory)}`
+const isFullValueExplanation = memory => ["four_examples", "four_more_examples"].includes(memory?.full_value_explanation?.mode)
 
 function keepPhoneLength(text, maxWords=28) {
   const words = String(text || "").split(/\s+/).filter(Boolean)
@@ -18,7 +19,7 @@ export function createSarvamConversation({ apiKey=process.env.SARVAM_API_KEY, mo
   if (!apiKey) return null
   return {
     async *replyStream({ language, history, callerText, memory, signal }) {
-      const response = await fetchImpl(`${SARVAM_API}/v1/chat/completions`, { method:"POST", signal, headers:{ "api-subscription-key":apiKey, "content-type":"application/json" }, body:JSON.stringify({ model, messages:[{ role:"system", content:systemWithMemory(language, memory) }, ...safeHistory(history)], reasoning_effort:null, temperature:0.55, max_tokens:voiceResponseTokenLimit(language), stream:true }) })
+      const response = await fetchImpl(`${SARVAM_API}/v1/chat/completions`, { method:"POST", signal, headers:{ "api-subscription-key":apiKey, "content-type":"application/json" }, body:JSON.stringify({ model, messages:[{ role:"system", content:systemWithMemory(language, memory) }, ...safeHistory(history)], reasoning_effort:null, temperature:0.55, max_tokens:voiceResponseTokenLimit(language, { extended:isFullValueExplanation(memory) }), stream:true }) })
       if (!response.ok) throw new Error(`Sarvam Conversations stream failed (${response.status}): ${(await response.text()).slice(0, 300)}`)
       const reader = response.body?.getReader(); if (!reader) throw new Error("Sarvam Conversations returned no stream")
       const decoder = new TextDecoder(); let buffered = ""; let usage = {}

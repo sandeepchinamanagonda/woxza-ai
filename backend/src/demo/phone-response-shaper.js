@@ -47,7 +47,7 @@ function completeSentences(text) {
   return { sentences, remainder:clean(text.slice(start)) }
 }
 
-export function shapePhoneResponse(text, { language="en", maximumCharacters=180, fullPictureMaximumCharacters=maximumCharacters, fullPictureMinimumSentences=5, stopReason=null }={}) {
+export function shapePhoneResponse(text, { language="en", maximumCharacters=180, fullPictureMaximumCharacters=maximumCharacters, fullPictureMinimumSentences=5, forceExtended=false, stopReason=null }={}) {
   const rawSource = clean(text)
   const source = stripLeadingAcknowledgement(rawSource, language)
   const { sentences, remainder } = completeSentences(source)
@@ -56,7 +56,7 @@ export function shapePhoneResponse(text, { language="en", maximumCharacters=180,
   // The model's full-picture contract is six to seven short sentences. Five
   // completed sentences is a conservative signal that it has begun that mode;
   // ordinary one- or two-sentence replies retain their strict small budget.
-  const maximum = sentences.length >= Math.max(5, Number(fullPictureMinimumSentences) || 5) ? extendedMaximum : ordinaryMaximum
+  const maximum = forceExtended || sentences.length >= Math.max(5, Number(fullPictureMinimumSentences) || 5) ? extendedMaximum : ordinaryMaximum
   const chosen = []
   let length = 0
   for (const sentence of sentences) {

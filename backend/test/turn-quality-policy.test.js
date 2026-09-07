@@ -8,6 +8,7 @@ test("holds acknowledgements and micro-fragments without invoking a model", () =
   assert.deepEqual(assessCallerTurn("sarele"), { action:"hold", reason:"acknowledgement" })
   assert.deepEqual(assessCallerTurn("Hmm adhe"), { action:"hold", reason:"acknowledgement" })
   assert.deepEqual(assessCallerTurn("I"), { action:"hold", reason:"micro_fragment" })
+  assert.deepEqual(assessCallerTurn("Oh, I"), { action:"hold", reason:"incomplete_opening" })
 })
 
 test("requires meaningful words before a partial can interrupt playback", () => {

@@ -22,6 +22,8 @@ import { configuredLanguageSwitchPolicy, createLanguageSwitchController, languag
 import { configuredOpeningDeliveryPolicy } from "./opening-delivery-policy.js"
 import { createConversationTurnStore } from "./conversation-turn-store.js"
 import { configuredStreamResumePolicy } from "./stream-resume-policy.js"
+import { configuredSemanticIntentMode, createGeminiEmbeddingAdapter, createSemanticIntentMatcher, loadSemanticIntentCatalog, semanticIntentRoutingContext } from "./semantic-intent-router.js"
+import { classifyFullValueOfferReply, isFullValueFollowUp, isFullValueOffer } from "./full-value-offer-controller.js"
 import { randomUUID } from "node:crypto"
 
 const findCall = async (db, id) => (await db.query("SELECT id,language FROM demo_calls WHERE id=$1 AND status IN ('ringing','connected')", [id])).rows[0]
@@ -38,6 +40,16 @@ const configuredBrain = () => {
   return createSarvamConversation()
 }
 const configuredBrainModel = provider => provider === "openai" ? (process.env.V3_OPENAI_MODEL || "gpt-4.1-mini") : provider === "anthropic" ? (process.env.V3_ANTHROPIC_MODEL || "claude-sonnet-4-6") : provider === "gemini" ? (process.env.V3_GEMINI_MODEL || "gemini-2.5-flash") : (process.env.SARVAM_CHAT_MODEL || "sarvam-105b-conversations")
+const semanticIntentCatalogPath = () => process.env.V3_SEMANTIC_INTENT_CATALOG_PATH || new URL("../../demo_prompts/full-value-explanation-intents.json", import.meta.url)
+let semanticMatcher
+const matcherFor = catalog => {
+  if (!semanticMatcher) {
+    const embed = createGeminiEmbeddingAdapter()
+    if (!embed) return null
+    semanticMatcher = createSemanticIntentMatcher({ catalog, embed })
+  }
+  return semanticMatcher
+}
 const tokenNumber = value => Number.isFinite(Number(value)) ? Number(value) : 0
 const normalizedUsage = (provider, usage={}) => {
   if (provider === "gemini") {
@@ -147,6 +159,8 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     const callStart = configuredCallStartPolicy()
     const spokenReplyBudget = configuredSpokenReplyBudget()
     const openingDeliveryPolicy = configuredOpeningDeliveryPolicy()
+    const semanticIntentMode = configuredSemanticIntentMode()
+    const semanticIntentCatalog = semanticIntentMode === "off" ? { status:"off" } : loadSemanticIntentCatalog(semanticIntentCatalogPath())
     const pendingManualUtterances = []
     const echoDetector = createPlaybackEchoDetector({ sampleRate:inboundSampleRate() })
     const candidateEcho = new Map()
@@ -382,6 +396,55 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       const callerText = text
       history.push({ role:"user", content:callerText })
       log("stt_final", { provider:"sarvam-saaras-realtime", request_id:requestId, utterance_id:utteranceId, language:languageCode, detected_language:detectedLanguage, response_language:language, language_switch_action:languageDecision.action, text_length:text.length, metrics, turn_control:turnControl }, 0)
+      // A prior Woxza invitation creates a one-turn decision point. Resolve it
+      // before the brain starts so a confirmed acceptance has the longer
+      // response budget from the beginning, rather than hoping a short reply
+      // will somehow grow into a full pitch after generation.
+      const pendingFullValueOffer = memory.full_value_offer?.state === "pending"
+      if (pendingFullValueOffer) {
+        const offerDecision = classifyFullValueOfferReply(callerText)
+        log("full_value_offer_response", { decision:offerDecision.decision, reason:offerDecision.reason, offered_turn:memory.full_value_offer?.turn || null })
+        delete memory.full_value_offer
+        if (offerDecision.decision === "accept") memory.full_value_explanation = { mode:"four_examples", source:"accepted_woxza_offer" }
+      }
+      if (!pendingFullValueOffer && memory.full_value_follow_up?.state === "available") {
+        if (isFullValueFollowUp(callerText)) {
+          memory.full_value_explanation = { mode:"four_more_examples", source:"requested_more_after_full_value" }
+          log("full_value_follow_up", { decision:"accept", mode:"four_more_examples" })
+        } else {
+          log("full_value_follow_up", { decision:"normal_conversation" })
+        }
+      }
+      const fullValueMode = memory.full_value_explanation?.mode === "four_examples"
+        || memory.full_value_explanation?.mode === "four_more_examples"
+      // Shadow mode deliberately has no effect on the caller-facing answer. It
+      // records whether the multilingual intent data is safe to activate while
+      // preserving the current low-latency conversation path.
+      if (semanticIntentMode !== "off") {
+        const context = semanticIntentRoutingContext({ language, callerText, memory })
+        const event = decision => log("semantic_intent_shadow", {
+          mode:semanticIntentMode,
+          catalog_status:semanticIntentCatalog.status,
+          catalog_valid:Boolean(semanticIntentCatalog.valid),
+          language:context.language,
+          caller_text_length:context.caller_text.length,
+          prior_paired_turns:context.recent_turns.length,
+          // The transcript writer stores speech separately; do not duplicate
+          // caller content in operational event telemetry.
+          has_previous_agent_turn:Boolean(context.previous_agent_text),
+          ...(decision || {})
+        })
+        const matcher = semanticIntentCatalog.catalog ? matcherFor(semanticIntentCatalog.catalog) : null
+        if (!matcher) event({ decision:"unavailable" })
+        else if (semanticIntentMode === "active") {
+          const decision = await matcher.evaluate(context)
+          memory.semantic_intent_route = decision
+          event(decision)
+        } else {
+          void matcher.evaluate(context).then(event).catch(error => event({ decision:"error", error:error.message }))
+          event({ decision:"pending" })
+        }
+      }
       try {
         // Start establishing TTS, but do not await it before the LLM. This
         // overlaps the WebSocket handshake with model time instead of making
@@ -446,6 +509,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           language,
           maximumCharacters:spokenReplyBudget.ordinary,
           fullPictureMaximumCharacters:spokenReplyBudget.fullPicture,
+          forceExtended:fullValueMode,
           stopReason:completion?.stopReason || null
         })
         // A complete grammatical sentence can still be an abandoned answer.
@@ -463,6 +527,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
             language,
             maximumCharacters:spokenReplyBudget.ordinary,
             fullPictureMaximumCharacters:spokenReplyBudget.fullPicture,
+            forceExtended:fullValueMode,
             stopReason:repairedCompletion?.stopReason || null
           })
           if (repaired.reason !== "model_cutoff_trimmed") {
@@ -473,7 +538,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           } else {
             // A second cutoff must not turn back into a half-answer. The
             // existing complete recovery is preferable to hanging the caller.
-            shapedReply = shapePhoneResponse("", { language, maximumCharacters:spokenReplyBudget.ordinary, fullPictureMaximumCharacters:spokenReplyBudget.fullPicture, stopReason:"MAX_TOKENS" })
+            shapedReply = shapePhoneResponse("", { language, maximumCharacters:spokenReplyBudget.ordinary, fullPictureMaximumCharacters:spokenReplyBudget.fullPicture, forceExtended:fullValueMode, stopReason:"MAX_TOKENS" })
             replyText = shapedReply.text
             completion = repairedCompletion || completion
             log("llm_response_repair_failed", { provider:brain.provider || configuredBrainProvider(), reason:"repair_token_cutoff" })
@@ -521,6 +586,11 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         if (provider === "gemini") callUsage.estimatedGeminiCostUsd = Number((callUsage.estimatedGeminiCostUsd + geminiCostUsd(turnUsage)).toFixed(8))
         const agentTranscript = transcripts.write("agent", replyText)
         const turnSequence = ++completedTurnSequence, turnId = randomUUID()
+        const offeredFullValue = isFullValueOffer(replyText)
+        // Arm an explicit invitation before audio is flushed. Waiting for the
+        // final TTS callback creates a race when a caller answers immediately.
+        // If delivery fails, the callback removes this optimistic state.
+        if (offeredFullValue) memory.full_value_offer = { state:"pending", turn:turnSequence }
         // Snapshot state now. The next caller turn may update language policy
         // before this asynchronous durable write runs.
         const languagePolicy = structuredClone(memory.language_policy || {})
@@ -529,11 +599,16 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         // compact pair asynchronously so the caller never waits on Postgres.
         voiceDelivery.onComplete = outcome => {
           if (outcome.status !== "completed" || !outcome.firstAudioSent) {
+            if (memory.full_value_offer?.turn === turnSequence) delete memory.full_value_offer
             log("conversation_turn_not_persisted", { turn_id:turnId, turn_sequence:turnSequence, reason:outcome.status || "no_audio" })
             return
           }
           history.push({ role:"assistant", content:replyText })
           memory.turns.push({ turn:turnSequence, caller:callerText, agent:replyText }); memory.turns = memory.turns.slice(-16)
+          if (fullValueMode) {
+            delete memory.full_value_explanation
+            memory.full_value_follow_up = { state:"available", completed_turn:turnSequence }
+          }
           void Promise.all([callerTranscript, agentTranscript]).then(([callerRow, agentRow]) => conversationTurns.completeTurn({
             turnId, demoCallId, turnSequence, callerText, agentText:replyText, language,
             languagePolicy,
