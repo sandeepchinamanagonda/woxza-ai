@@ -1,0 +1,34 @@
+name: Authorize production admin key
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type AUTHORIZE to add the pre-approved production admin public key.
+        required: true
+        type: string
+
+concurrency:
+  group: production-access-recovery
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  authorize:
+    name: Add pre-approved admin key
+    if: inputs.confirmation == 'AUTHORIZE'
+    runs-on: [self-hosted, Linux, ARM64]
+    environment: production
+    steps:
+      - name: Add key to the runner account only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          admin_key='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE02lVx1Fu3T59XccT70gXLeefQX6H5YTDfAEVUqgygW woxza-production-admin-2026-09'
+          install -d -m 700 "$HOME/.ssh"
+          touch "$HOME/.ssh/authorized_keys"
+          chmod 600 "$HOME/.ssh/authorized_keys"
+          grep -qxF "$admin_key" "$HOME/.ssh/authorized_keys" || printf '%s\n' "$admin_key" >> "$HOME/.ssh/authorized_keys"
+          echo "Authorized the pre-approved admin key for runner account: $(id -un)"
