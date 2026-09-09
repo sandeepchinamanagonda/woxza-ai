@@ -3,6 +3,7 @@ import { decodePlivoInboundAudio } from "./gemini-bridge.js"
 import { LANGUAGES } from "./prompt.js"
 import { woxzaLanguageFromSarvamCode } from "./sarvam-api.js"
 import { createSarvamRealtimeStt, createSarvamStreamingTts } from "./sarvam-realtime.js"
+import { createPlivoClient } from "./plivo.js"
 import { createIndicTts } from "./indic-tts.js"
 import { createSarvamConversation } from "./sarvam-conversation.js"
 import { createOpenAiConversation } from "./openai-conversation.js"
@@ -16,17 +17,22 @@ import { createTranscriptWriter } from "../transcript-writer.js"
 import { createCallerTurnController } from "./caller-turn-controller.js"
 import { assessCallerPartial, assessCallerTurn } from "./turn-quality-policy.js"
 import { callerFirstPresencePrompt, configuredCallStartPolicy } from "./call-start-policy.js"
-import { agentFirstGreeting } from "./call-start-messages.js"
+import { agentFirstGreeting, openingPermissionDiscoveryMessage, openingPermissionMessage } from "./call-start-messages.js"
+import { classifyOpeningPermissionReply, createOpeningPermissionController, OPENING_PERMISSION_STATES } from "./opening-permission-controller.js"
 import { createPlaybackEchoDetector } from "./playback-echo-detector.js"
 import { configuredLanguageSwitchPolicy, createLanguageSwitchController, languageSwitchQuestion } from "./language-switch-policy.js"
 import { configuredOpeningDeliveryPolicy } from "./opening-delivery-policy.js"
 import { createConversationTurnStore } from "./conversation-turn-store.js"
 import { configuredStreamResumePolicy } from "./stream-resume-policy.js"
 import { configuredSemanticIntentMode, createGeminiEmbeddingAdapter, createSemanticIntentMatcher, loadSemanticIntentCatalog, semanticIntentRoutingContext } from "./semantic-intent-router.js"
+import { createFullValueSemanticShadowService } from "./full-value-semantic-index-service.js"
+import { createOpeningPermissionSemanticShadowService } from "./opening-permission-semantic-index-service.js"
+import { createSemanticRouteEvaluationStore } from "./semantic-route-evaluation-store.js"
+import { buildSemanticRouteContext } from "./semantic-route-policy.js"
 import { classifyFullValueOfferReply, isFullValueFollowUp, isFullValueOffer } from "./full-value-offer-controller.js"
 import { randomUUID } from "node:crypto"
 
-const findCall = async (db, id) => (await db.query("SELECT id,language FROM demo_calls WHERE id=$1 AND status IN ('ringing','connected')", [id])).rows[0]
+const findCall = async (db, id) => (await db.query("SELECT id,language,provider_call_id FROM demo_calls WHERE id=$1 AND status IN ('ringing','connected')", [id])).rows[0]
 // V3 is deliberately separate from V2. Set VOICE_PIPELINE=v3 to opt in;
 // changing it back to v2 restores the previous bridge without a code rollback.
 const configuredBrainProvider = () => (process.env.V3_BRAIN_PROVIDER || "sarvam").toLowerCase()
@@ -41,7 +47,17 @@ const configuredBrain = () => {
 }
 const configuredBrainModel = provider => provider === "openai" ? (process.env.V3_OPENAI_MODEL || "gpt-4.1-mini") : provider === "anthropic" ? (process.env.V3_ANTHROPIC_MODEL || "claude-sonnet-4-6") : provider === "gemini" ? (process.env.V3_GEMINI_MODEL || "gemini-2.5-flash") : (process.env.SARVAM_CHAT_MODEL || "sarvam-105b-conversations")
 const semanticIntentCatalogPath = () => process.env.V3_SEMANTIC_INTENT_CATALOG_PATH || new URL("../../demo_prompts/full-value-explanation-intents.json", import.meta.url)
+export const configuredSemanticRouteMode = (env=process.env) => {
+  const value = String(env.V3_SEMANTIC_ROUTE_ROUTER || "shadow").trim().toLowerCase()
+  return ["off", "shadow", "active"].includes(value) ? value : "shadow"
+}
+export const configuredSemanticRouteTimeoutMs = (env=process.env) => {
+  const value = Number(env.V3_SEMANTIC_ROUTE_TIMEOUT_MS || 650)
+  return Number.isFinite(value) ? Math.max(100, Math.min(1500, Math.round(value))) : 650
+}
 let semanticMatcher
+let fullValueSemanticRouteShadow
+let openingPermissionSemanticRouteShadow
 const matcherFor = catalog => {
   if (!semanticMatcher) {
     const embed = createGeminiEmbeddingAdapter()
@@ -49,6 +65,14 @@ const matcherFor = catalog => {
     semanticMatcher = createSemanticIntentMatcher({ catalog, embed })
   }
   return semanticMatcher
+}
+const fullValueRouteShadowFor = () => {
+  fullValueSemanticRouteShadow ||= createFullValueSemanticShadowService()
+  return fullValueSemanticRouteShadow
+}
+const openingPermissionRouteShadowFor = () => {
+  openingPermissionSemanticRouteShadow ||= createOpeningPermissionSemanticShadowService()
+  return openingPermissionSemanticRouteShadow
 }
 const tokenNumber = value => Number.isFinite(Number(value)) ? Number(value) : 0
 const normalizedUsage = (provider, usage={}) => {
@@ -120,8 +144,9 @@ export const configuredTurnControlSettings = (env=process.env) => ({
   endSilenceMs:Math.max(250, Number(env.V3_TURN_ENDPOINT_SILENCE_MS || "750")),
   preRollFrames:Math.max(0, Number(env.V3_TURN_PRE_ROLL_FRAMES || "10"))
 })
+const configuredOpeningCloseDrainMs = (env=process.env) => Math.min(5_000, Math.max(500, Number(env.V3_OPENING_CLOSE_DRAIN_MS || "1500")))
 
-export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealtimeStt(), tts=configuredTts(), sarvamTts=createSarvamStreamingTts(), brain=configuredBrain() }={}) {
+export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealtimeStt(), tts=configuredTts(), sarvamTts=createSarvamStreamingTts(), brain=configuredBrain(), plivo=createPlivoClient({ authId:process.env.PLIVO_AUTH_ID, authToken:process.env.PLIVO_AUTH_TOKEN, fromNumber:process.env.PLIVO_FROM_NUMBER, publicUrl:process.env.PUBLIC_API_URL }) }={}) {
   const wss = new WebSocketServer({ noServer:true })
   // Process-local ownership prevents two simultaneous media sockets from
   // speaking for one call. PostgreSQL remains the source of truth for the
@@ -135,15 +160,23 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
   wss.on("connection", async (socket, url) => {
     const demoCallId = url.searchParams.get("demoCallId"), requestedLanguage = url.searchParams.get("lang") || "en"
     if (!demoCallId || !LANGUAGES.has(requestedLanguage) || !stt || !tts || !brain) return socket.close(1011, "V3 providers are not configured")
-    if (!await findCall(db, demoCallId).catch(() => null)) return socket.close(1008, "Unknown demo call")
+    const callRecord = await findCall(db, demoCallId).catch(() => null)
+    if (!callRecord) return socket.close(1008, "Unknown demo call")
     const resumePolicy = configuredStreamResumePolicy()
     const previousLease = streamLeases.get(demoCallId)
     if (previousLease?.active) return socket.close(1013, "Demo call already has an active media stream")
     const withinResumeWindow = Boolean(resumePolicy.enabled && previousLease?.expiresAt > Date.now())
     const connectionId = randomUUID()
     if (previousLease?.expiryTimer) clearTimeout(previousLease.expiryTimer)
-    streamLeases.set(demoCallId, { connectionId, active:true, expiresAt:0 })
+    streamLeases.set(demoCallId, {
+      connectionId, active:true, expiresAt:0,
+      // The opening controller survives a brief media-stream reconnect. It
+      // never has to guess whether a caller has already heard the question.
+      openingPermissionState:previousLease?.openingPermissionState,
+      openingFirstCallerText:previousLease?.openingFirstCallerText
+    })
     const conversationTurns = createConversationTurnStore({ db })
+    const semanticRouteEvaluations = createSemanticRouteEvaluationStore({ db })
     let restoredTurns = []
     if (withinResumeWindow) {
       try {
@@ -160,6 +193,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     const spokenReplyBudget = configuredSpokenReplyBudget()
     const openingDeliveryPolicy = configuredOpeningDeliveryPolicy()
     const semanticIntentMode = configuredSemanticIntentMode()
+    const semanticRouteMode = configuredSemanticRouteMode()
     const semanticIntentCatalog = semanticIntentMode === "off" ? { status:"off" } : loadSemanticIntentCatalog(semanticIntentCatalogPath())
     const pendingManualUtterances = []
     const echoDetector = createPlaybackEchoDetector({ sampleRate:inboundSampleRate() })
@@ -176,8 +210,14 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       language_policy:languageSwitch.snapshot(),
       turns:restoredTurns.map(turn => ({ turn:turn.turn_sequence, caller:turn.caller_text, agent:turn.agent_text }))
     }
+    const openingPermission = createOpeningPermissionController({
+      initialState:withinResumeWindow && previousLease?.openingPermissionState
+        ? previousLease.openingPermissionState
+        : (withinResumeWindow && restoredTurns.length ? OPENING_PERMISSION_STATES.GRANTED : OPENING_PERMISSION_STATES.AWAITING_FIRST_REPLY)
+    })
+    if (previousLease?.openingFirstCallerText) memory.opening_permission = { first_caller_text:previousLease.openingFirstCallerText }
     let firstCallerTurnSeen = withinResumeWindow, callerFirstTimer, completedTurnSequence = restoredTurns.at(-1)?.turn_sequence || 0
-    let openingDelivery, openingDeliveryTimer, openingDeliverySequence = 0
+    let openingDelivery, openingDeliveryTimer, openingDeliverySequence = 0, openingCloseTimer
     const callUsage = { inputTokens:0, cachedInputTokens:0, outputTokens:0, visibleOutputTokens:0, thinkingTokens:0, totalTokens:0, estimatedGeminiCostUsd:0, sttAudioSeconds:0, ttsCharacters:0, ttsProvider:tts.provider || (configuredTtsProvider() === "indic" ? "ai4bharat-indic-tts" : "sarvam-bulbul-streaming"), llmProvider:configuredBrainProvider(), llmModel:configuredBrainModel(configuredBrainProvider()) }
     const log = (eventType, payload={}, latencyMs=null) => logCallEvent(db, { callId:demoCallId, demoCallId, eventType, payload:{ pipeline:"v3-streaming", ...payload }, latencyMs })
     const transcripts = createTranscriptWriter({ db, demoCallId, onError:(error, turn) => log("error", { component:"transcript", message:error.message, speaker:turn.speaker }) })
@@ -221,6 +261,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       return true
     }
     const clearOpeningDeliveryTimer = () => { if (openingDeliveryTimer) { clearTimeout(openingDeliveryTimer); openingDeliveryTimer = undefined } }
+    const clearOpeningCloseTimer = () => { if (openingCloseTimer) { clearTimeout(openingCloseTimer); openingCloseTimer = undefined } }
     const cancelOpeningDelivery = reason => {
       if (!openingDelivery || openingDelivery.delivered || openingDelivery.cancelled) return false
       openingDelivery.cancelled = true
@@ -259,6 +300,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         if (!playback.firstAudioSent) {
           playback.firstAudioSent = true
           log("first_audio_sent", { provider:ttsSession?.provider || callUsage.ttsProvider, request_id:result.requestId }, Date.now() - playback.startedAt)
+          playback.onFirstAudio?.({ requestId:result.requestId })
           if (playback.openingDeliveryId) confirmOpeningDelivery({ openingId:playback.openingDeliveryId, attempt:playback.openingAttempt, requestId:result.requestId })
         }
       }, onComplete:() => {
@@ -356,6 +398,47 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       log("call_start_prompt", { opening_id:delivery.id, source, mode:memory.call_start_mode, characters:[...text].length })
       void scheduleOpeningAttempt(delivery)
     }
+    const speakOpeningControlMessage = async ({ text, source, language, closeAfter=false }) => {
+      if (!text || closed) return false
+      const turnEpoch = epoch
+      const startedAt = Date.now()
+      try {
+        const session = await prepareTts(language)
+        if (!session || closed || turnEpoch !== epoch) return false
+        const playback = createTtsPlayback({ epoch:turnEpoch, startedAt })
+        playback.onFirstAudio = () => {
+          history.push({ role:"assistant", content:text })
+          void transcripts.write("agent", text)
+          log("opening_permission_message_delivered", { source, characters:[...text].length })
+        }
+        playback.onComplete = outcome => {
+          if (closeAfter && outcome.status === "completed" && outcome.firstAudioSent && !closed) {
+            // Sarvam has finished producing audio, but Plivo can still have
+            // its final packets buffered for playback. Do not cut the final
+            // sentence by terminating the carrier call in that small window.
+            const drainMs = configuredOpeningCloseDrainMs()
+            log("opening_permission_close_scheduled", { source, drain_ms:drainMs })
+            openingCloseTimer = setTimeout(() => {
+              openingCloseTimer = undefined
+              if (closed) return
+              log("opening_permission_closed", { source, drain_ms:drainMs })
+              const hangup = plivo?.hangup ? plivo.hangup(callRecord.provider_call_id) : Promise.resolve(false)
+              void hangup.catch(error => {
+                log("error", { component:"opening_permission_hangup", source, message:error.message })
+              }).finally(() => socket.close(1000, "opening_permission_declined"))
+            }, drainMs)
+          }
+        }
+        ttsPlayback = playback
+        const spoken = await session.send(text)
+        recordTtsUsage(spoken, source, session)
+        session.flush()
+        return true
+      } catch (error) {
+        log("error", { component:"v3_opening_permission_tts", source, message:error.message })
+        return false
+      }
+    }
     const processFinal = async ({ text, languageCode, requestId, metrics, utteranceId=null }) => {
       if (!text || closed) return
       const detectedLanguage = woxzaLanguageFromSarvamCode(languageCode)
@@ -370,13 +453,125 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       })
       const callerTranscript = transcripts.write("caller", text)
       const turnAssessment = assessCallerTurn(text)
+      const openingState = openingPermission.state()
+      const openingIsPending = ![OPENING_PERMISSION_STATES.GRANTED, OPENING_PERMISSION_STATES.DECLINED].includes(openingState)
+      let permissionGrantedThisTurn = false
+      let openingShadowEvaluation
+      // Consent is a control-plane exchange, not a conversational-model task.
+      // It must run before the generic turn-quality gate because "yes" and
+      // "maybe" are intentionally short but decisive at this point in a call.
+      // The permission sequence is the agent-first website-demo workflow.
+      // Caller-first integrations retain their existing hand-off behaviour.
+      if (callStart.speakFirst && openingIsPending) {
+        if (semanticRouteMode !== "off") {
+          const routeId = openingState === OPENING_PERMISSION_STATES.AWAITING_FIRST_REPLY ? "opening_first_reply" : "opening_permission"
+          const previousAgentText = [...history].reverse().find(turn => turn.role === "assistant")?.content || ""
+          const routeContext = buildSemanticRouteContext({ callStage:routeId === "opening_permission" ? "permission_pending" : "first_reply_after_greeting", language, callerText:text, previousAgentText, routeState:{ openingPermissionPending:routeId === "opening_permission" } })
+          const startedRoutingAt = Date.now()
+          const evaluation = openingPermissionRouteShadowFor().evaluate({ routeId, context:routeContext })
+          openingShadowEvaluation = { routeId, callStage:routeContext.call_stage, startedRoutingAt, evaluation }
+          void evaluation.then(decision => {
+            log("opening_permission_semantic_shadow", { route_id:routeId, mode:semanticRouteMode, caller_text_length:text.length, ...decision }, Date.now() - startedRoutingAt)
+          }).catch(error => log("opening_permission_semantic_shadow", { route_id:routeId, mode:semanticRouteMode, caller_text_length:text.length, decision:"no_decision", reason:"unexpected_shadow_error", error:error.message }, Date.now() - startedRoutingAt))
+        }
+        stopAgent("opening_permission_caller_reply")
+        let openingDecision = openingPermission.handle(text)
+        // Local controlled activation: clear deterministic answers have
+        // already been resolved above. Only unfamiliar wording may use a
+        // ready, high-confidence semantic recommendation, within a bounded
+        // caller-facing budget. Every miss fails closed to normal behaviour.
+        if (semanticRouteMode === "active" && openingShadowEvaluation && classifyOpeningPermissionReply(text).decision === "unrecognized") {
+          const timeoutMs = configuredSemanticRouteTimeoutMs()
+          const semantic = await Promise.race([
+            openingShadowEvaluation.evaluation,
+            new Promise(resolve => setTimeout(() => resolve({ decision:"no_decision", reason:"active_timeout" }), timeoutMs))
+          ]).catch(error => ({ decision:"no_decision", reason:"active_evaluation_error", error:error.message }))
+          if (semantic.decision === "action" && semantic.action) {
+            const semanticDecision = openingPermission.handleHighConfidenceSemanticAction(text, semantic.action)
+            if (semanticDecision.reason === "high_confidence_semantic_action") {
+              openingDecision = semanticDecision
+              log("opening_permission_semantic_active", { route_id:openingShadowEvaluation.routeId, action:semantic.action, positive_score:semantic.positive_score, negative_margin:semantic.negative_margin, competing_margin:semantic.competing_margin }, Date.now() - openingShadowEvaluation.startedRoutingAt)
+            }
+          } else {
+            log("opening_permission_semantic_active_fallback", { route_id:openingShadowEvaluation.routeId, reason:semantic.reason || "no_decision" }, Date.now() - openingShadowEvaluation.startedRoutingAt)
+          }
+        }
+        const lease = streamLeases.get(demoCallId)
+        if (lease?.connectionId === connectionId) lease.openingPermissionState = openingDecision.state
+        log("opening_permission_decision", {
+          action:openingDecision.action,
+          state:openingDecision.state,
+          reason:openingDecision.reason,
+          language,
+          caller_text_length:text.length
+        })
+        if (openingShadowEvaluation) {
+          void Promise.all([callerTranscript, openingShadowEvaluation.evaluation]).then(([transcript, semantic]) => semanticRouteEvaluations.record({
+            demoCallId,
+            callerTranscriptTurnId:transcript?.id || null,
+            routeId:openingShadowEvaluation.routeId,
+            callStage:openingShadowEvaluation.callStage,
+            activeLanguage:language,
+            deterministicAction:openingDecision.action,
+            semantic,
+            latencyMs:Date.now() - openingShadowEvaluation.startedRoutingAt,
+            catalogVersion:"opening-permission-scenarios-v1"
+          })).catch(error => log("error", { component:"semantic_route_evaluation", message:error.message }))
+        }
+        if (openingDecision.action === "ask_permission") {
+          // Preserve the caller's genuine first reply. If permission is later
+          // granted, the response model receives it as useful context rather
+          // than asking the caller to repeat themselves.
+          memory.opening_permission = { state:"permission_pending", first_caller_text:text }
+          if (lease?.connectionId === connectionId) lease.openingFirstCallerText = text
+          history.push({ role:"user", content:text })
+          await speakOpeningControlMessage({
+            text:openingPermissionMessage(language, "ask"),
+            source:"opening_permission_question",
+            language
+          })
+          return
+        }
+        if (openingDecision.action === "reassure_permission") {
+          memory.opening_permission = { ...(memory.opening_permission || {}), state:"reassurance_pending" }
+          await speakOpeningControlMessage({
+            text:openingPermissionMessage(language, "reassure"),
+            source:"opening_permission_reassurance",
+            language
+          })
+          return
+        }
+        if (openingDecision.action === "close_declined" || openingDecision.action === "close_after_reassurance") {
+          memory.opening_permission = { ...(memory.opening_permission || {}), state:"declined" }
+          await speakOpeningControlMessage({
+            text:openingPermissionMessage(language, "decline"),
+            source:openingDecision.action,
+            language,
+            closeAfter:true
+          })
+          return
+        }
+        if (openingDecision.action === "grant_permission") {
+          memory.opening_permission = { ...(memory.opening_permission || {}), state:"granted", permission:"accepted", expected_answer_type:"business_type" }
+          if (lease?.connectionId === connectionId) lease.openingFirstCallerText = undefined
+          log("opening_permission_granted", { language, first_caller_text_present:Boolean(memory.opening_permission.first_caller_text) })
+          const discoveryQuestion = openingPermissionDiscoveryMessage(language)
+          history.push({ role:"assistant", content:discoveryQuestion })
+          await speakOpeningControlMessage({
+            text:discoveryQuestion,
+            source:"opening_permission_business_question",
+            language
+          })
+          return
+        }
+      }
       if (turnAssessment.action === "respond" || languageDecision.forceReply) cancelOpeningDelivery("caller_turn_before_opening")
       // A language-switch confirmation can be a short acknowledgement such as
       // “okay”. It is meaningful only while the controller has a pending
       // offer, so let it clear old playback and produce the confirmation turn.
       if (turnControl === "hybrid" && (turnAssessment.action === "respond" || languageDecision.forceReply)) stopAgent("sarvam_final_valid_turn")
       const turnEpoch = epoch, started = Date.now(), controller = new AbortController(); activeTurn = controller
-      if (turnAssessment.action !== "respond" && !languageDecision.forceReply) {
+      if (turnAssessment.action !== "respond" && !languageDecision.forceReply && !permissionGrantedThisTurn) {
         // At the start of caller-first mode, a short acknowledgement means
         // the person is present—not an answer to an earlier Woxza question.
         // Give one brief identity prompt and never leave a live caller in
@@ -444,6 +639,42 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           void matcher.evaluate(context).then(event).catch(error => event({ decision:"error", error:error.message }))
           event({ decision:"pending" })
         }
+      }
+      // The persisted multi-route engine shadows the current call without
+      // changing memory, the prompt, the selected response model, or TTS.
+      // Its only product output in Phase 3 is an auditable decision event.
+      if (semanticRouteMode !== "off") {
+        const previous = memory.turns.at(-1) || {}
+        const routeContext = buildSemanticRouteContext({
+          callStage:"full_value_explanation_candidate",
+          language,
+          callerText,
+          previousAgentText:previous.agent,
+          previousCallerText:previous.caller,
+          recentTurns:memory.turns,
+          routeState:{
+            hasKnownBusinessPainPoint:Boolean(previous.caller),
+            recentAgentMentionedWoxzaHelp:/woxza/iu.test(String(previous.agent || ""))
+          }
+        })
+        const routeEvent = (decision, latencyMs=null) => log("semantic_route_shadow", {
+          mode:semanticRouteMode,
+          route_id:"full_value_explanation",
+          language:routeContext.active_language,
+          caller_text_length:routeContext.caller_text.length,
+          prior_paired_turns:routeContext.recent_turns.length,
+          has_previous_agent_turn:Boolean(routeContext.previous_agent_text),
+          has_known_business_pain_point:routeContext.route_state.hasKnownBusinessPainPoint,
+          recent_agent_mentioned_woxza_help:routeContext.route_state.recentAgentMentionedWoxzaHelp,
+          // The decision engine deliberately reports scores and IDs, never
+          // the caller text or the matched example text, in event telemetry.
+          ...(decision || {})
+        }, latencyMs)
+        const startedRoutingAt = Date.now()
+        void fullValueRouteShadowFor().evaluate(routeContext)
+          .then(decision => routeEvent(decision, Date.now() - startedRoutingAt))
+          .catch(error => routeEvent({ decision:"no_decision", reason:"unexpected_shadow_error", error:error.message }, Date.now() - startedRoutingAt))
+        routeEvent({ decision:"pending" })
       }
       try {
         // Start establishing TTS, but do not await it before the LLM. This
@@ -735,7 +966,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     const close = ({ resumable=false, reason="stream_closed" }={}) => {
       if (closed) return
       closed = true
-      clearCallerFirstTimer(); clearOpeningDeliveryTimer(); candidateEcho.clear(); echoDetector.reset(); bridgeTurnController?.reset(); pendingManualUtterances.length = 0
+      clearCallerFirstTimer(); clearOpeningDeliveryTimer(); clearOpeningCloseTimer(); candidateEcho.clear(); echoDetector.reset(); bridgeTurnController?.reset(); pendingManualUtterances.length = 0
       sttSession?.close(); discardTts(); stopAgent(reason)
       const lease = streamLeases.get(demoCallId)
       if (lease?.connectionId === connectionId) {

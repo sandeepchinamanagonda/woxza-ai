@@ -14,7 +14,7 @@ const waitFor = async (predicate, timeout=1_000) => {
 }
 
 async function runWorkflow({ completeAudio=true }={}) {
-  const transcriptRows = [], completedRows = [], events = []
+  const transcriptRows = [], completedRows = [], events = [], brainInputs = [], hangups = []
   let transcriptId = 0, sttHandlers
   const client = {
     async query(sql, values=[]) {
@@ -29,7 +29,7 @@ async function runWorkflow({ completeAudio=true }={}) {
   }
   const db = {
     async query(sql, values=[]) {
-      if (/SELECT id,language FROM demo_calls/.test(sql)) return { rows:[{ id:values[0], language:"en" }] }
+      if (/SELECT id,language,provider_call_id FROM demo_calls/.test(sql)) return { rows:[{ id:values[0], language:"en", provider_call_id:"test-call-uuid" }] }
       if (/FROM call_conversation_turns/.test(sql)) return { rows:[...completedRows].sort((a, b) => b.turn_sequence - a.turn_sequence).slice(0, values[1]).reverse() }
       if (/INSERT INTO call_transcript_turns/.test(sql)) {
         const row = { id:++transcriptId, created_at:new Date() }
@@ -60,10 +60,11 @@ async function runWorkflow({ completeAudio=true }={}) {
   }
   const brain = {
     provider:"fake-brain", model:"fake-brain",
-    async *replyStream() { yield { text:"That sounds useful." }; yield { completion:{ usage:{ promptTokenCount:10, candidatesTokenCount:5 } } } }
+    async *replyStream(input) { brainInputs.push(input); yield { text:"That sounds useful." }; yield { completion:{ usage:{ promptTokenCount:10, candidatesTokenCount:5 } } } }
   }
+  const plivo = { async hangup(callUuid) { hangups.push(callUuid); return true } }
   const server = createServer()
-  attachDemoV3StreamingBridge(server, { db, stt, tts, sarvamTts:tts, brain })
+  attachDemoV3StreamingBridge(server, { db, stt, tts, sarvamTts:tts, brain, plivo })
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve))
   const port = server.address().port
   let socket
@@ -82,7 +83,7 @@ async function runWorkflow({ completeAudio=true }={}) {
     }
     await new Promise(resolve => server.close(resolve))
   }
-  return { get sttHandlers() { return sttHandlers }, completedRows, transcriptRows, events, connect, get socket() { return socket }, finish }
+  return { get sttHandlers() { return sttHandlers }, completedRows, transcriptRows, events, brainInputs, hangups, connect, get socket() { return socket }, finish }
 }
 
 test("V3 workflow persists one pair only after TTS completes", async () => {
@@ -140,9 +141,14 @@ test("V3 reconnect restores durable completed turns without replaying the greeti
   process.env.V3_STREAM_RESUME_ENABLED = "true"
   const workflow = await runWorkflow()
   try {
-    // Initial greeting plus one completed exchange.
+    // Initial greeting, explicit permission, fixed business question, then
+    // one completed discovery exchange.
     await waitFor(() => workflow.events.some(event => event.eventType === "tts_usage"))
     workflow.sttHandlers.onFinal({ text:"I run a pharmacy.", languageCode:"en-IN", requestId:"stt-1", metrics:{} })
+    await waitFor(() => workflow.events.some(event => event.eventType === "tts_usage" && event.payload.source === "opening_permission_question"))
+    workflow.sttHandlers.onFinal({ text:"Yes", languageCode:"en-IN", requestId:"stt-permission", metrics:{} })
+    await waitFor(() => workflow.events.some(event => event.eventType === "tts_usage" && event.payload.source === "opening_permission_business_question"))
+    workflow.sttHandlers.onFinal({ text:"I run a pharmacy.", languageCode:"en-IN", requestId:"stt-business", metrics:{} })
     await waitFor(() => workflow.completedRows.length === 1)
     workflow.socket.close()
     await once(workflow.socket, "close")
@@ -162,5 +168,78 @@ test("V3 reconnect restores durable completed turns without replaying the greeti
     if (previous.speakFirst === undefined) delete process.env.SPEAK_FIRST; else process.env.SPEAK_FIRST = previous.speakFirst
     if (previous.turnControl === undefined) delete process.env.V3_TURN_CONTROL; else process.env.V3_TURN_CONTROL = previous.turnControl
     if (previous.resume === undefined) delete process.env.V3_STREAM_RESUME_ENABLED; else process.env.V3_STREAM_RESUME_ENABLED = previous.resume
+  }
+})
+
+test("V3 permission grant asks the fixed business question before the model", async () => {
+  const previous = { speakFirst:process.env.SPEAK_FIRST, turnControl:process.env.V3_TURN_CONTROL }
+  process.env.SPEAK_FIRST = "true"
+  process.env.V3_TURN_CONTROL = "hybrid"
+  const workflow = await runWorkflow()
+  try {
+    await waitFor(() => workflow.events.some(event => event.eventType === "opening_delivery_confirmed"))
+    workflow.sttHandlers.onFinal({ text:"Hello, I run a pharmacy.", languageCode:"en-IN", requestId:"stt-1", metrics:{} })
+    await waitFor(() => workflow.events.some(event => event.eventType === "opening_permission_decision" && event.payload.action === "ask_permission"))
+    assert.equal(workflow.brainInputs.length, 0)
+    await waitFor(() => workflow.events.some(event => event.eventType === "tts_usage" && event.payload.source === "opening_permission_question"))
+
+    workflow.sttHandlers.onFinal({ text:"Yes", languageCode:"en-IN", requestId:"stt-2", metrics:{} })
+    await waitFor(() => workflow.events.some(event => event.eventType === "tts_usage" && event.payload.source === "opening_permission_business_question"))
+    assert.equal(workflow.brainInputs.length, 0)
+
+    workflow.sttHandlers.onFinal({ text:"I run a pharmacy.", languageCode:"en-IN", requestId:"stt-business", metrics:{} })
+    await waitFor(() => workflow.brainInputs.length === 1)
+    assert.equal(workflow.brainInputs[0].callerText, "I run a pharmacy.")
+    assert.equal(workflow.brainInputs[0].memory.opening_permission.permission, "accepted")
+    assert.equal(workflow.brainInputs[0].memory.opening_permission.expected_answer_type, "business_type")
+    assert.equal(workflow.brainInputs[0].memory.opening_permission.first_caller_text, "Hello, I run a pharmacy.")
+  } finally {
+    await workflow.finish()
+    if (previous.speakFirst === undefined) delete process.env.SPEAK_FIRST; else process.env.SPEAK_FIRST = previous.speakFirst
+    if (previous.turnControl === undefined) delete process.env.V3_TURN_CONTROL; else process.env.V3_TURN_CONTROL = previous.turnControl
+  }
+})
+
+test("V3 active semantic fallback never crashes when a decision is unavailable", async () => {
+  const previous = { speakFirst:process.env.SPEAK_FIRST, turnControl:process.env.V3_TURN_CONTROL, routeMode:process.env.V3_SEMANTIC_ROUTE_ROUTER, apiKey:process.env.GEMINI_API_KEY }
+  process.env.SPEAK_FIRST = "true"
+  process.env.V3_TURN_CONTROL = "hybrid"
+  process.env.V3_SEMANTIC_ROUTE_ROUTER = "active"
+  delete process.env.GEMINI_API_KEY
+  const workflow = await runWorkflow()
+  try {
+    await waitFor(() => workflow.events.some(event => event.eventType === "opening_delivery_confirmed"))
+    workflow.sttHandlers.onFinal({ text:"unfamiliar wording", languageCode:"en-IN", requestId:"stt-active-fallback", metrics:{} })
+    await waitFor(() => workflow.events.some(event => event.eventType === "opening_permission_decision"))
+    assert.equal(workflow.events.find(event => event.eventType === "opening_permission_decision").payload.action, "ask_permission")
+    assert.ok(workflow.events.some(event => event.eventType === "opening_permission_semantic_active_fallback"))
+  } finally {
+    await workflow.finish()
+    if (previous.speakFirst === undefined) delete process.env.SPEAK_FIRST; else process.env.SPEAK_FIRST = previous.speakFirst
+    if (previous.turnControl === undefined) delete process.env.V3_TURN_CONTROL; else process.env.V3_TURN_CONTROL = previous.turnControl
+    if (previous.routeMode === undefined) delete process.env.V3_SEMANTIC_ROUTE_ROUTER; else process.env.V3_SEMANTIC_ROUTE_ROUTER = previous.routeMode
+    if (previous.apiKey === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = previous.apiKey
+  }
+})
+
+test("V3 opening permission gives one reassurance then closes a non-acceptance", async () => {
+  const previous = { speakFirst:process.env.SPEAK_FIRST, turnControl:process.env.V3_TURN_CONTROL }
+  process.env.SPEAK_FIRST = "true"
+  process.env.V3_TURN_CONTROL = "hybrid"
+  const workflow = await runWorkflow()
+  try {
+    await waitFor(() => workflow.events.some(event => event.eventType === "opening_delivery_confirmed"))
+    workflow.sttHandlers.onFinal({ text:"Hello", languageCode:"en-IN", requestId:"stt-1", metrics:{} })
+    await waitFor(() => workflow.events.some(event => event.eventType === "tts_usage" && event.payload.source === "opening_permission_question"))
+    workflow.sttHandlers.onFinal({ text:"Maybe", languageCode:"en-IN", requestId:"stt-2", metrics:{} })
+    await waitFor(() => workflow.events.some(event => event.eventType === "tts_usage" && event.payload.source === "opening_permission_reassurance"))
+    workflow.sttHandlers.onFinal({ text:"No, not now", languageCode:"en-IN", requestId:"stt-3", metrics:{} })
+    await waitFor(() => workflow.hangups.length === 1, 2_500)
+    assert.equal(workflow.brainInputs.length, 0)
+    assert.ok(workflow.events.some(event => event.eventType === "opening_permission_closed" && event.payload.source === "close_after_reassurance"))
+  } finally {
+    await workflow.finish()
+    if (previous.speakFirst === undefined) delete process.env.SPEAK_FIRST; else process.env.SPEAK_FIRST = previous.speakFirst
+    if (previous.turnControl === undefined) delete process.env.V3_TURN_CONTROL; else process.env.V3_TURN_CONTROL = previous.turnControl
   }
 })

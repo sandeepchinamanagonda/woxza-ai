@@ -29,7 +29,8 @@ const schemaUrls = [
   new URL("../migrations/026_call_cost_telemetry.sql", import.meta.url),
   new URL("../migrations/027_gemini_call_cost_telemetry.sql", import.meta.url),
   new URL("../migrations/028_backfill_historical_v3_event_costs.sql", import.meta.url),
-  new URL("../migrations/029_completed_call_conversation_turns.sql", import.meta.url)
+  new URL("../migrations/029_completed_call_conversation_turns.sql", import.meta.url),
+  new URL("../migrations/030_semantic_route_evaluations.sql", import.meta.url)
 ];
 
 const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));

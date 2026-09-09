@@ -51,10 +51,10 @@ test("builds paired-turn context for a short multilingual follow-up", () => {
   })
 })
 
-test("defaults the semantic router to safe shadow mode", () => {
-  assert.equal(configuredSemanticIntentMode({}), "shadow")
+test("keeps the legacy semantic router off unless explicitly enabled", () => {
+  assert.equal(configuredSemanticIntentMode({}), "off")
   assert.equal(configuredSemanticIntentMode({ V3_SEMANTIC_INTENT_ROUTER:"active" }), "active")
-  assert.equal(configuredSemanticIntentMode({ V3_SEMANTIC_INTENT_ROUTER:"unknown" }), "shadow")
+  assert.equal(configuredSemanticIntentMode({ V3_SEMANTIC_INTENT_ROUTER:"unknown" }), "off")
 })
 
 test("semantic matcher requires paired Woxza context before accepting a short follow-up", async () => {

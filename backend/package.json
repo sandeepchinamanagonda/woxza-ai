@@ -10,7 +10,10 @@
     "start": "node src/server.js",
     "test": "node --test test/*.test.js",
     "test:workflow": "node --test test/orchestrator.test.js test/production-workflow.integration.test.js test/adversarial-workflow.test.js test/turn-normalizer.test.js test/approved-action-renderer.test.js test/output-guardrail.test.js test/live-transcript-buffer.test.js test/live-turn-gate.test.js test/deterministic-demo-engine.test.js",
-    "benchmark:voice": "node scripts/benchmark-voice-brains.mjs"
+    "benchmark:voice": "node scripts/benchmark-voice-brains.mjs",
+    "semantic-index:sync": "node scripts/sync-semantic-route-index.mjs",
+    "test:semantic": "node --test test/semantic-route-index.test.js test/semantic-route-policy.test.js test/semantic-route-decision-engine.test.js test/semantic-route-evaluation-store.test.js test/semantic-route-calibration.test.js test/semantic-route-runtime.test.js test/opening-permission-controller.test.js test/v3-completed-turn-workflow.test.js",
+    "load:semantic": "node scripts/load-semantic-route-decision.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.42.0",

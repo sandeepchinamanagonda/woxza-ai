@@ -78,6 +78,13 @@ test("reports database health", async () => {
   assert.equal(health.body.status, "ok");
 });
 
+test("reports API readiness separately from liveness", async () => {
+  const readiness = await request("/ready", null, "GET");
+  assert.equal(readiness.response.status, 200);
+  assert.equal(readiness.body.status, "ready");
+  assert.equal(readiness.body.database, "ready");
+});
+
 test("creates a registration with optional company and completes preferences", async () => {
   const created = await request("/api/waitlist/registrations", registration);
   assert.equal(created.response.status, 201);

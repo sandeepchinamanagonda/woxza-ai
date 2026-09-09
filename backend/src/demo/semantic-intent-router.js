@@ -58,8 +58,10 @@ export function semanticIntentRoutingContext({ language, callerText, memory={} }
 }
 
 export function configuredSemanticIntentMode(env=process.env) {
-  const value = asText(env.V3_SEMANTIC_INTENT_ROUTER || "shadow").toLowerCase()
-  return ["off", "shadow", "active"].includes(value) ? value : "shadow"
+  // The legacy in-memory matcher remains available for an explicit rollback,
+  // but the persisted route index owns the normal shadow rollout now.
+  const value = asText(env.V3_SEMANTIC_INTENT_ROUTER || "off").toLowerCase()
+  return ["off", "shadow", "active"].includes(value) ? value : "off"
 }
 
 const cosineSimilarity = (left, right) => {

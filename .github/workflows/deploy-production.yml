@@ -32,6 +32,12 @@ jobs:
       - name: Run API tests
         working-directory: backend
         run: npm test
+      - name: Run semantic routing regression gate
+        working-directory: backend
+        run: npm run test:semantic
+      - name: Run semantic routing load check
+        working-directory: backend
+        run: npm run load:semantic
 
   deploy:
     name: Deploy to OCI

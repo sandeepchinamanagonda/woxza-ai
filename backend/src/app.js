@@ -3,6 +3,8 @@ import { validatePreferences, validateRegistration, validateSalesInquiry, valida
 import { listFeatures, listTags, normalizeTags } from "./features.js";
 import { debugCallSummary, getDebugCall, growthMetrics, growthRecords, listDebugCalls, searchDebugCalls, usageMetrics, websiteMetrics } from "./admin-debug.js";
 import { authenticateAdmin, changeAdminPassword, clearSessionCookie, sessionCookie, sessionFor } from "./admin-auth.js";
+import { createSemanticRouteEvaluationStore } from "./demo/semantic-route-evaluation-store.js";
+import { calibrateSemanticRoute } from "./demo/semantic-route-calibration.js";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
@@ -85,6 +87,8 @@ export function createApp({
   db,
   demoService,
   debugRuntime,
+  semanticRouteRuntime,
+  semanticRouteRequired=false,
   adminToken = process.env.ADMIN_SESSION_SECRET,
   allowedOrigins = ["http://localhost:3456"]
 }) {
@@ -102,6 +106,18 @@ export function createApp({
       if (req.method === "GET" && url.pathname === "/health") {
         await db.query("SELECT 1");
         return sendJson(res, 200, { status: "ok" }, cors);
+      }
+
+      if (req.method === "GET" && url.pathname === "/ready") {
+        await db.query("SELECT 1");
+        const semanticRoutes = semanticRouteRuntime?.status?.() || {};
+        const openingReady = semanticRoutes.opening_permission?.status === "ready";
+        const ready = !semanticRouteRequired || openingReady;
+        return sendJson(res, ready ? 200 : 503, {
+          status:ready ? "ready" : "degraded",
+          database:"ready",
+          semantic_routes:semanticRoutes
+        }, cors);
       }
 
       if (url.pathname === "/api/admin/login" && req.method === "POST") {
@@ -135,6 +151,28 @@ export function createApp({
         if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const inProgress = await db.query("SELECT count(*)::int AS count FROM calls WHERE status='in_progress'");
         return sendJson(res, 200, { inProgressCalls:inProgress.rows[0].count, postgres:{ total:db.totalCount, idle:db.idleCount, waiting:db.waitingCount }, ...(await debugRuntime?.health?.() || { redis:{ available:false }, queues:{} }) }, cors);
+      }
+      if (url.pathname === "/api/admin/semantic-route-evaluations" && req.method === "GET") {
+        const session = sessionFor(req, adminToken); if (!session || session.mustChangePassword) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        const reviewed = url.searchParams.get("reviewed");
+        const rows = await createSemanticRouteEvaluationStore({ db }).list({ routeId:url.searchParams.get("route_id"), reviewed:reviewed === "true" ? true : reviewed === "false" ? false : null, limit:url.searchParams.get("limit"), offset:url.searchParams.get("offset") });
+        return sendJson(res, 200, { items:rows }, cors);
+      }
+      if (url.pathname === "/api/admin/semantic-route-calibration" && req.method === "GET") {
+        const session = sessionFor(req, adminToken); if (!session || session.mustChangePassword) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        const routeId = url.searchParams.get("route_id");
+        const rows = await createSemanticRouteEvaluationStore({ db }).labelled({ routeId });
+        return sendJson(res, 200, calibrateSemanticRoute({ rows }), cors);
+      }
+      if (url.pathname === "/api/admin/semantic-route-status" && req.method === "GET") {
+        const session = sessionFor(req, adminToken); if (!session || session.mustChangePassword) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        return sendJson(res, 200, { semantic_routes:semanticRouteRuntime?.status?.() || {}, required_for_active_routing:Boolean(semanticRouteRequired) }, cors);
+      }
+      const semanticEvaluation = url.pathname.match(/^\/api\/admin\/semantic-route-evaluations\/([0-9a-f-]+)$/i);
+      if (semanticEvaluation && req.method === "PATCH") {
+        const session = sessionFor(req, adminToken); if (!session || session.mustChangePassword) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        const row = await createSemanticRouteEvaluationStore({ db }).label({ id:semanticEvaluation[1], expectedAction:(await readJson(req)).expected_action, reviewerId:session.email });
+        return row ? sendJson(res, 200, row, cors) : sendJson(res, 422, { error:"Choose a valid expected action" }, cors);
       }
       if (url.pathname === "/api/admin/usage" && req.method === "GET") {
         if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
