@@ -16,3 +16,14 @@ test("calibration identifies false positives and keeps a risky route in shadow",
   assert.equal(result.by_action.close_declined.false_positive, 1)
   assert.equal(result.recommendation, "keep_shadow_and_improve_catalog_or_thresholds")
 })
+
+test("calibration recommends a stricter evidence-backed score when it removes a risky false positive", () => {
+  const rows = []
+  for (let index = 0; index < 30; index += 1) rows.push({ expected_action:"grant_permission", semantic_decision:"action", semantic_action:"grant_permission", positive_score:.91, negative_margin:.2, competing_margin:.14 })
+  for (let index = 0; index < 30; index += 1) rows.push({ expected_action:"close_declined", semantic_decision:"action", semantic_action:"close_declined", positive_score:.91, negative_margin:.2, competing_margin:.14 })
+  rows.push({ expected_action:"grant_permission", semantic_decision:"action", semantic_action:"close_declined", positive_score:.85, negative_margin:.2, competing_margin:.14 })
+  const result = calibrateSemanticRoute({ rows })
+  assert.equal(result.threshold_source, "labelled_evidence")
+  assert.equal(result.thresholds.minimumScore, .91)
+  assert.equal(result.recommendation, "eligible_for_controlled_activation")
+})

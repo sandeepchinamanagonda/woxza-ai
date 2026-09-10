@@ -61,6 +61,30 @@ export async function debugCallSummary(db, url) {
   return { ...summary.rows[0], heatmap:heatmap.rows };
 }
 
+// Production voice-pipeline dashboard. All figures are derived from the
+// privacy-safe operational events; caller text and provider payloads are not
+// selected here. Latency is measured from the final STT event for a turn.
+export async function voicePipelineMetrics(db, url) {
+  const requestedHours = Number(url.searchParams.get("hours") || 24)
+  const hours = Number.isFinite(requestedHours) ? Math.min(24 * 30, Math.max(1, Math.round(requestedHours))) : 24
+  const stages = ["turn_validation_evaluated", "semantic_route_shadow", "llm_first_token", "tts_phrase_ready", "first_audio_sent"]
+  const [calls, latency, decisions, errors] = await Promise.all([
+    db.query(`SELECT count(*)::int AS calls, count(*) FILTER (WHERE status='completed')::int AS completed_calls, count(*) FILTER (WHERE status='failed')::int AS failed_calls, count(*) FILTER (WHERE error_count > 0)::int AS calls_with_errors FROM calls WHERE started_at >= NOW() - ($1::int * INTERVAL '1 hour')`, [hours]),
+    db.query(`SELECT event_type,count(*)::int AS requests,count(*) FILTER (WHERE latency_ms IS NOT NULL)::int AS measured_requests,COALESCE(percentile_cont(0.50) WITHIN GROUP (ORDER BY latency_ms) FILTER (WHERE latency_ms IS NOT NULL),0)::int AS p50_ms,COALESCE(percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms) FILTER (WHERE latency_ms IS NOT NULL),0)::int AS p95_ms,COALESCE(max(latency_ms),0)::int AS max_ms FROM call_events WHERE created_at >= NOW() - ($1::int * INTERVAL '1 hour') AND event_type = ANY($2::text[]) GROUP BY event_type ORDER BY event_type`, [hours, stages]),
+    db.query(`SELECT COALESCE(payload->>'decision','not_recorded') AS decision,count(*)::int AS requests FROM call_events WHERE created_at >= NOW() - ($1::int * INTERVAL '1 hour') AND event_type='turn_validation_evaluated' GROUP BY 1 ORDER BY 1`, [hours]),
+    db.query(`SELECT event_type,severity,count(*)::int AS requests FROM call_events WHERE created_at >= NOW() - ($1::int * INTERVAL '1 hour') AND severity IN ('warning','error') GROUP BY 1,2 ORDER BY requests DESC,event_type`, [hours])
+  ])
+  const targets = { turn_validation_evaluated:5000, semantic_route_shadow:650, llm_first_token:1500, tts_phrase_ready:2500, first_audio_sent:3000 }
+  const byStage = Object.fromEntries(latency.rows.map(row => [row.event_type, row]))
+  return {
+    window_hours:hours,
+    calls:calls.rows[0],
+    latency:stages.map(eventType => ({ event_type:eventType, requests:0, measured_requests:0, p50_ms:0, p95_ms:0, max_ms:0, target_p95_ms:targets[eventType], status:"no_data", ...(byStage[eventType] || {}), status:byStage[eventType] ? (Number(byStage[eventType].p95_ms) <= targets[eventType] ? "within_target" : "above_target") : "no_data" })),
+    turn_validation_decisions:decisions.rows,
+    errors:errors.rows
+  }
+}
+
 export async function getDebugCall(db, callId) {
   const summary = await db.query("SELECT * FROM calls WHERE call_id=$1", [callId]);
   if (!summary.rowCount) return null;

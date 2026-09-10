@@ -38,7 +38,7 @@ export function createSemanticRouteEvaluationStore({ db }={}) {
     },
     async labelled({ routeId=null }={}) {
       const values = text(routeId) ? [text(routeId)] : []
-      const result = await db.query(`SELECT route_id,expected_action,semantic_decision,semantic_action,positive_score,competing_margin FROM semantic_route_evaluations WHERE expected_action IS NOT NULL ${values.length ? "AND route_id=$1" : ""} ORDER BY created_at`, values)
+      const result = await db.query(`SELECT route_id,expected_action,semantic_decision,semantic_action,positive_score,negative_margin,competing_margin FROM semantic_route_evaluations WHERE expected_action IS NOT NULL ${values.length ? "AND route_id=$1" : ""} ORDER BY created_at`, values)
       return result.rows
     }
   }

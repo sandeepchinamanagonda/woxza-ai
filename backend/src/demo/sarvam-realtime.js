@@ -4,12 +4,11 @@ import { normalizeTtsText } from "./tts-text-normalizer.js"
 
 const SARVAM_API = "wss://api.sarvam.ai"
 
-// This is intentionally an opt-in experiment.  The established V3 value is
-// still V3_STT_SILENCE_MS, so removing this change restores its 500ms behavior
-// even if the local environment retains the experiment variable.
+// A caller needs room to think mid-sentence. V3 therefore uses a 2.2-second
+// endpoint pause; the experiment value remains available for latency tests.
 export function v3EndpointSilenceMs({ experiment=process.env.V3_LATENCY_CHERRY_VAD_MS, baseline=process.env.V3_STT_SILENCE_MS }={}) {
-  const value = Number(experiment || baseline || "500")
-  return Number.isFinite(value) && value >= 250 && value <= 1200 ? Math.floor(value) : 500
+  const value = Number(experiment || baseline || "2200")
+  return Number.isFinite(value) && value >= 250 && value <= 3000 ? Math.floor(value) : 2200
 }
 
 const parseMessage = raw => {

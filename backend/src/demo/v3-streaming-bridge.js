@@ -28,8 +28,12 @@ import { configuredSemanticIntentMode, createGeminiEmbeddingAdapter, createSeman
 import { createFullValueSemanticShadowService } from "./full-value-semantic-index-service.js"
 import { createOpeningPermissionSemanticShadowService } from "./opening-permission-semantic-index-service.js"
 import { createSemanticRouteEvaluationStore } from "./semantic-route-evaluation-store.js"
+import { resolveSemanticRouteActivation, semanticRouteActivationStatus } from "./semantic-route-activation.js"
 import { buildSemanticRouteContext } from "./semantic-route-policy.js"
 import { classifyFullValueOfferReply, isFullValueFollowUp, isFullValueOffer } from "./full-value-offer-controller.js"
+import { createGeminiTurnValidator } from "./gemini-turn-validator.js"
+import { createTurnValidationGate } from "./turn-validation-gate.js"
+import { turnValidationClarificationMessage } from "./turn-validation-messages.js"
 import { randomUUID } from "node:crypto"
 
 const findCall = async (db, id) => (await db.query("SELECT id,language,provider_call_id FROM demo_calls WHERE id=$1 AND status IN ('ringing','connected')", [id])).rows[0]
@@ -54,6 +58,14 @@ export const configuredSemanticRouteMode = (env=process.env) => {
 export const configuredSemanticRouteTimeoutMs = (env=process.env) => {
   const value = Number(env.V3_SEMANTIC_ROUTE_TIMEOUT_MS || 650)
   return Number.isFinite(value) ? Math.max(100, Math.min(1500, Math.round(value))) : 650
+}
+export const configuredTurnValidationMode = (env=process.env) => {
+  const value = String(env.V3_TURN_VALIDATION_MODE || "off").trim().toLowerCase()
+  return ["off", "shadow", "active"].includes(value) ? value : "off"
+}
+export const configuredTurnValidationTimeoutMs = (env=process.env) => {
+  const value = Number(env.V3_TURN_VALIDATION_TIMEOUT_MS || "5000")
+  return Number.isFinite(value) ? Math.max(500, Math.min(5_000, Math.round(value))) : 5_000
 }
 let semanticMatcher
 let fullValueSemanticRouteShadow
@@ -136,17 +148,17 @@ const settleTtsPlayback = (playback, outcome) => {
   playback.resolveCompletion?.({ ...outcome, firstAudioSent:playback.firstAudioSent })
 }
 export const configuredTurnControl = (env=process.env) => {
-  const value = String(env.V3_TURN_CONTROL || "provider").trim().toLowerCase()
-  return ["provider", "shadow", "bridge", "hybrid"].includes(value) ? value : "provider"
+  const value = String(env.V3_TURN_CONTROL || "hybrid").trim().toLowerCase()
+  return ["provider", "shadow", "bridge", "hybrid"].includes(value) ? value : "hybrid"
 }
 export const configuredTurnControlSettings = (env=process.env) => ({
   startFrames:Math.max(1, Number(env.V3_TURN_START_FRAMES || "2")),
-  endSilenceMs:Math.max(250, Number(env.V3_TURN_ENDPOINT_SILENCE_MS || "750")),
+  endSilenceMs:Math.max(250, Number(env.V3_TURN_ENDPOINT_SILENCE_MS || "2200")),
   preRollFrames:Math.max(0, Number(env.V3_TURN_PRE_ROLL_FRAMES || "10"))
 })
 const configuredOpeningCloseDrainMs = (env=process.env) => Math.min(5_000, Math.max(500, Number(env.V3_OPENING_CLOSE_DRAIN_MS || "1500")))
 
-export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealtimeStt(), tts=configuredTts(), sarvamTts=createSarvamStreamingTts(), brain=configuredBrain(), plivo=createPlivoClient({ authId:process.env.PLIVO_AUTH_ID, authToken:process.env.PLIVO_AUTH_TOKEN, fromNumber:process.env.PLIVO_FROM_NUMBER, publicUrl:process.env.PUBLIC_API_URL }) }={}) {
+export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealtimeStt(), tts=configuredTts(), sarvamTts=createSarvamStreamingTts(), brain=configuredBrain(), turnValidator=createGeminiTurnValidator(), plivo=createPlivoClient({ authId:process.env.PLIVO_AUTH_ID, authToken:process.env.PLIVO_AUTH_TOKEN, fromNumber:process.env.PLIVO_FROM_NUMBER, publicUrl:process.env.PUBLIC_API_URL }) }={}) {
   const wss = new WebSocketServer({ noServer:true })
   // Process-local ownership prevents two simultaneous media sockets from
   // speaking for one call. PostgreSQL remains the source of truth for the
@@ -193,7 +205,10 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     const spokenReplyBudget = configuredSpokenReplyBudget()
     const openingDeliveryPolicy = configuredOpeningDeliveryPolicy()
     const semanticIntentMode = configuredSemanticIntentMode()
-    const semanticRouteMode = configuredSemanticRouteMode()
+    const routeActivation = routeId => resolveSemanticRouteActivation({ routeId })
+    const turnValidationMode = configuredTurnValidationMode()
+    const turnValidationTimeoutMs = configuredTurnValidationTimeoutMs()
+    const turnValidationGate = createTurnValidationGate({ validator:turnValidator })
     const semanticIntentCatalog = semanticIntentMode === "off" ? { status:"off" } : loadSemanticIntentCatalog(semanticIntentCatalogPath())
     const pendingManualUtterances = []
     const echoDetector = createPlaybackEchoDetector({ sampleRate:inboundSampleRate() })
@@ -221,6 +236,48 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     const callUsage = { inputTokens:0, cachedInputTokens:0, outputTokens:0, visibleOutputTokens:0, thinkingTokens:0, totalTokens:0, estimatedGeminiCostUsd:0, sttAudioSeconds:0, ttsCharacters:0, ttsProvider:tts.provider || (configuredTtsProvider() === "indic" ? "ai4bharat-indic-tts" : "sarvam-bulbul-streaming"), llmProvider:configuredBrainProvider(), llmModel:configuredBrainModel(configuredBrainProvider()) }
     const log = (eventType, payload={}, latencyMs=null) => logCallEvent(db, { callId:demoCallId, demoCallId, eventType, payload:{ pipeline:"v3-streaming", ...payload }, latencyMs })
     const transcripts = createTranscriptWriter({ db, demoCallId, onError:(error, turn) => log("error", { component:"transcript", message:error.message, speaker:turn.speaker }) })
+    const turnValidationInput = ({ text, language, languageCode, metrics }) => {
+      const previousAgentText = [...history].reverse().find(turn => turn.role === "assistant")?.content || ""
+      const recentTurns = memory.turns.slice(-3).map(turn => ({ caller:turn.caller, agent:turn.agent }))
+      return {
+        finalTranscript:text,
+        language,
+        stt:{
+          detectedLanguage:languageCode,
+          confidence:metrics?.confidence,
+          endpointSilenceMs:turnControlSettings.endSilenceMs,
+          noiseDetected:false,
+          possibleAgentEcho:false
+        },
+        conversation:{
+          phase:memory.conversation_objective || "conversation",
+          lastAgentMessage:previousAgentText,
+          lastAgentQuestion:previousAgentText,
+          expectedAnswerType:memory.opening_permission?.expected_answer_type || "open",
+          recentTurns
+        }
+      }
+    }
+    const logTurnValidation = (evaluation, startedAt, mode) => {
+      log("turn_validation_evaluated", {
+        mode,
+        status:evaluation.status,
+        decision:evaluation.result?.value?.decision || null,
+        reason_code:evaluation.result?.value?.reason_code || null,
+        confidence:evaluation.result?.value?.confidence ?? null,
+        candidate_text_length:evaluation.request.candidate_text.length,
+        held_fragment_length:evaluation.request.held_fragment.length,
+        error:evaluation.error?.message || null,
+        timing:evaluation.timing || null
+      }, Date.now() - startedAt)
+    }
+    const evaluateTurnValidationShadow = input => {
+      if (turnValidationMode !== "shadow") return
+      const startedAt = Date.now()
+      void turnValidationGate.evaluate(turnValidationInput(input)).then(evaluation => {
+        logTurnValidation(evaluation, startedAt, "shadow")
+      })
+    }
     const recordTtsUsage = (sentText, source, session) => {
       const characters = [...String(sentText || "")].length
       if (!characters) return
@@ -441,6 +498,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     }
     const processFinal = async ({ text, languageCode, requestId, metrics, utteranceId=null }) => {
       if (!text || closed) return
+      const finalReceivedAt = Date.now()
       const detectedLanguage = woxzaLanguageFromSarvamCode(languageCode)
       const languageDecision = languageSwitch.observeTurn({ text, detectedLanguage })
       const language = languageDecision.activeLanguage
@@ -451,7 +509,45 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         candidate_language:languageDecision.candidateLanguage,
         detected_language:detectedLanguage
       })
-      const callerTranscript = transcripts.write("caller", text)
+      // Shadow mode observes the semantic decision without changing existing
+      // behavior. Active mode below consumes only a validated result.
+      evaluateTurnValidationShadow({ text, language, languageCode, metrics })
+      log("turn_timing", { stage:"stt_final_received", utterance_id:utteranceId, request_id:requestId, elapsed_ms:0 }, 0)
+      const rawFinalText = text
+      // Keep raw STT finals only in the audit transcript. Validation must
+      // succeed before anything reaches live history, facts, embeddings, or
+      // the conversation model.
+      const callerTranscript = transcripts.write("caller", rawFinalText)
+      if (turnValidationMode === "active") {
+        const startedAt = Date.now()
+        const evaluation = await turnValidationGate.evaluate(turnValidationInput({ text, language, languageCode, metrics }))
+        logTurnValidation(evaluation, startedAt, "active")
+        const validation = evaluation.result?.value
+        if (evaluation.status !== "validated" || !validation) {
+          log("turn_validation_held", { reason:evaluation.status, text_length:rawFinalText.length, utterance_id:utteranceId })
+          return
+        }
+        if (validation.decision === "incomplete") {
+          log("turn_validation_held", { reason:validation.reason_code, text_length:rawFinalText.length, candidate_text_length:validation.candidate_text.length, utterance_id:utteranceId, fragment_expires_at:evaluation.state.fragmentExpiresAt })
+          return
+        }
+        if (validation.decision === "unclear") {
+          log("turn_validation_unclear", { reason:validation.reason_code, text_length:rawFinalText.length, clarification:validation.should_request_clarification, utterance_id:utteranceId })
+          // Do not cut off live audio merely to ask a clarification. If
+          // playback has already ended, the fixed localized prompt is safe.
+          if (validation.should_request_clarification && !ttsPlayback) {
+            await speakOpeningControlMessage({
+              text:turnValidationClarificationMessage(language),
+              source:"turn_validation_clarification",
+              language
+            })
+          } else if (validation.should_request_clarification) {
+            log("turn_validation_clarification_deferred", { reason:"agent_audio_active", utterance_id:utteranceId })
+          }
+          return
+        }
+        text = validation.candidate_text
+      }
       const turnAssessment = assessCallerTurn(text)
       const openingState = openingPermission.state()
       const openingIsPending = ![OPENING_PERMISSION_STATES.GRANTED, OPENING_PERMISSION_STATES.DECLINED].includes(openingState)
@@ -463,16 +559,18 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       // The permission sequence is the agent-first website-demo workflow.
       // Caller-first integrations retain their existing hand-off behaviour.
       if (callStart.speakFirst && openingIsPending) {
-        if (semanticRouteMode !== "off") {
-          const routeId = openingState === OPENING_PERMISSION_STATES.AWAITING_FIRST_REPLY ? "opening_first_reply" : "opening_permission"
+        const openingRouteId = openingState === OPENING_PERMISSION_STATES.AWAITING_FIRST_REPLY ? "opening_first_reply" : "opening_permission"
+        const openingRouteActivation = routeActivation(openingRouteId)
+        if (openingRouteActivation.mode !== "off") {
+          const routeId = openingRouteId
           const previousAgentText = [...history].reverse().find(turn => turn.role === "assistant")?.content || ""
           const routeContext = buildSemanticRouteContext({ callStage:routeId === "opening_permission" ? "permission_pending" : "first_reply_after_greeting", language, callerText:text, previousAgentText, routeState:{ openingPermissionPending:routeId === "opening_permission" } })
           const startedRoutingAt = Date.now()
           const evaluation = openingPermissionRouteShadowFor().evaluate({ routeId, context:routeContext })
           openingShadowEvaluation = { routeId, callStage:routeContext.call_stage, startedRoutingAt, evaluation }
           void evaluation.then(decision => {
-            log("opening_permission_semantic_shadow", { route_id:routeId, mode:semanticRouteMode, caller_text_length:text.length, ...decision }, Date.now() - startedRoutingAt)
-          }).catch(error => log("opening_permission_semantic_shadow", { route_id:routeId, mode:semanticRouteMode, caller_text_length:text.length, decision:"no_decision", reason:"unexpected_shadow_error", error:error.message }, Date.now() - startedRoutingAt))
+            log("opening_permission_semantic_shadow", { route_id:routeId, mode:openingRouteActivation.mode, activation_reason:openingRouteActivation.reason, caller_text_length:text.length, ...decision }, Date.now() - startedRoutingAt)
+          }).catch(error => log("opening_permission_semantic_shadow", { route_id:routeId, mode:openingRouteActivation.mode, activation_reason:openingRouteActivation.reason, caller_text_length:text.length, decision:"no_decision", reason:"unexpected_shadow_error", error:error.message }, Date.now() - startedRoutingAt))
         }
         stopAgent("opening_permission_caller_reply")
         let openingDecision = openingPermission.handle(text)
@@ -480,7 +578,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
         // already been resolved above. Only unfamiliar wording may use a
         // ready, high-confidence semantic recommendation, within a bounded
         // caller-facing budget. Every miss fails closed to normal behaviour.
-        if (semanticRouteMode === "active" && openingShadowEvaluation && classifyOpeningPermissionReply(text).decision === "unrecognized") {
+        if (openingRouteActivation.mode === "active" && openingShadowEvaluation && classifyOpeningPermissionReply(text).decision === "unrecognized") {
           const timeoutMs = configuredSemanticRouteTimeoutMs()
           const semantic = await Promise.race([
             openingShadowEvaluation.evaluation,
@@ -570,7 +668,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       // “okay”. It is meaningful only while the controller has a pending
       // offer, so let it clear old playback and produce the confirmation turn.
       if (turnControl === "hybrid" && (turnAssessment.action === "respond" || languageDecision.forceReply)) stopAgent("sarvam_final_valid_turn")
-      const turnEpoch = epoch, started = Date.now(), controller = new AbortController(); activeTurn = controller
+      const turnEpoch = epoch, started = finalReceivedAt, controller = new AbortController(); activeTurn = controller
       if (turnAssessment.action !== "respond" && !languageDecision.forceReply && !permissionGrantedThisTurn) {
         // At the start of caller-first mode, a short acknowledgement means
         // the person is present—not an answer to an earlier Woxza question.
@@ -610,8 +708,6 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           log("full_value_follow_up", { decision:"normal_conversation" })
         }
       }
-      const fullValueMode = memory.full_value_explanation?.mode === "four_examples"
-        || memory.full_value_explanation?.mode === "four_more_examples"
       // Shadow mode deliberately has no effect on the caller-facing answer. It
       // records whether the multilingual intent data is safe to activate while
       // preserving the current low-latency conversation path.
@@ -643,7 +739,8 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
       // The persisted multi-route engine shadows the current call without
       // changing memory, the prompt, the selected response model, or TTS.
       // Its only product output in Phase 3 is an auditable decision event.
-      if (semanticRouteMode !== "off") {
+      const fullValueRouteActivation = routeActivation("full_value_explanation")
+      if (fullValueRouteActivation.mode !== "off") {
         const previous = memory.turns.at(-1) || {}
         const routeContext = buildSemanticRouteContext({
           callStage:"full_value_explanation_candidate",
@@ -658,7 +755,8 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           }
         })
         const routeEvent = (decision, latencyMs=null) => log("semantic_route_shadow", {
-          mode:semanticRouteMode,
+          mode:fullValueRouteActivation.mode,
+          activation_reason:fullValueRouteActivation.reason,
           route_id:"full_value_explanation",
           language:routeContext.active_language,
           caller_text_length:routeContext.caller_text.length,
@@ -670,12 +768,24 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
           // the caller text or the matched example text, in event telemetry.
           ...(decision || {})
         }, latencyMs)
-        const startedRoutingAt = Date.now()
-        void fullValueRouteShadowFor().evaluate(routeContext)
-          .then(decision => routeEvent(decision, Date.now() - startedRoutingAt))
-          .catch(error => routeEvent({ decision:"no_decision", reason:"unexpected_shadow_error", error:error.message }, Date.now() - startedRoutingAt))
-        routeEvent({ decision:"pending" })
+        const startedRoutingAt = Date.now(), evaluation = fullValueRouteShadowFor().evaluate(routeContext)
+        if (fullValueRouteActivation.mode === "active") {
+          const decision = await Promise.race([
+            evaluation,
+            new Promise(resolve => setTimeout(() => resolve({ decision:"no_decision", reason:"active_timeout" }), configuredSemanticRouteTimeoutMs()))
+          ]).catch(error => ({ decision:"no_decision", reason:"active_evaluation_error", error:error.message }))
+          routeEvent(decision, Date.now() - startedRoutingAt)
+          if (decision.decision === "action" && decision.action === "give_full_value_explanation") {
+            memory.full_value_explanation = { mode:"four_examples", source:"semantic_route_activation" }
+            log("full_value_semantic_active", { route_id:"full_value_explanation", action:decision.action, positive_score:decision.positive_score, negative_margin:decision.negative_margin, competing_margin:decision.competing_margin }, Date.now() - startedRoutingAt)
+          } else log("full_value_semantic_active_fallback", { route_id:"full_value_explanation", reason:decision.reason || "no_decision" }, Date.now() - startedRoutingAt)
+        } else {
+          void evaluation.then(decision => routeEvent(decision, Date.now() - startedRoutingAt)).catch(error => routeEvent({ decision:"no_decision", reason:"unexpected_shadow_error", error:error.message }, Date.now() - startedRoutingAt))
+          routeEvent({ decision:"pending" })
+        }
       }
+      const fullValueMode = memory.full_value_explanation?.mode === "four_examples"
+        || memory.full_value_explanation?.mode === "four_more_examples"
       try {
         // Start establishing TTS, but do not await it before the LLM. This
         // overlaps the WebSocket handshake with model time instead of making
@@ -990,7 +1100,7 @@ export function attachDemoV3StreamingBridge(server, { db, stt=createSarvamRealti
     }
     socket.on("close", () => close({ resumable:true, reason:"media_socket_closed" }))
     socket.on("message", raw => { try { const event = JSON.parse(raw.toString()); if (event.event === "stop") return close({ reason:"provider_stream_stopped" }); if (event.event === "media" && event.media?.payload) { const pcm = decodePlivoInboundAudio(event.media.payload, process.env.PLIVO_STREAM_CONTENT_TYPE || "audio/x-l16;rate=16000", process.env.PLIVO_L16_BYTE_ORDER || "little"); callUsage.sttAudioSeconds += pcm.length / 2 / inboundSampleRate(); if (bridgeTurnController) bridgeTurnController.push(pcm); else sttSession.push(pcm) } } catch (error) { log("error", { component:"v3_plivo_input", message:error.message }) } })
-    log("call_started", { provider:"plivo", agentId:"sarvam-streaming-v3", brain_provider:configuredBrainProvider(), brain_model:brain.model || configuredBrainModel(configuredBrainProvider()), stt_model:process.env.V3_STT_MODEL || "saaras:v3-realtime", tts_provider:callUsage.ttsProvider, tts_model:tts.model || (configuredTtsProvider() === "indic" ? "indic-tts-fastpitch-hifigan" : process.env.SARVAM_TTS_MODEL || "bulbul:v3"), turn_control:turnControl, turn_control_settings:turnControlSettings, spoken_reply_budget:spokenReplyBudget, language_switch_policy:configuredLanguageSwitchPolicy(), call_start:callStart, resumed:withinResumeWindow })
+    log("call_started", { provider:"plivo", agentId:"sarvam-streaming-v3", brain_provider:configuredBrainProvider(), brain_model:brain.model || configuredBrainModel(configuredBrainProvider()), stt_model:process.env.V3_STT_MODEL || "saaras:v3-realtime", tts_provider:callUsage.ttsProvider, tts_model:tts.model || (configuredTtsProvider() === "indic" ? "indic-tts-fastpitch-hifigan" : process.env.SARVAM_TTS_MODEL || "bulbul:v3"), turn_control:turnControl, turn_control_settings:turnControlSettings, turn_validation:{ mode:turnValidationMode, timeout_ms:turnValidationTimeoutMs }, semantic_route_activation:semanticRouteActivationStatus(), spoken_reply_budget:spokenReplyBudget, language_switch_policy:configuredLanguageSwitchPolicy(), call_start:callStart, resumed:withinResumeWindow })
     if (withinResumeWindow) {
       log("stream_resumed", { restored_turns:restoredTurns.length, restored_language:languageSwitch.snapshot().active_language, next_turn_sequence:completedTurnSequence + 1 })
     } else if (callStart.speakFirst) {

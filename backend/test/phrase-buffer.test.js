@@ -1,7 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { createPhraseBuffer, createProsodyPhraseBuffer, createWordBoundaryBuffer } from "../src/demo/phrase-buffer.js"
-import { configuredTurnControl, configuredTurnControlSettings, configuredWoxzaPhraseBuffer } from "../src/demo/v3-streaming-bridge.js"
+import { configuredTurnControl, configuredTurnControlSettings, configuredTurnValidationMode, configuredTurnValidationTimeoutMs, configuredWoxzaPhraseBuffer } from "../src/demo/v3-streaming-bridge.js"
 
 test("phrase buffer waits for a complete sentence before TTS", () => {
   const buffer = createPhraseBuffer({ minimumCharacters:10 })
@@ -65,13 +65,26 @@ test("Woxza phrase controls use their own settings before legacy values", () => 
   }), { minimumCharacters:72, maximumCharacters:160, maxWaitMs:350 })
 })
 
-test("turn control defaults to the provider baseline and accepts only explicit modes", () => {
-  assert.equal(configuredTurnControl({}), "provider")
+test("turn control defaults to completed-turn protection and accepts only explicit modes", () => {
+  assert.equal(configuredTurnControl({}), "hybrid")
   assert.equal(configuredTurnControl({ V3_TURN_CONTROL:"shadow" }), "shadow")
   assert.equal(configuredTurnControl({ V3_TURN_CONTROL:"bridge" }), "bridge")
   assert.equal(configuredTurnControl({ V3_TURN_CONTROL:"hybrid" }), "hybrid")
-  assert.equal(configuredTurnControl({ V3_TURN_CONTROL:"anything-else" }), "provider")
+  assert.equal(configuredTurnControl({ V3_TURN_CONTROL:"anything-else" }), "hybrid")
   assert.deepEqual(configuredTurnControlSettings({
     V3_TURN_START_FRAMES:"3", V3_TURN_ENDPOINT_SILENCE_MS:"800", V3_TURN_PRE_ROLL_FRAMES:"12"
   }), { startFrames:3, endSilenceMs:800, preRollFrames:12 })
+})
+
+test("turn validation modes are explicit, with production-safe code defaults", () => {
+  assert.equal(configuredTurnValidationMode({}), "off")
+  assert.equal(configuredTurnValidationMode({ V3_TURN_VALIDATION_MODE:"shadow" }), "shadow")
+  assert.equal(configuredTurnValidationMode({ V3_TURN_VALIDATION_MODE:"active" }), "active")
+})
+
+test("turn validation timeout is bounded for predictable caller latency", () => {
+  assert.equal(configuredTurnValidationTimeoutMs({}), 5000)
+  assert.equal(configuredTurnValidationTimeoutMs({ V3_TURN_VALIDATION_TIMEOUT_MS:"4200" }), 4200)
+  assert.equal(configuredTurnValidationTimeoutMs({ V3_TURN_VALIDATION_TIMEOUT_MS:"100" }), 500)
+  assert.equal(configuredTurnValidationTimeoutMs({ V3_TURN_VALIDATION_TIMEOUT_MS:"9000" }), 5000)
 })

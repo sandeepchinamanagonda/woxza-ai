@@ -13,7 +13,7 @@ const waitFor = async (predicate, timeout=1_000) => {
   }
 }
 
-async function runWorkflow({ completeAudio=true }={}) {
+async function runWorkflow({ completeAudio=true, turnValidator }={}) {
   const transcriptRows = [], completedRows = [], events = [], brainInputs = [], hangups = []
   let transcriptId = 0, sttHandlers
   const client = {
@@ -64,7 +64,7 @@ async function runWorkflow({ completeAudio=true }={}) {
   }
   const plivo = { async hangup(callUuid) { hangups.push(callUuid); return true } }
   const server = createServer()
-  attachDemoV3StreamingBridge(server, { db, stt, tts, sarvamTts:tts, brain, plivo })
+  attachDemoV3StreamingBridge(server, { db, stt, tts, sarvamTts:tts, brain, turnValidator, plivo })
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve))
   const port = server.address().port
   let socket
@@ -131,6 +131,69 @@ test("V3 workflow never persists an agent reply whose audio was interrupted", as
     await workflow.finish()
     if (previous.speakFirst === undefined) delete process.env.SPEAK_FIRST; else process.env.SPEAK_FIRST = previous.speakFirst
     if (previous.turnControl === undefined) delete process.env.V3_TURN_CONTROL; else process.env.V3_TURN_CONTROL = previous.turnControl
+  }
+})
+
+test("V3 active turn validation holds an incomplete final and routes only the merged complete thought", async () => {
+  const previous = { speakFirst:process.env.SPEAK_FIRST, turnControl:process.env.V3_TURN_CONTROL, validationMode:process.env.V3_TURN_VALIDATION_MODE }
+  process.env.SPEAK_FIRST = "false"
+  process.env.V3_TURN_CONTROL = "hybrid"
+  process.env.V3_TURN_VALIDATION_MODE = "active"
+  const turnValidator = {
+    async validate(request) {
+      const incomplete = request.candidate_text === "I think"
+      return { valid:true, value:{
+        decision:incomplete ? "incomplete" : "complete",
+        confidence:0.98,
+        reason_code:incomplete ? "continuing_thought" : "contextually_complete_answer",
+        candidate_text:request.candidate_text,
+        should_request_clarification:false
+      } }
+    }
+  }
+  const workflow = await runWorkflow({ turnValidator })
+  try {
+    workflow.sttHandlers.onFinal({ text:"I think", languageCode:"en-IN", requestId:"stt-incomplete", metrics:{} })
+    await waitFor(() => workflow.events.some(event => event.eventType === "turn_validation_held"))
+    assert.equal(workflow.brainInputs.length, 0)
+
+    workflow.sttHandlers.onFinal({ text:"I run a medical shop.", languageCode:"en-IN", requestId:"stt-complete", metrics:{} })
+    await waitFor(() => workflow.brainInputs.length === 1)
+    assert.equal(workflow.brainInputs[0].callerText, "I think I run a medical shop.")
+    assert.equal(workflow.transcriptRows.filter(row => row.speaker === "caller").length, 2)
+  } finally {
+    await workflow.finish()
+    if (previous.speakFirst === undefined) delete process.env.SPEAK_FIRST; else process.env.SPEAK_FIRST = previous.speakFirst
+    if (previous.turnControl === undefined) delete process.env.V3_TURN_CONTROL; else process.env.V3_TURN_CONTROL = previous.turnControl
+    if (previous.validationMode === undefined) delete process.env.V3_TURN_VALIDATION_MODE; else process.env.V3_TURN_VALIDATION_MODE = previous.validationMode
+  }
+})
+
+test("V3 active turn validation discards unclear input and clarifies only after a repeat", async () => {
+  const previous = { speakFirst:process.env.SPEAK_FIRST, turnControl:process.env.V3_TURN_CONTROL, validationMode:process.env.V3_TURN_VALIDATION_MODE }
+  process.env.SPEAK_FIRST = "false"
+  process.env.V3_TURN_CONTROL = "hybrid"
+  process.env.V3_TURN_VALIDATION_MODE = "active"
+  let attempts = 0
+  const turnValidator = { async validate(request) {
+    attempts += 1
+    return { valid:true, value:{ decision:"unclear", confidence:0.9, reason_code:"garbled_transcript", candidate_text:request.candidate_text, should_request_clarification:attempts >= 2 } }
+  } }
+  const workflow = await runWorkflow({ turnValidator })
+  try {
+    workflow.sttHandlers.onFinal({ text:"medical noise", languageCode:"en-IN", requestId:"stt-unclear-1", metrics:{} })
+    await waitFor(() => workflow.events.some(event => event.eventType === "turn_validation_unclear"))
+    assert.equal(workflow.brainInputs.length, 0)
+    assert.equal(workflow.events.filter(event => event.eventType === "tts_usage" && event.payload.source === "turn_validation_clarification").length, 0)
+
+    workflow.sttHandlers.onFinal({ text:"card static", languageCode:"en-IN", requestId:"stt-unclear-2", metrics:{} })
+    await waitFor(() => workflow.events.some(event => event.eventType === "tts_usage" && event.payload.source === "turn_validation_clarification"))
+    assert.equal(workflow.brainInputs.length, 0)
+  } finally {
+    await workflow.finish()
+    if (previous.speakFirst === undefined) delete process.env.SPEAK_FIRST; else process.env.SPEAK_FIRST = previous.speakFirst
+    if (previous.turnControl === undefined) delete process.env.V3_TURN_CONTROL; else process.env.V3_TURN_CONTROL = previous.turnControl
+    if (previous.validationMode === undefined) delete process.env.V3_TURN_VALIDATION_MODE; else process.env.V3_TURN_VALIDATION_MODE = previous.validationMode
   }
 })
 
@@ -201,10 +264,12 @@ test("V3 permission grant asks the fixed business question before the model", as
 })
 
 test("V3 active semantic fallback never crashes when a decision is unavailable", async () => {
-  const previous = { speakFirst:process.env.SPEAK_FIRST, turnControl:process.env.V3_TURN_CONTROL, routeMode:process.env.V3_SEMANTIC_ROUTE_ROUTER, apiKey:process.env.GEMINI_API_KEY }
+  const previous = { speakFirst:process.env.SPEAK_FIRST, turnControl:process.env.V3_TURN_CONTROL, routeMode:process.env.V3_SEMANTIC_ROUTE_ROUTER, activeRoutes:process.env.V3_SEMANTIC_ROUTE_ACTIVE_ROUTES, localOverride:process.env.V3_SEMANTIC_ROUTE_ALLOW_UNCALIBRATED_LOCAL, apiKey:process.env.GEMINI_API_KEY }
   process.env.SPEAK_FIRST = "true"
   process.env.V3_TURN_CONTROL = "hybrid"
   process.env.V3_SEMANTIC_ROUTE_ROUTER = "active"
+  process.env.V3_SEMANTIC_ROUTE_ACTIVE_ROUTES = "opening_first_reply"
+  process.env.V3_SEMANTIC_ROUTE_ALLOW_UNCALIBRATED_LOCAL = "true"
   delete process.env.GEMINI_API_KEY
   const workflow = await runWorkflow()
   try {
@@ -218,6 +283,8 @@ test("V3 active semantic fallback never crashes when a decision is unavailable",
     if (previous.speakFirst === undefined) delete process.env.SPEAK_FIRST; else process.env.SPEAK_FIRST = previous.speakFirst
     if (previous.turnControl === undefined) delete process.env.V3_TURN_CONTROL; else process.env.V3_TURN_CONTROL = previous.turnControl
     if (previous.routeMode === undefined) delete process.env.V3_SEMANTIC_ROUTE_ROUTER; else process.env.V3_SEMANTIC_ROUTE_ROUTER = previous.routeMode
+    if (previous.activeRoutes === undefined) delete process.env.V3_SEMANTIC_ROUTE_ACTIVE_ROUTES; else process.env.V3_SEMANTIC_ROUTE_ACTIVE_ROUTES = previous.activeRoutes
+    if (previous.localOverride === undefined) delete process.env.V3_SEMANTIC_ROUTE_ALLOW_UNCALIBRATED_LOCAL; else process.env.V3_SEMANTIC_ROUTE_ALLOW_UNCALIBRATED_LOCAL = previous.localOverride
     if (previous.apiKey === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = previous.apiKey
   }
 })

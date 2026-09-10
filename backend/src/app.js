@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { validatePreferences, validateRegistration, validateSalesInquiry, validateWaitlistSubmission } from "./validation.js";
 import { listFeatures, listTags, normalizeTags } from "./features.js";
-import { debugCallSummary, getDebugCall, growthMetrics, growthRecords, listDebugCalls, searchDebugCalls, usageMetrics, websiteMetrics } from "./admin-debug.js";
+import { debugCallSummary, getDebugCall, growthMetrics, growthRecords, listDebugCalls, searchDebugCalls, usageMetrics, voicePipelineMetrics, websiteMetrics } from "./admin-debug.js";
 import { authenticateAdmin, changeAdminPassword, clearSessionCookie, sessionCookie, sessionFor } from "./admin-auth.js";
 import { createSemanticRouteEvaluationStore } from "./demo/semantic-route-evaluation-store.js";
 import { calibrateSemanticRoute } from "./demo/semantic-route-calibration.js";
+import { semanticRouteActivationStatus } from "./demo/semantic-route-activation.js";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
@@ -152,6 +153,10 @@ export function createApp({
         const inProgress = await db.query("SELECT count(*)::int AS count FROM calls WHERE status='in_progress'");
         return sendJson(res, 200, { inProgressCalls:inProgress.rows[0].count, postgres:{ total:db.totalCount, idle:db.idleCount, waiting:db.waitingCount }, ...(await debugRuntime?.health?.() || { redis:{ available:false }, queues:{} }) }, cors);
       }
+      if (url.pathname === "/api/admin/voice-pipeline-metrics" && req.method === "GET") {
+        if (!hasAdminAccess(req, adminToken)) return sendJson(res, 401, { error:"Unauthorized" }, cors);
+        return sendJson(res, 200, await voicePipelineMetrics(db, url), cors);
+      }
       if (url.pathname === "/api/admin/semantic-route-evaluations" && req.method === "GET") {
         const session = sessionFor(req, adminToken); if (!session || session.mustChangePassword) return sendJson(res, 401, { error:"Unauthorized" }, cors);
         const reviewed = url.searchParams.get("reviewed");
@@ -166,7 +171,7 @@ export function createApp({
       }
       if (url.pathname === "/api/admin/semantic-route-status" && req.method === "GET") {
         const session = sessionFor(req, adminToken); if (!session || session.mustChangePassword) return sendJson(res, 401, { error:"Unauthorized" }, cors);
-        return sendJson(res, 200, { semantic_routes:semanticRouteRuntime?.status?.() || {}, required_for_active_routing:Boolean(semanticRouteRequired) }, cors);
+        return sendJson(res, 200, { semantic_routes:semanticRouteRuntime?.status?.() || {}, activation:semanticRouteActivationStatus(), required_for_active_routing:Boolean(semanticRouteRequired) }, cors);
       }
       const semanticEvaluation = url.pathname.match(/^\/api\/admin\/semantic-route-evaluations\/([0-9a-f-]+)$/i);
       if (semanticEvaluation && req.method === "PATCH") {
